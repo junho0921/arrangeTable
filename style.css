@@ -1,0 +1,140 @@
+*{margin:0; padding:0;}
+
+.centerflex ,
+.flex-alignstart ,
+.flex-bothstart,
+.flex-justyfied
+{
+    display: -webkit-box;  /* 老版本语法: Safari,  iOS, Android browser, older WebKit browsers.  */
+    display: -moz-box;    /* 老版本语法: Firefox (buggy) */
+    display: -ms-flexbox;  /* 混合版本语法: IE 10 */
+    display: -webkit-flex;  /* 新版本语法： Chrome 21+ */
+    display: flex;       /* 新版本语法： Opera 12.1, Firefox 22+ */
+}
+.centerflex{
+    /*垂直居中*/
+    /*老版本语法*/
+    -webkit-box-align: center;
+    -moz-box-align: center;
+    /*混合版本语法*/
+    -ms-flex-align: center;
+    /*新版本语法*/
+    -webkit-align-items: center;
+    align-items: center;
+    /*水平居中*/
+    /*老版本语法*/
+    -webkit-box-pack: center;
+    -moz-box-pack: center;
+    /*混合版本语法*/
+    -ms-flex-pack: center;
+    /*新版本语法*/
+    -webkit-justify-content: center;
+    justify-content: center;
+}
+.flex-alignstart{
+    /*垂直排列*/
+    /*老版本语法*/
+    -webkit-box-align: start;
+    -moz-box-align: start;
+    /*混合版本语法*/
+    -ms-flex-align: start;
+    /*新版本语法*/
+    -webkit-align-items: flex-start;
+    align-items: flex-start;
+    /*水平居中*/
+    /*老版本语法*/
+    -webkit-box-pack: center;
+    -moz-box-pack: center;
+    /*混合版本语法*/
+    -ms-flex-pack: center;
+    /*新版本语法*/
+    -webkit-justify-content: center;
+    justify-content: center;
+
+    /*垂直方向排列*/
+    /*老版本语法*/
+    -webkit-box-direction: vertical;
+    -moz-box-direction: vertical;
+    /*混合版本语法*/
+    -ms-flex-direction: column;
+    /*新版本语法*/
+    -webkit-flex-direction:column;
+    flex-direction: column;
+
+    /*wrap*/
+    /*老版本语法*/
+    -webkit-box-lines: multiple;
+    -moz-box-lines: multiple;
+    /*混合版本语法*/
+    -ms-flex-wrap: wrap;
+    /*新版本语法*/
+    -webkit-flex-wrap:wrap;
+    flex-wrap:wrap;
+}
+.flex-bothstart{
+    /*垂直排列*/
+    /*老版本语法*/
+    -webkit-box-align: start;
+    -moz-box-align: start;
+    /*混合版本语法*/
+    -ms-flex-align: start;
+    /*新版本语法*/
+    -webkit-align-items: flex-start;
+    align-items: flex-start;
+    /*水平排列*/
+    /*老版本语法*/
+    -webkit-box-pack: start;
+    -moz-box-pack: start;
+    /*混合版本语法*/
+    -ms-flex-pack: start;
+    /*新版本语法*/
+    -webkit-justify-content: flex-start;
+    justify-content: flex-start;
+}
+
+.flex-justyfied{
+    /*垂直排列*/
+    /*老版本语法*/
+    -webkit-box-align: start;
+    -moz-box-align: start;
+    /*混合版本语法*/
+    -ms-flex-align: start;
+    /*新版本语法*/
+    -webkit-align-items: flex-start;
+    align-items: flex-start;
+    /*水平排列*/
+    /*老版本语法*/
+    -webkit-box-pack: justify;
+    -moz-box-pack: justify;
+    /*混合版本语法*/
+    -ms-flex-pack: justify;
+    /*新版本语法*/
+    -webkit-justify-content: space-between  ;
+    justify-content: space-between;
+}
+
+
+ul.junDrag.flex-justyfied {
+    -webkit-flex-wrap: wrap-reverse; /* Safari */
+    flex-wrap:         wrap-reverse;
+}
+
+ul.junDrag {
+    list-style: none;
+    position: relative;
+}
+
+ul.junDrag li{
+    display: inline-block;
+
+    width:200px;
+    height: 200px;
+    border:7px solid white;
+    background: lightcyan;
+    font-size: 46px;
+    text-align: center;
+    line-height: 200px;
+}
+ul.junDrag li.active{
+    background: lightblue;
+}
