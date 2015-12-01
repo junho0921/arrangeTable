@@ -18,41 +18,119 @@
 }(function($) {
 	'use strict';
 
-	function YCdrag(options) {
+	// 方法: 获取触控点坐标
+	var page = $.proxy(function (coord, event) {
+		return (this.hasTouch ? event.originalEvent.touches[0] : event)['page' + coord.toUpperCase()];
+	}, this);
 
+	//var YCdrag = window.YCdrag || {};
+
+	window.YCdrag = function (options) {
+
+		// 默认选项
 		var defalutOptions = {
 			Container: '.junDrag',
 			Item:"li",
 			timeDuration: 250,
-			// 设置
+			// 动画选项,默认选择translate的CSS效果
 			useTransform: true, // <1>
 			useCSS: true
 		};
 
 		// 关于动画效果的设置
-		var settings = {
+		var thisSettings = {
+
+			// 对象
+			$ul: null,
+			$li: null,
+
+			// 尺寸属性
+			liw: null,
+			liH: null,
+			ulW: null,
+			ulH: null,
+			rows: null,
+			cols: null,
+			li_1_top: null,
+			li_1_left: null,
+
+			// 事件类型
+			hasTouch: null,
+			startEvent: null,
+			stopEvent: null,
+			moveEvent: null,
+
+			// 事件相关的基本属性
+			eventStartX: null,
+			eventStartY: null,
+			moveTargetIndex: null, // moveEvent的位置
+			MEMOmoveTargetIndex: null, // 记录moveEvent的位置
+			startTargetIndex: null, // startEvent的位置
+
+			// 定时事件
+			setTimeoutDrag: null,
 
 			// 位置保存:
-			positionProp : {left: null, top: null},
-			// 属性
+			positionProp: {left: null, top: null},// 可能不需要
+
+			// CSS属性
 			cssTransitions:null, // <1>
 			transformsEnabled:null,
+
 			// css属性前缀
 			transitionType:null,
 			transformType:null,
 			animType:null
 		};
 
-		$.extend(this, settings);
+		$.extend(this, thisSettings);
 
 		this.options = $.extend({}, defalutOptions, options);
 
-		console.log('options = ', options);
+		// 添加对象jQuery包装集
+		this.$ul = $(this.options.Container);
+		this.$li = this.$ul.find(this.options.Item);
+
+		console.log('options = ', this.options);
+
+		this.init();
+	};
+
+	YCdrag.prototype.init = function() {
+
+		this.size();
 
 		this.setProps();
 
-		this.init();
-	}
+		this.initailizeEvent();
+
+	};
+
+	YCdrag.prototype.size = function(){
+		// 获取子项li尺寸
+		this.liH = this.$li.outerHeight(true);
+		this.liW = this.$li.outerWidth(true);
+
+		// 获取容器ul尺寸
+		this.ulH = this.$ul.height();
+		this.ulW = this.$ul.width();
+
+		// 计算ul排列了多少列,与项
+		this.rows = Math.floor(this.ulH/this.liH); // 最准确的数字
+		this.cols;
+		// 遍历方法来计算列数
+		for(var i = 0; i < this.$li.length; i++){
+			if(this.$li.eq(i).position().top > 1){
+				this.cols = i;
+				break;
+			}
+		}
+		console.log('ul data : rows = ', this.rows, ', cols = ', this.cols);
+
+		// 计算第一个li的页面坐标, 以此作为参考基准
+		this.li_1_top = this.$li.eq(0).offset().top;
+		this.li_1_left = this.$li.eq(0).offset().left;
+	};
 
 	YCdrag.prototype.setProps = function() {
 		// 检测判断:
@@ -64,6 +142,12 @@
 
 		var _ = this,
 			bodyStyle = document.body.style;
+
+		// 选择事件类型
+		_.hasTouch = 'ontouchstart' in window ;
+		_.startEvent = _.hasTouch ? 'touchstart' : 'mousedown';
+		_.stopEvent = _.hasTouch ? 'touchend touchcancel' : 'mouseup mouseleave';
+		_.moveEvent = _.hasTouch ? 'touchmove' : 'mousemove';
 
 		if (bodyStyle.WebkitTransition !== undefined ||
 			bodyStyle.MozTransition !== undefined ||
@@ -133,220 +217,108 @@
 
 
 
-	function setProps () {
-		// 设置使用的方法, 决定组件使用.css()方法或translate方法或translate3d方法
-		var _ = this,
-			bodyStyle = document.body.style;
-
-		if (bodyStyle.WebkitTransition !== undefined ||
-			bodyStyle.MozTransition !== undefined ||
-			bodyStyle.msTransition !== undefined) {
-			if (_.options.useCSS === true) { //options是提供用户的选择, 但要使用的话, 需检测环境能否
-				_.cssTransitions = true;
-			}
-		}
-
-		/*setProps的主要作用之一:检测可使用的前缀, 可以用来借鉴, Perspective更小众*/
-		if (bodyStyle.OTransform !== undefined) {
-			_.animType = 'OTransform';
-			_.transformType = '-o-transform';
-			_.transitionType = 'OTransition';
-			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) _.animType = false;
-		}
-		if (bodyStyle.MozTransform !== undefined) {
-			_.animType = 'MozTransform';
-			_.transformType = '-moz-transform';
-			_.transitionType = 'MozTransition';
-			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.MozPerspective === undefined) _.animType = false;
-		}
-		if (bodyStyle.webkitTransform !== undefined) {
-			_.animType = 'webkitTransform';
-			_.transformType = '-webkit-transform';
-			_.transitionType = 'webkitTransition';
-			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) _.animType = false;
-		}
-		if (bodyStyle.msTransform !== undefined) {
-			_.animType = 'msTransform';
-			_.transformType = '-ms-transform';
-			_.transitionType = 'msTransition';
-			if (bodyStyle.msTransform === undefined) _.animType = false;
-		}
-		if (bodyStyle.transform !== undefined && _.animType !== false) {
-			_.animType = 'transform';
-			_.transformType = 'transform';
-			_.transitionType = 'transition';
-		}
-		_.transformsEnabled = _.options.useTransform && (_.animType !== null && _.animType !== false);
-	};
-
-	window.junDrag = function(options){
-
-		var defalutOptions = {
-			Container: '.junDrag',
-			Item:"li",
-			timeDuration: 250,
-			useCSS: true,// Enable/Disable CSS Transitions 是否使用translate3d
-			useTransform: true// 是否使用transform的CSS功能, translate 否则使用.css()方法而已
-		};
-
-		options = $.extend({}, defalutOptions, options);
-
-		console.log('options', options);
-
-		/*初始化动画环境, 本部分可以在插件里完成并获取, 不必要在这里执行方法*/
-
-		/*动画环境END*/
-
-
-
-		// options
-		var $ul = $(options.Container),
-			$li = $ul.find(options.Item);
-
-		// 选择事件类型
-		var hasTouch = 'ontouchstart' in window ,
-			startEvent = hasTouch ? 'touchstart' : 'mousedown',
-			stopEvent = hasTouch ? 'touchend touchcancel' : 'mouseup mouseleave',
-			moveEvent = hasTouch ? 'touchmove' : 'mousemove';
-
-
-		// 方法: 获取触控点坐标
-		function page(coord, event) {
-			return (hasTouch ? event.originalEvent.touches[0] : event)['page' + coord.toUpperCase()];
-		}
-
-		// 布局变量记录:
-		var setTimeoutDrag, eventStartX, eventStartY;
-
-		// moveEvent的位置
-		var moveTargetIndex;
-		var MEMOmoveTargetIndex;
-
-		// startEvent的位置
-		var startTargetIndex;
-
-		// 获取子项li尺寸
-		var liH = $li.outerHeight(true), liW = $li.outerWidth(true);
-		//获取容器ul尺寸
-		var ulH = $ul.height(),ulW = $ul.width();
-
-		// 计算ul排列了多少列,与项
-		var rows = Math.floor(ulH/liH); // 最准确的数字
-		var cols;
-		var linums = $li.length;
-		// 遍历方法来计算列数
-		for(var i = 0; i<linums; i++){
-			if($li.eq(i).position().top > 1){
-				cols = i;
-				break
-			}
-		}
-		console.log('ul data : rows = ', rows, ', cols = ', cols);
-
-		// 计算第一个li的页面坐标, 以此作为参考基准
-		var li_1_top = $li.eq(0).offset().top;
-		var li_1_left = $li.eq(0).offset().left;
-
-		// 绑定事件startEvent
-		$li.on(startEvent,function(event){
+	YCdrag.prototype.initailizeEvent = function() {
+// 绑定事件startEvent
+		var _ = this;
+		_.$li.on(_.startEvent, function(event){
 
 			var $this = $(this);
 
-			startTargetIndex = $this.addClass('active').index();
+			_.startTargetIndex = $this.addClass('active').index();
 
 			//startTime = event.timeStamp || +new Date();
 
 			// 记录初始位置
-			eventStartX = page('x', event);
-			eventStartY = page('y', event);
+			_.eventStartX = page('x', event);
+			_.eventStartY = page('y', event);
 
 			// 设定触发拖拉事件
-			setTimeoutDrag = setTimeout(function(){drag(event, $this)}, options.timeDuration);
+			_.setTimeoutDrag = setTimeout(function(){_.drag(event, $this)}, _.options.timeDuration);
 
 			// 绑定事件stopEvent
-			$('body').one(stopEvent, function(){
-				$ul.find('li').removeClass('active').css('opacity',1); // 此处应优化动画效果
-				$ul.find('.clone').remove(); // 此处应优化动画效果
-				clearTimeout(setTimeoutDrag);
-				$('body').off(moveEvent);
+			$('body').one(_.stopEvent, function(){
+				_.$ul.find(_.options.Item).removeClass('active').css('opacity',1); // 此处应优化动画效果
+				_.$ul.find('.clone').remove(); // 此处应优化动画效果
+				clearTimeout(_.setTimeoutDrag);
+				$('body').off(_.moveEvent);
 				// 监听触控点位置, 在ul插入本对象li
 			});
 		});
 
-		var drag = function(event, $this){
-			// 需要重新获取$li, 不然出现Bug: 多次排序出错
-			$li = $ul.find(options.Item);
 
-			/*动画效果放大对象*/
-			//...
+	};
 
-			// 虚拟:
-			$this.css('opacity',.3);
+	YCdrag.prototype.drag = function(event, $this){
+		var _ = this;
 
-			/* 脱离文本流 */
-			// 获取点击对象的相对父级的位置
-			var thisPos = $this.position();
+		// 需要重新获取$li, 不然出现Bug: 多次排序出错
+		_.$li = _.$ul.find(_.options.Item);
 
-			// 改变目标的定位, 脱离文本流
+		/*动画效果放大对象*/
+		//...
 
-			var $cloneone = $this.clone().addClass('clone').css({'opacity':1,'position':'absolute', 'font-size':'60px','left':thisPos.left, 'top':thisPos.top, 'z-index': 99});
+		// 虚拟:
+		$this.css('opacity',.3);
 
-			$ul.append($cloneone);
+		/* 脱离文本流 */
+		// 获取点击对象的相对父级的位置
+		var thisPos = $this.position();
 
-			/* 计算鼠标相对于对象左上角的坐标XY */
-			// 获取对象先对窗口的坐标XY
-			var tx = $this.offset().left, ty = $this.offset().top;
-			// 计算鼠标相对于对象左上角的坐标XY
-			var eX = eventStartX - tx, eY = eventStartY - ty;
+		// 改变目标的定位, 脱离文本流
 
-			// 计算每个子项的定位
-			// pageXY位置为准, 所以取值offsetXY, 加上li自身尺寸作为范围值,
-			// 然后进行moveEvent时候, 检测e.pageXY位置, 然后遍历每个子项的位置, 对比后获取当今位置
+		var $cloneone = $this.clone().addClass('clone').css({'opacity':1,'position':'absolute', 'font-size':'60px','left':thisPos.left, 'top':thisPos.top, 'z-index': 99});
 
-			$('body').on(moveEvent, function(event){
-				var Move_ex = page('x', event), Move_ey = page('y', event);
-				$cloneone.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 此处应优化动画
+		_.$ul.append($cloneone);
 
-				// 监听触控点位置来插入空白格子
-				// 思路1
-				// 以event触控点坐标来计算触控点所在的li的序号
-				// 以把startTarget使用after/before的方法来插入到ul的指定序号
+		/* 计算鼠标相对于对象左上角的坐标XY */
+		// 获取对象先对窗口的坐标XY
+		var tx = $this.offset().left, ty = $this.offset().top;
+		// 计算鼠标相对于对象左上角的坐标XY
+		var eX = _.eventStartX - tx, eY = _.eventStartY - ty;
 
-				var check_ex = Move_ex - li_1_left;
-				var check_ey = Move_ey - li_1_top;
-				// 以check_ex, check_ey为触控点来检测触控点所在位置
-				// 限定方法仅发生在ul范围
-				if(
-					check_ex > 0 && check_ey > 0 &&
-					check_ex < ulW && check_ey < ulH
-				){
-					// 计算触控点的位置index
-					var curCol = Math.floor(check_ex/liW) + 1;
-					var curRow = Math.floor(check_ey/liH);
-					moveTargetIndex = curRow * cols + curCol - 1;
+		// 计算每个子项的定位
+		// pageXY位置为准, 所以取值offsetXY, 加上li自身尺寸作为范围值,
+		// 然后进行moveEvent时候, 检测e.pageXY位置, 然后遍历每个子项的位置, 对比后获取当今位置
 
-					// 位移未超出一个li位置, 就取消执行
-					if(MEMOmoveTargetIndex == moveTargetIndex){ return }
+		$('body').on(_.moveEvent, function(event){
+			var Move_ex = page('x', event), Move_ey = page('y', event);
+			$cloneone.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 此处应优化动画
 
-					if(moveTargetIndex < startTargetIndex){
-						$li.eq(moveTargetIndex).before($this);
-					}else if(moveTargetIndex > startTargetIndex){
-						$li.eq(moveTargetIndex).after($this);
-					}else if(moveTargetIndex == startTargetIndex){
-						$li.eq(moveTargetIndex - 1).after($this);
-					}
+			// 监听触控点位置来插入空白格子
+			// 思路1
+			// 以event触控点坐标来计算触控点所在的li的序号
+			// 以把startTarget使用after/before的方法来插入到ul的指定序号
 
+			var check_ex = Move_ex - _.li_1_left;
+			var check_ey = Move_ey - _.li_1_top;
+			// 以check_ex, check_ey为触控点来检测触控点所在位置
+			// 限定方法仅发生在ul范围
+			if(
+				check_ex > 0 && check_ey > 0 &&
+				check_ex < _.ulW && check_ey < _.ulH
+			){
+				// 计算触控点的位置index
+				var curCol = Math.floor(check_ex/_.liW) + 1;
+				var curRow = Math.floor(check_ey/_.liH);
+				_.moveTargetIndex = curRow * _.cols + curCol - 1;
+
+				// 位移未超出一个li位置, 就取消执行
+				if(_.MEMOmoveTargetIndex == _.moveTargetIndex){ return }
+
+				if(_.moveTargetIndex < _.startTargetIndex){
+					_.$li.eq(_.moveTargetIndex).before($this);
+				}else if(_.moveTargetIndex > _.startTargetIndex){
+					_.$li.eq(_.moveTargetIndex).after($this);
+				}else if(_.moveTargetIndex == _.startTargetIndex){
+					_.$li.eq(_.moveTargetIndex - 1).after($this);
 				}
-				// 记录本次位置
-				MEMOmoveTargetIndex = moveTargetIndex;
-			});
-		};
+
+			}
+			// 记录本次位置
+			_.MEMOmoveTargetIndex = _.moveTargetIndex;
+		});
+	};
 
 
-		/*其他*/
-
-// 标题显示  底层事件类型
-		$('.junDragtittle').text('startEvent : '+ startEvent);
-	}
 }));
 
