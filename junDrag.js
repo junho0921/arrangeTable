@@ -5,7 +5,6 @@
 // 拖动状态时候, 触控点的位置差生新的空白格(先忽略动画效果), li重新排序(动画效果先忽略)
 // 放开触控, 判断触控点位置, 移除空白格, 重新排位(先忽略动画效果)
 
-
 (function(factory) {
 	'use strict';
 	if (typeof define === 'function' && define.amd) {
@@ -19,18 +18,197 @@
 }(function($) {
 	'use strict';
 
+	function YCdrag(options) {
+
+		var defalutOptions = {
+			Container: '.junDrag',
+			Item:"li",
+			timeDuration: 250,
+			// 设置
+			useTransform: true, // <1>
+			useCSS: true
+		};
+
+		// 关于动画效果的设置
+		var settings = {
+
+			// 位置保存:
+			positionProp : {left: null, top: null},
+			// 属性
+			cssTransitions:null, // <1>
+			transformsEnabled:null,
+			// css属性前缀
+			transitionType:null,
+			transformType:null,
+			animType:null
+		};
+
+		$.extend(this, settings);
+
+		this.options = $.extend({}, defalutOptions, options);
+
+		console.log('options = ', options);
+
+		this.setProps();
+
+		this.init();
+	}
+
+	YCdrag.prototype.setProps = function() {
+		// 检测判断:
+		// cssTransitions
+		// 设置前缀:
+		// animType/ transformType/ transitionType
+		// 检测判断:
+		// transformsEnabled = 根据useTransform正反基础, 检测animType不为null与false
+
+		var _ = this,
+			bodyStyle = document.body.style;
+
+		if (bodyStyle.WebkitTransition !== undefined ||
+			bodyStyle.MozTransition !== undefined ||
+			bodyStyle.msTransition !== undefined) {
+			if (_.options.useCSS === true) { //options是提供用户的选择, 但要使用的话, 需检测环境能否
+				_.cssTransitions = true;
+			}
+		}
+		/*setProps的主要作用之一:检测可使用的前缀, 可以用来借鉴, Perspective更小众*/
+		if (bodyStyle.OTransform !== undefined) {
+			_.animType = 'OTransform';
+			_.transformType = '-o-transform';
+			_.transitionType = 'OTransition';
+			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) _.animType = false;
+		}
+		if (bodyStyle.MozTransform !== undefined) {
+			_.animType = 'MozTransform';
+			_.transformType = '-moz-transform';
+			_.transitionType = 'MozTransition';
+			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.MozPerspective === undefined) _.animType = false;
+		}
+		if (bodyStyle.webkitTransform !== undefined) {
+			_.animType = 'webkitTransform';
+			_.transformType = '-webkit-transform';
+			_.transitionType = 'webkitTransition';
+			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) _.animType = false;
+		}
+		if (bodyStyle.msTransform !== undefined) {
+			_.animType = 'msTransform';
+			_.transformType = '-ms-transform';
+			_.transitionType = 'msTransition';
+			if (bodyStyle.msTransform === undefined) _.animType = false;
+		}
+		if (bodyStyle.transform !== undefined && _.animType !== false) {
+			_.animType = 'transform';
+			_.transformType = 'transform';
+			_.transitionType = 'transition';
+		}
+		_.transformsEnabled = _.options.useTransform && (_.animType !== null && _.animType !== false);
+	};
+
+	YCdrag.prototype.setCSS = function(position) {
+		// position = {left: ?, top: ?}
+		var _ = this,
+			positionProps = {},
+			x, y;
+
+		x = _.positionProp == 'left' ? Math.ceil(position) + 'px' : '0px';
+		y = _.positionProp == 'top' ? Math.ceil(position) + 'px' : '0px';
+
+		positionProps[_.positionProp] = position;
+
+		if (_.transformsEnabled === false) {
+			_.$slideTrack.css(positionProps);
+		} else {
+			positionProps = {};
+			if (_.cssTransitions === false) {
+				positionProps[_.animType] = 'translate(' + x + ', ' + y + ')';
+				_.$slideTrack.css(positionProps);
+			} else {
+				positionProps[_.animType] = 'translate3d(' + x + ', ' + y + ', 0px)';
+				_.$slideTrack.css(positionProps);
+			}
+		}
+		log('当前css位置', positionProps);
+	};
+
+
+
+	function setProps () {
+		// 设置使用的方法, 决定组件使用.css()方法或translate方法或translate3d方法
+		var _ = this,
+			bodyStyle = document.body.style;
+
+		if (bodyStyle.WebkitTransition !== undefined ||
+			bodyStyle.MozTransition !== undefined ||
+			bodyStyle.msTransition !== undefined) {
+			if (_.options.useCSS === true) { //options是提供用户的选择, 但要使用的话, 需检测环境能否
+				_.cssTransitions = true;
+			}
+		}
+
+		/*setProps的主要作用之一:检测可使用的前缀, 可以用来借鉴, Perspective更小众*/
+		if (bodyStyle.OTransform !== undefined) {
+			_.animType = 'OTransform';
+			_.transformType = '-o-transform';
+			_.transitionType = 'OTransition';
+			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) _.animType = false;
+		}
+		if (bodyStyle.MozTransform !== undefined) {
+			_.animType = 'MozTransform';
+			_.transformType = '-moz-transform';
+			_.transitionType = 'MozTransition';
+			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.MozPerspective === undefined) _.animType = false;
+		}
+		if (bodyStyle.webkitTransform !== undefined) {
+			_.animType = 'webkitTransform';
+			_.transformType = '-webkit-transform';
+			_.transitionType = 'webkitTransition';
+			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) _.animType = false;
+		}
+		if (bodyStyle.msTransform !== undefined) {
+			_.animType = 'msTransform';
+			_.transformType = '-ms-transform';
+			_.transitionType = 'msTransition';
+			if (bodyStyle.msTransform === undefined) _.animType = false;
+		}
+		if (bodyStyle.transform !== undefined && _.animType !== false) {
+			_.animType = 'transform';
+			_.transformType = 'transform';
+			_.transitionType = 'transition';
+		}
+		_.transformsEnabled = _.options.useTransform && (_.animType !== null && _.animType !== false);
+	};
+
 	window.junDrag = function(options){
 
+		var defalutOptions = {
+			Container: '.junDrag',
+			Item:"li",
+			timeDuration: 250,
+			useCSS: true,// Enable/Disable CSS Transitions 是否使用translate3d
+			useTransform: true// 是否使用transform的CSS功能, translate 否则使用.css()方法而已
+		};
+
+		options = $.extend({}, defalutOptions, options);
+
+		console.log('options', options);
+
+		/*初始化动画环境, 本部分可以在插件里完成并获取, 不必要在这里执行方法*/
+
+		/*动画环境END*/
+
+
+
 		// options
-		var timeDuration = (options && options.timeDuration) || 250,
-			$ul = (options && options.ul && $(options.ul)) || $('.junDrag'),
-			$li = $ul.find('li');
+		var $ul = $(options.Container),
+			$li = $ul.find(options.Item);
 
 		// 选择事件类型
 		var hasTouch = 'ontouchstart' in window ,
 			startEvent = hasTouch ? 'touchstart' : 'mousedown',
 			stopEvent = hasTouch ? 'touchend touchcancel' : 'mouseup mouseleave',
 			moveEvent = hasTouch ? 'touchmove' : 'mousemove';
+
 
 		// 方法: 获取触控点坐标
 		function page(coord, event) {
@@ -83,7 +261,7 @@
 			eventStartY = page('y', event);
 
 			// 设定触发拖拉事件
-			setTimeoutDrag = setTimeout(function(){drag(event, $this)}, timeDuration);
+			setTimeoutDrag = setTimeout(function(){drag(event, $this)}, options.timeDuration);
 
 			// 绑定事件stopEvent
 			$('body').one(stopEvent, function(){
@@ -97,7 +275,7 @@
 
 		var drag = function(event, $this){
 			// 需要重新获取$li, 不然出现Bug: 多次排序出错
-			$li = $ul.find('li');
+			$li = $ul.find(options.Item);
 
 			/*动画效果放大对象*/
 			//...
