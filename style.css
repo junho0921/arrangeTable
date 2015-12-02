@@ -150,8 +150,8 @@ ul.junDrag li.active.host {
 }
 ul.junDrag li.active.clone {
 opacity:1;
-position:absolute;
-font-size:60px;
+position:relative;
+/*font-size:60px;*/
 z-index: 99;
 }
 

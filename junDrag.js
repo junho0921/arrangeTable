@@ -195,6 +195,7 @@
 			_.transitionType = 'transition';
 		}
 		_.transformsEnabled = _.options.useTransform && (_.animType !== null && _.animType !== false);
+		//_.transformsEnabled = false;// 测试用
 	};
 
 	YCdrag.prototype.dragCSS = function(position) {
@@ -204,9 +205,9 @@
 			x, y;
 
 		if (_.transformsEnabled === false) {
-			// css位置
-			x = Math.ceil(position.left - _.eX) + 'px';
-			y = Math.ceil(position.top - _.eY) + 'px';
+			// css位置, 基于$dragItem是position:relative的基础
+			x = Math.ceil(position.left - _.eventStartX + _.dx) + 'px';
+			y = Math.ceil(position.top - _.eventStartY + _.dy) + 'px';
 			_.$dragItem.css({'left': x, "top": y});
 		} else {
 			positionProps = {};
@@ -281,25 +282,28 @@
 
 	YCdrag.prototype.dragItemReset = function(event, $this){
 		// mouseUp动画
-		var MouseUp_ex = page('x', event),
-			MouseUp_ey = page('y', event),
-			$item = $this;
+		var $item = $this,
+			_ = this,
+			positionProps= {};
+
+		//var MouseUp_ex = page('x', event),
+		//	MouseUp_ey = page('y', event);
 
 		// 获取目标定位
 		var targetPos = $item.position();
 
-		console.log('MouseUp_ex  ', MouseUp_ex, MouseUp_ey, targetPos);
+		var x =  targetPos.left - _.startPos.left,
+		y = targetPos.top - _.startPos.top ;
 
-		var x = targetPos.left - MouseUp_ex,
-		y = targetPos.top - MouseUp_ey, positionProps = {};
+		_.applyTransition(_.$dragItem);
+		positionProps[_.animType] = 'translate3d(' + x + 'px, ' + y + 'px, 0px)'; // 测试用, 应调用dragCSS方法
+		_.$dragItem.css(positionProps);
 
-		positionProps[this.animType] = 'translate3d(' + x + ', ' + y + ', 0px)';
-		this.$dragItem.css(positionProps);
-
-		//this.$dragItem.animate({'left':, "top":});
-
-		this.$container.find('.clone').remove();
-		this.$container.find(this.options.Item).removeClass('active host');
+		setTimeout(function(){
+			_.$container.find('.clone').remove();
+			_.$container.find(_.options.Item).removeClass('active host');
+			_.disableTransition(_.$dragItem);
+		}, _.options.resetDuration);
 
 	};
 
@@ -312,28 +316,24 @@
 		/*动画效果放大对象*/
 		//...
 
-		//$this.css('opacity',.3);
 		$this.addClass('host');
 
 		/* 脱离文本流 */
 		// 获取点击对象的相对父级的位置
-		var thisPos = $this.position();
+		_.startPos = $this.position();
 
 		// 改变目标的定位, 脱离文本流
 		_.$dragItem =
-			$this.clone().
-				addClass('clone').
-				css({'left':thisPos.left,'top':thisPos.top});
+			$this.clone()
+				.addClass('clone');
 
-		_.$container.append(_.$dragItem);
+		_.$container.append(_.$dragItem);// Bug: 改变了$container的高度! 但可通过css固定高度
 
-		/* 计算鼠标相对于对象左上角的坐标XY */
-		// 获取对象先对窗口的坐标XY
-		var tx = $this.offset().left, ty = $this.offset().top;
-		// 计算鼠标相对于对象左上角的坐标XY
-		var eX = _.eventStartX - tx, eY = _.eventStartY - ty;
-		_.eX = eX;
-		_.eY = eY;
+		// 原item与新添加item的距离
+		_.dx = $this.position().left - _.$dragItem.position().left;
+		_.dy = $this.position().top - _.$dragItem.position().top;
+
+		_.$dragItem.css({'left': _.dx,'top': _.dy});
 
 		// 计算每个子项的定位
 		// pageXY位置为准, 所以取值offsetXY, 加上li自身尺寸作为范围值,
@@ -344,7 +344,7 @@
 				Move_ey = page('y', event);
 
 			_.dragCSS({'left':Move_ex, 'top':Move_ey});
-			//_.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 没有优化动画的模式
+			//_.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
 
 			// 监听触控点位置来插入空白格子
 			// 思路1
