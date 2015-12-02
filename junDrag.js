@@ -5,6 +5,9 @@
 // 拖动状态时候, 触控点的位置差生新的空白格(先忽略动画效果), li重新排序(动画效果先忽略)
 // 放开触控, 判断触控点位置, 移除空白格, 重新排位(先忽略动画效果)
 
+// 改进空间:
+// touch事件命名空间
+
 (function(factory) {
 	'use strict';
 	if (typeof define === 'function' && define.amd) {
@@ -40,7 +43,7 @@
 			useTransform: true, // <1>
 			useCSS: true,
 			// 允许触控边缘
-			RangeXY: 10,
+			RangeXY: 30,
 			// 内容
 			dataList:[]
 		};
@@ -48,7 +51,6 @@
 		// 关于动画效果的设置
 		var thisSettings = {
 
-			dragCapable:false,
 			// 对象
 			$container: null,
 			$item: null,
@@ -79,6 +81,9 @@
 
 			// 定时事件
 			setTimeoutDrag: null,
+
+			// 检测拖动
+			dragCapable:false,
 
 			// CSS属性
 			cssTransitions:null, // <1>
@@ -120,29 +125,18 @@
 
 	};
 
-	YCdrag.prototype.render = function(oElement,aAppList,flag){
+	YCdrag.prototype.render = function(){
 		var _ = this,
-			sLiContent = '',
 			data = _.options.dataList,
 			len = data.length;
-			//sBtnClass = '',
-			//aAppDivList = this.getnodeName(oElement,'div'),
-			//aAppPList = this.getnodeName(oElement,'p');
 
-		//sBtnClass = flag==0?'minus':'plus';
-
-		//遍历数组中的 应用，创建DOM
 		for(var i = 0; i < len; i ++){
 			$('<' + _.options.ItemNode + '>')
 				.addClass(_.options.ItemClassName)
 				.append($('<h2>').text(data[i].name))
 				.append($('<img>').attr('src',data[i].src))
 				.appendTo(_.$container);
-			//sLiContent += ('<h2>' + data[i].name + "</h2>" + "");
 		}
-
-		console.log('模板', sLiContent);
-
 	};
 
 	YCdrag.prototype.size = function(){
@@ -280,7 +274,8 @@
 			_.eventStartY = page('y', event);
 
 			// 定时触发拖拉事件
-			_.setTimeoutDrag = setTimeout(function(){_.drag(event, $this)}, _.options.timeDuration);
+			_.drag(event, $this)
+			//_.setTimeoutDrag = setTimeout(function(){_.drag(event, $this)}, _.options.timeDuration);
 
 			// 绑定事件stopEvent
 			$('body').one(_.stopEvent, function(event){
@@ -288,7 +283,6 @@
 				// 监听触控点位置, 在ul插入本对象li
 				clearTimeout(_.setTimeoutDrag);
 				$('body').off(_.moveEvent);
-
 			});
 		});
 	};
@@ -345,54 +339,68 @@
 	YCdrag.prototype.drag = function(event, $this){
 		var _ = this;
 
-		// 需要重新获取$item, 不然出现Bug: 多次排序出错
-		_.$item = _.$container.find(_.options.ItemClass);
-
-		/*动画效果放大对象*/
-		//...
-
-		$this.addClass('host');
-
-		/* 脱离文本流 */
-		// 获取点击对象的相对父级的位置
-		_.startPos = $this.position();
-
-		// 改变目标的定位, 脱离文本流
-		_.$dragItem =
-			$this.clone()
-				.addClass('clone');
-
-		_.$container.append(_.$dragItem);// Bug: 改变了$container的高度! 但可通过css固定高度
-
-		// 原item与新添加item的距离
-		_.dx = $this.position().left - _.$dragItem.position().left;
-		_.dy = $this.position().top - _.$dragItem.position().top;
-
-		_.$dragItem.css({'left': _.dx,'top': _.dy});
-
 		// 计算每个子项的定位
 		// pageXY位置为准, 所以取值offsetXY, 加上li自身尺寸作为范围值,
 		// 然后进行moveEvent时候, 检测e.pageXY位置, 然后遍历每个子项的位置, 对比后获取当今位置
 
 		$('body').on(_.moveEvent, function(event){
 			// 每次初始拖动必须检查触控点位移情况, 若位置已经变化很大,就退出
-			if(!_.dragCapable){
-				if(event.pageX - _.eventStartX > _.options.RangeXY ||
-					event.pageY - _.eventStartY > _.options.RangeXY
-				){
-					$('body').off(_.moveEvent);
-					_.dragCapable = false;
-					return;
-				}else{
-					_.dragCapable = true
-				}
-			}
 
 			var Move_ex = page('x', event),
 				Move_ey = page('y', event);
 
+			if(!_.dragCapable){
+
+				if (event.timeStamp - _.startTime < _.options.timeDuration){
+					console.warn('失效: 拖动太快');
+					$('body').off(_.moveEvent);
+					$('body').off(_.stopEvent);
+					$this.removeClass('active');
+					_.dragCapable = false;
+					return;
+				}
+
+				if(Move_ex - _.eventStartX > _.options.RangeXY ||
+					Move_ey - _.eventStartY > _.options.RangeXY){
+					console.warn('失效: 超过距离');
+					$('body').off(_.moveEvent);
+					$('body').off(_.stopEvent);
+					$this.removeClass('active');
+					_.dragCapable = false;
+					return;
+				}else{
+					// 初始化
+
+					// 需要重新获取$item, 不然出现Bug: 多次排序出错
+					_.$item = _.$container.find(_.options.ItemClass);
+
+					$this.addClass('host');
+
+					// 获取点击对象的相对父级的位置
+					_.startPos = $this.position();
+
+					// 改变目标的定位, 脱离文本流
+					_.$dragItem =
+						$this.clone()
+							.addClass('clone');
+
+					_.$container.append(_.$dragItem);// Bug: 改变了$container的高度! 但可通过css固定高度
+
+					// 原item与新添加item的距离
+					_.dx = $this.position().left - _.$dragItem.position().left;
+					_.dy = $this.position().top - _.$dragItem.position().top;
+
+					_.$dragItem.css({'left': _.dx,'top': _.dy});
+
+					_.dragCapable = true
+				}
+			}
+
 			_.dragCSS({'left':Move_ex, 'top':Move_ey});
 			//_.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
+
+			// 提供触发事件:
+			//$.trigger("beforeYCdrag");
 
 			// 监听触控点位置来插入空白格子
 			// 思路1

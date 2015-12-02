@@ -139,7 +139,6 @@ ul.junDrag.flex-justyfied {
     border:7px solid white;
     background: lightcyan;
     text-align: center;
-    line-height: 200px;
 }
 .junDrag .dragItem.active{
     background: lightblue;
@@ -148,10 +147,10 @@ ul.junDrag.flex-justyfied {
     opacity: 0.3
 }
 .junDrag .dragItem.active.clone {
-opacity:1;
-position:relative;
-/*font-size:60px;*/
-z-index: 99;
+    opacity:1;
+    position:relative;
+    font-size:30px;
+    z-index: 99;
 }
 
 .junDrag .dragItem, /*不应该是.dragItem但现在暂不管*/
