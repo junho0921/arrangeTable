@@ -153,11 +153,28 @@ ul.junDrag.flex-justyfied {
     z-index: 99;
 }
 
-.junDrag .dragItem, /*不应该是.dragItem但现在暂不管*/
-.junDrag {
+.junDrag .dragItem, .junDrag {
     -webkit-transform: translate3d(0, 0, 0);
     -moz-transform: translate3d(0, 0, 0);
     -ms-transform: translate3d(0, 0, 0);
     -o-transform: translate3d(0, 0, 0);
     transform: translate3d(0, 0, 0);
+}
+
+.closebtn, .addClose::after {
+    position: absolute;
+    right:3px;
+    top:3px;
+    color: #ffffff;
+    width: 30px;
+    height:30px;
+    line-height: 30px;
+    border: 4px solid lightgray;
+    background: lightcoral;
+    font-size: 30px;
+    border-radius: 100%;
+    cursor: pointer;
+}
+.addClose::after{
+    content:"X";
 }

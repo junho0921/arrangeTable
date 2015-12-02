@@ -31,7 +31,6 @@
 
 	//var YCdrag = window.YCdrag || {};
 	window.YCdrag = function (options) {
-
 		// 默认选项
 		var defalutOptions = {
 			Container: '.junDrag',
@@ -54,6 +53,7 @@
 			// 对象
 			$container: null,
 			$item: null,
+			$dragTarget:null,
 			$dragItem: null,
 
 			// 尺寸属性
@@ -79,9 +79,6 @@
 			MEMOmoveTargetIndex: null, // 记录moveEvent的位置
 			startTargetIndex: null, // startEvent的位置
 
-			// 定时事件
-			setTimeoutDrag: null,
-
 			// 检测拖动
 			dragCapable:false,
 
@@ -103,10 +100,9 @@
 		this.options = $.extend({}, defalutOptions, options);
 
 		this.options.ItemClass = "." + this.options.ItemClassName;
-		// 添加对象jQuery包装集
-		this.$container = $(this.options.Container);
 
-		console.log('options = ', this.options);
+		// 添加对象jQuery包装集$container
+		this.$container = $(this.options.Container);
 
 		this.init();
 	};
@@ -115,14 +111,15 @@
 
 		this.render();
 
+		// 添加对象jQuery包装集$item
 		this.$item = this.$container.find(this.options.ItemClass);
 
 		this.size();
 
 		this.setProps();
 
+		// 执行绑定事件
 		this.initailizeEvent();
-
 	};
 
 	YCdrag.prototype.render = function(){
@@ -136,6 +133,212 @@
 				.append($('<h2>').text(data[i].name))
 				.append($('<img>').attr('src',data[i].src))
 				.appendTo(_.$container);
+		}
+	};
+
+	YCdrag.prototype.initailizeEvent = function() {
+		// 绑定事件startEvent
+		var _ = this;
+
+		_.$item.on(_.startEvent, function(event){
+
+			var $this = _.$dragTarget = $(this);
+
+			_.fireEvent("mouseDown", [_.$item]);
+
+			_.startTargetIndex = $this.addClass('active').index();
+
+			_.startTime = event.timeStamp || +new Date();
+
+			// 记录初始位置
+			_.eventStartX = page('x', event);
+			_.eventStartY = page('y', event);
+
+
+			// 绑定事件stopEvent, 本方法必须在绑定拖拽事件之前
+			$('body').one(_.stopEvent, function(event){
+				_.stopEventFunc($this, event);
+			});
+
+			// 绑定拖拽事件
+			_.drag();
+		});
+	};
+
+	YCdrag.prototype.stopEventFunc = function(event){
+		var _ = this;
+
+		$('body').off(_.moveEvent);
+
+		if(_.dragCapable){ // 已拖拽的mouseUp
+			_.dragItemReset(event, _.$dragTarget);
+		}else{ // 没有拖拽后的mouseUp, 判断为click
+			_.$container.find(_.options.ItemClass).removeClass('active host');
+			_.fireEvent("click", [_.$dragTarget]);
+		}
+
+		_.dragCapable = false;
+	};
+
+	YCdrag.prototype.dragItemReset = function(){
+		// mouseUp动画
+		var _ = this,
+			positionProps= {};
+
+		//var MouseUp_ex = page('x', event),
+		//	MouseUp_ey = page('y', event); // 保留
+
+		// 获取目标定位
+		var targetPos = _.$dragTarget.position();
+
+		var x =  targetPos.left - _.startPos.left,
+		y = targetPos.top - _.startPos.top ;
+
+		_.applyTransition(_.$dragItem);
+		positionProps[_.animType] = 'translate3d(' + x + 'px, ' + y + 'px, 0px)'; // 测试用, 应调用dragCSS方法
+		_.$dragItem.css(positionProps);
+
+		setTimeout(function(){
+			_.$container.find('.clone').remove();
+			_.$container.find(_.options.ItemClass).removeClass('active host');
+			_.disableTransition(_.$dragItem);
+			_.fireEvent("afterDrag", [_.$dragTarget]);
+		}, _.options.resetDuration);
+	};
+
+	YCdrag.prototype.drag = function(){
+		var _ = this;
+
+		// 计算每个子项的定位
+		// pageXY位置为准, 所以取值offsetXY, 加上li自身尺寸作为范围值,
+		// 然后进行moveEvent时候, 检测e.pageXY位置, 然后遍历每个子项的位置, 对比后获取当今位置
+
+		$('body').on(_.moveEvent, function(event){
+			// 每次初始拖动必须检查触控点位移情况, 若位置已经变化很大,就退出
+
+			var Move_ex = page('x', event),
+				Move_ey = page('y', event);
+
+			if(!_.dragCapable){
+
+				if (event.timeStamp - _.startTime < _.options.timeDuration){
+					console.warn('失效: 拖动太快');
+					_.stopEventFunc();
+					return;
+				}
+
+				if(Move_ex - _.eventStartX > _.options.RangeXY ||
+					Move_ey - _.eventStartY > _.options.RangeXY){
+					console.warn('失效: 超过距离');
+					_.stopEventFunc();
+					return;
+				}else{
+					// 初始化
+
+					// 需要重新获取$item, 不然出现Bug: 多次排序出错
+					_.$item = _.$container.find(_.options.ItemClass);
+
+					_.$dragTarget.addClass('host');
+
+					// 获取点击对象的相对父级的位置
+					_.startPos = _.$dragTarget.position();
+
+					// 复制拖拽目标
+					_.$dragItem =
+						_.$dragTarget.clone()
+							.addClass('clone')
+							.appendTo(_.$container);// Bug: 改变了$container的高度! 但可通过css固定高度
+
+					// fixBug:
+
+					// 原item与新添加item的距离
+					_.dx = _.$dragTarget.position().left - _.$dragItem.position().left;
+					_.dy = _.$dragTarget.position().top - _.$dragItem.position().top;
+
+					_.$dragItem.css({'left': _.dx,'top': _.dy});
+
+					_.dragCapable = true
+				}
+			}
+
+			_.dragCSS({'left':Move_ex, 'top':Move_ey});
+			//_.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
+
+			// 提供触发事件:"beforeDrag"
+			_.fireEvent("beforeDrag", [_.$dragItem]);
+
+			// 监听触控点位置来插入空白格子
+			// 思路1
+			// 以event触控点坐标来计算触控点所在的li的序号
+			// 以把startTarget使用after/before的方法来插入到ul的指定序号
+
+			var check_ex = Move_ex - _.li_1_left;
+			var check_ey = Move_ey - _.li_1_top;
+			// 以check_ex, check_ey为触控点来检测触控点所在位置
+			// 限定方法仅发生在ul范围
+			if(
+				check_ex > 0 && check_ey > 0 &&
+				check_ex < _.ulW && check_ey < _.ulH
+			){
+				// 计算触控点的位置index
+				var curCol = Math.floor(check_ex/_.liW) + 1;
+				var curRow = Math.floor(check_ey/_.liH);
+				_.moveTargetIndex = curRow * _.cols + curCol - 1;
+
+				// 位移未超出一个li位置, 就取消执行
+				if(_.MEMOmoveTargetIndex == _.moveTargetIndex){ return }
+
+				if(_.moveTargetIndex < _.startTargetIndex){
+					_.$item.eq(_.moveTargetIndex).before(_.$dragTarget);
+				}else if(_.moveTargetIndex > _.startTargetIndex){
+					_.$item.eq(_.moveTargetIndex).after(_.$dragTarget);
+				}else if(_.moveTargetIndex == _.startTargetIndex){
+					_.$item.eq(_.moveTargetIndex - 1).after(_.$dragTarget);
+				}
+
+			}
+			// 记录本次位置
+			_.MEMOmoveTargetIndex = _.moveTargetIndex;
+		});
+	};
+
+
+
+	/*-----------------------------------------------------------------------------------------------*/
+
+
+
+	YCdrag.prototype.applyTransition = function($dragItem) {
+		// 添加css  Transition
+		var _ = this,
+			transition = {};
+
+		transition[_.transitionType] = _.transformType + ' ' + _.options.resetDuration + 'ms ease';
+
+		$dragItem.css(transition);
+	};
+
+	YCdrag.prototype.disableTransition = function($dragItem) {
+		// 去掉css  Transition
+		var _ = this,
+			transition = {};
+
+		transition[_.transitionType] = '';
+
+		$dragItem.css(transition);
+	};
+
+	// 添加触发事件的方法
+	YCdrag.prototype.addEvent = function(event, func){
+		if(event){
+			YCdrag.prototype[event] = func;
+		}
+	};
+
+	// 手动触发事件的方法
+	YCdrag.prototype.fireEvent = function(eventName, args){
+		if(this[eventName]){
+			this[eventName].apply(this, args);
 		}
 	};
 
@@ -253,189 +456,6 @@
 		}
 	};
 
-
-
-	YCdrag.prototype.initailizeEvent = function() {
-		// 绑定事件startEvent
-		var _ = this;
-
-		_.$item.on(_.startEvent, function(event){
-
-			var $this = $(this);
-
-			_.startTargetIndex = $this.addClass('active').index();
-
-			_.startTime = event.timeStamp || +new Date();
-
-			console.log('startTime', _.startTime);
-
-			// 记录初始位置
-			_.eventStartX = page('x', event);
-			_.eventStartY = page('y', event);
-
-			// 定时触发拖拉事件
-			_.drag(event, $this)
-			//_.setTimeoutDrag = setTimeout(function(){_.drag(event, $this)}, _.options.timeDuration);
-
-			// 绑定事件stopEvent
-			$('body').one(_.stopEvent, function(event){
-				_.dragItemReset(event, $this);
-				// 监听触控点位置, 在ul插入本对象li
-				clearTimeout(_.setTimeoutDrag);
-				$('body').off(_.moveEvent);
-			});
-		});
-	};
-
-	YCdrag.prototype.applyTransition = function($dragItem) {
-		// 添加css  Transition
-		var _ = this,
-			transition = {};
-
-		transition[_.transitionType] = _.transformType + ' ' + _.options.resetDuration + 'ms ease';
-
-		$dragItem.css(transition);
-	};
-
-	YCdrag.prototype.disableTransition = function($dragItem) {
-		// 去掉css  Transition
-		var _ = this,
-			transition = {};
-
-		transition[_.transitionType] = '';
-
-		$dragItem.css(transition);
-	};
-
-
-	YCdrag.prototype.dragItemReset = function(event, $this){
-		// mouseUp动画
-		var $item = $this,
-			_ = this,
-			positionProps= {};
-
-		//var MouseUp_ex = page('x', event),
-		//	MouseUp_ey = page('y', event); // 保留
-
-		// 获取目标定位
-		var targetPos = $item.position();
-
-		var x =  targetPos.left - _.startPos.left,
-		y = targetPos.top - _.startPos.top ;
-
-		_.applyTransition(_.$dragItem);
-		positionProps[_.animType] = 'translate3d(' + x + 'px, ' + y + 'px, 0px)'; // 测试用, 应调用dragCSS方法
-		_.$dragItem.css(positionProps);
-
-		setTimeout(function(){
-			_.$container.find('.clone').remove();
-			_.$container.find(_.options.ItemClass).removeClass('active host');
-			_.disableTransition(_.$dragItem);
-		}, _.options.resetDuration);
-		_.dragCapable = false;
-
-	};
-
-	YCdrag.prototype.drag = function(event, $this){
-		var _ = this;
-
-		// 计算每个子项的定位
-		// pageXY位置为准, 所以取值offsetXY, 加上li自身尺寸作为范围值,
-		// 然后进行moveEvent时候, 检测e.pageXY位置, 然后遍历每个子项的位置, 对比后获取当今位置
-
-		$('body').on(_.moveEvent, function(event){
-			// 每次初始拖动必须检查触控点位移情况, 若位置已经变化很大,就退出
-
-			var Move_ex = page('x', event),
-				Move_ey = page('y', event);
-
-			if(!_.dragCapable){
-
-				if (event.timeStamp - _.startTime < _.options.timeDuration){
-					console.warn('失效: 拖动太快');
-					$('body').off(_.moveEvent);
-					$('body').off(_.stopEvent);
-					$this.removeClass('active');
-					_.dragCapable = false;
-					return;
-				}
-
-				if(Move_ex - _.eventStartX > _.options.RangeXY ||
-					Move_ey - _.eventStartY > _.options.RangeXY){
-					console.warn('失效: 超过距离');
-					$('body').off(_.moveEvent);
-					$('body').off(_.stopEvent);
-					$this.removeClass('active');
-					_.dragCapable = false;
-					return;
-				}else{
-					// 初始化
-
-					// 需要重新获取$item, 不然出现Bug: 多次排序出错
-					_.$item = _.$container.find(_.options.ItemClass);
-
-					$this.addClass('host');
-
-					// 获取点击对象的相对父级的位置
-					_.startPos = $this.position();
-
-					// 改变目标的定位, 脱离文本流
-					_.$dragItem =
-						$this.clone()
-							.addClass('clone');
-
-					_.$container.append(_.$dragItem);// Bug: 改变了$container的高度! 但可通过css固定高度
-
-					// 原item与新添加item的距离
-					_.dx = $this.position().left - _.$dragItem.position().left;
-					_.dy = $this.position().top - _.$dragItem.position().top;
-
-					_.$dragItem.css({'left': _.dx,'top': _.dy});
-
-					_.dragCapable = true
-				}
-			}
-
-			_.dragCSS({'left':Move_ex, 'top':Move_ey});
-			//_.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
-
-			// 提供触发事件:
-			//$.trigger("beforeYCdrag");
-
-			// 监听触控点位置来插入空白格子
-			// 思路1
-			// 以event触控点坐标来计算触控点所在的li的序号
-			// 以把startTarget使用after/before的方法来插入到ul的指定序号
-
-			var check_ex = Move_ex - _.li_1_left;
-			var check_ey = Move_ey - _.li_1_top;
-			// 以check_ex, check_ey为触控点来检测触控点所在位置
-			// 限定方法仅发生在ul范围
-			if(
-				check_ex > 0 && check_ey > 0 &&
-				check_ex < _.ulW && check_ey < _.ulH
-			){
-				// 计算触控点的位置index
-				var curCol = Math.floor(check_ex/_.liW) + 1;
-				var curRow = Math.floor(check_ey/_.liH);
-				_.moveTargetIndex = curRow * _.cols + curCol - 1;
-
-				// 位移未超出一个li位置, 就取消执行
-				if(_.MEMOmoveTargetIndex == _.moveTargetIndex){ return }
-
-				if(_.moveTargetIndex < _.startTargetIndex){
-					_.$item.eq(_.moveTargetIndex).before($this);
-				}else if(_.moveTargetIndex > _.startTargetIndex){
-					_.$item.eq(_.moveTargetIndex).after($this);
-				}else if(_.moveTargetIndex == _.startTargetIndex){
-					_.$item.eq(_.moveTargetIndex - 1).after($this);
-				}
-
-			}
-			// 记录本次位置
-			_.MEMOmoveTargetIndex = _.moveTargetIndex;
-		});
-	};
 
 
 }));
