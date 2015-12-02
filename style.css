@@ -113,11 +113,18 @@
     justify-content: space-between;
 }
 
-
 ul.junDrag.flex-justyfied {
     -webkit-flex-wrap: wrap-reverse; /* Safari */
     flex-wrap:         wrap-reverse;
 }
+
+
+
+
+
+
+
+
 
 ul.junDrag {
     list-style: none;
@@ -137,4 +144,22 @@ ul.junDrag li{
 }
 ul.junDrag li.active{
     background: lightblue;
+}
+ul.junDrag li.active.host {
+    opacity: 0.3
+}
+ul.junDrag li.active.clone {
+opacity:1;
+position:absolute;
+font-size:60px;
+z-index: 99;
+}
+
+ul.junDrag li, /*不应该是li但现在暂不管*/
+ul.junDrag {
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    -ms-transform: translate3d(0, 0, 0);
+    -o-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
 }

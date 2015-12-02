@@ -18,20 +18,23 @@
 }(function($) {
 	'use strict';
 
+	// 这一句没有写好
+	var hasTouch = 'ontouchstart' in window ;
+
 	// 方法: 获取触控点坐标
-	var page = $.proxy(function (coord, event) {
-		return (this.hasTouch ? event.originalEvent.touches[0] : event)['page' + coord.toUpperCase()];
-	}, this);
+	var page = function (coord, event) {
+		return (hasTouch? event.originalEvent.touches[0] : event)['page' + coord.toUpperCase()];
+	};
 
 	//var YCdrag = window.YCdrag || {};
-
 	window.YCdrag = function (options) {
 
 		// 默认选项
 		var defalutOptions = {
 			Container: '.junDrag',
 			Item:"li",
-			timeDuration: 250,
+			timeDuration: 300,
+			resetDuration: 3000,
 			// 动画选项,默认选择translate的CSS效果
 			useTransform: true, // <1>
 			useCSS: true
@@ -41,8 +44,9 @@
 		var thisSettings = {
 
 			// 对象
-			$ul: null,
-			$li: null,
+			$container: null,
+			$item: null,
+			$dragItem: null,
 
 			// 尺寸属性
 			liw: null,
@@ -70,9 +74,6 @@
 			// 定时事件
 			setTimeoutDrag: null,
 
-			// 位置保存:
-			positionProp: {left: null, top: null},// 可能不需要
-
 			// CSS属性
 			cssTransitions:null, // <1>
 			transformsEnabled:null,
@@ -88,8 +89,8 @@
 		this.options = $.extend({}, defalutOptions, options);
 
 		// 添加对象jQuery包装集
-		this.$ul = $(this.options.Container);
-		this.$li = this.$ul.find(this.options.Item);
+		this.$container = $(this.options.Container);
+		this.$item = this.$container.find(this.options.Item);
 
 		console.log('options = ', this.options);
 
@@ -97,6 +98,8 @@
 	};
 
 	YCdrag.prototype.init = function() {
+
+		this.render();
 
 		this.size();
 
@@ -106,21 +109,25 @@
 
 	};
 
+	YCdrag.prototype.render = function(){
+
+	};
+
 	YCdrag.prototype.size = function(){
 		// 获取子项li尺寸
-		this.liH = this.$li.outerHeight(true);
-		this.liW = this.$li.outerWidth(true);
+		this.liH = this.$item.outerHeight(true);
+		this.liW = this.$item.outerWidth(true);
 
 		// 获取容器ul尺寸
-		this.ulH = this.$ul.height();
-		this.ulW = this.$ul.width();
+		this.ulH = this.$container.height();
+		this.ulW = this.$container.width();
 
 		// 计算ul排列了多少列,与项
 		this.rows = Math.floor(this.ulH/this.liH); // 最准确的数字
 		this.cols;
 		// 遍历方法来计算列数
-		for(var i = 0; i < this.$li.length; i++){
-			if(this.$li.eq(i).position().top > 1){
+		for(var i = 0; i < this.$item.length; i++){
+			if(this.$item.eq(i).position().top > 1){
 				this.cols = i;
 				break;
 			}
@@ -128,23 +135,24 @@
 		console.log('ul data : rows = ', this.rows, ', cols = ', this.cols);
 
 		// 计算第一个li的页面坐标, 以此作为参考基准
-		this.li_1_top = this.$li.eq(0).offset().top;
-		this.li_1_left = this.$li.eq(0).offset().left;
+		this.li_1_top = this.$item.eq(0).offset().top;
+		this.li_1_left = this.$item.eq(0).offset().left;
 	};
 
 	YCdrag.prototype.setProps = function() {
-		// 检测判断:
+		// 1, 选择事件类型
+		// 2, 检测判断:
 		// cssTransitions
-		// 设置前缀:
+		// 3, 设置前缀:
 		// animType/ transformType/ transitionType
-		// 检测判断:
+		// 4, 检测判断:
 		// transformsEnabled = 根据useTransform正反基础, 检测animType不为null与false
 
 		var _ = this,
 			bodyStyle = document.body.style;
 
 		// 选择事件类型
-		_.hasTouch = 'ontouchstart' in window ;
+		_.hasTouch = hasTouch ;
 		_.startEvent = _.hasTouch ? 'touchstart' : 'mousedown';
 		_.stopEvent = _.hasTouch ? 'touchend touchcancel' : 'mouseup mouseleave';
 		_.moveEvent = _.hasTouch ? 'touchmove' : 'mousemove';
@@ -189,38 +197,42 @@
 		_.transformsEnabled = _.options.useTransform && (_.animType !== null && _.animType !== false);
 	};
 
-	YCdrag.prototype.setCSS = function(position) {
+	YCdrag.prototype.dragCSS = function(position) {
 		// position = {left: ?, top: ?}
 		var _ = this,
 			positionProps = {},
 			x, y;
 
-		x = _.positionProp == 'left' ? Math.ceil(position) + 'px' : '0px';
-		y = _.positionProp == 'top' ? Math.ceil(position) + 'px' : '0px';
-
-		positionProps[_.positionProp] = position;
-
 		if (_.transformsEnabled === false) {
-			_.$slideTrack.css(positionProps);
+			// css位置
+			x = Math.ceil(position.left - _.eX) + 'px';
+			y = Math.ceil(position.top - _.eY) + 'px';
+			_.$dragItem.css({'left': x, "top": y});
 		} else {
 			positionProps = {};
+			// 这里的原理是不同的, 因为这里使用了位移, 是在原基础上的位移多少, 可以说是直接追踪触控点的距离
+			x = Math.ceil(position.left - _.eventStartX) + 'px';
+			y = Math.ceil(position.top - _.eventStartY) + 'px';
+
 			if (_.cssTransitions === false) {
 				positionProps[_.animType] = 'translate(' + x + ', ' + y + ')';
-				_.$slideTrack.css(positionProps);
+				_.$dragItem.css(positionProps);
+				console.log(positionProps)
 			} else {
 				positionProps[_.animType] = 'translate3d(' + x + ', ' + y + ', 0px)';
-				_.$slideTrack.css(positionProps);
+				_.$dragItem.css(positionProps);
+				console.log(positionProps)
 			}
 		}
-		log('当前css位置', positionProps);
 	};
 
 
 
 	YCdrag.prototype.initailizeEvent = function() {
-// 绑定事件startEvent
+		// 绑定事件startEvent
 		var _ = this;
-		_.$li.on(_.startEvent, function(event){
+
+		_.$item.on(_.startEvent, function(event){
 
 			var $this = $(this);
 
@@ -232,57 +244,107 @@
 			_.eventStartX = page('x', event);
 			_.eventStartY = page('y', event);
 
-			// 设定触发拖拉事件
+			// 定时触发拖拉事件
 			_.setTimeoutDrag = setTimeout(function(){_.drag(event, $this)}, _.options.timeDuration);
 
 			// 绑定事件stopEvent
-			$('body').one(_.stopEvent, function(){
-				_.$ul.find(_.options.Item).removeClass('active').css('opacity',1); // 此处应优化动画效果
-				_.$ul.find('.clone').remove(); // 此处应优化动画效果
+			$('body').one(_.stopEvent, function(event){
+				_.dragItemReset(event, $this);
+				// 监听触控点位置, 在ul插入本对象li
 				clearTimeout(_.setTimeoutDrag);
 				$('body').off(_.moveEvent);
-				// 监听触控点位置, 在ul插入本对象li
+
 			});
 		});
+	};
 
+	YCdrag.prototype.applyTransition = function($dragItem) {
+		// 添加css  Transition
+		var _ = this,
+			transition = {};
+
+		transition[_.transitionType] = _.transformType + ' ' + _.options.resetDuration + 'ms ease';
+
+		$dragItem.css(transition);
+	};
+
+	YCdrag.prototype.disableTransition = function($dragItem) {
+		// 去掉css  Transition
+		var _ = this,
+			transition = {};
+
+		transition[_.transitionType] = '';
+
+		$dragItem.css(transition);
+	};
+
+
+	YCdrag.prototype.dragItemReset = function(event, $this){
+		// mouseUp动画
+		var MouseUp_ex = page('x', event),
+			MouseUp_ey = page('y', event),
+			$item = $this;
+
+		// 获取目标定位
+		var targetPos = $item.position();
+
+		console.log('MouseUp_ex  ', MouseUp_ex, MouseUp_ey, targetPos);
+
+		var x = targetPos.left - MouseUp_ex,
+		y = targetPos.top - MouseUp_ey, positionProps = {};
+
+		positionProps[this.animType] = 'translate3d(' + x + ', ' + y + ', 0px)';
+		this.$dragItem.css(positionProps);
+
+		//this.$dragItem.animate({'left':, "top":});
+
+		this.$container.find('.clone').remove();
+		this.$container.find(this.options.Item).removeClass('active host');
 
 	};
 
 	YCdrag.prototype.drag = function(event, $this){
 		var _ = this;
 
-		// 需要重新获取$li, 不然出现Bug: 多次排序出错
-		_.$li = _.$ul.find(_.options.Item);
+		// 需要重新获取$item, 不然出现Bug: 多次排序出错
+		_.$item = _.$container.find(_.options.Item);
 
 		/*动画效果放大对象*/
 		//...
 
-		// 虚拟:
-		$this.css('opacity',.3);
+		//$this.css('opacity',.3);
+		$this.addClass('host');
 
 		/* 脱离文本流 */
 		// 获取点击对象的相对父级的位置
 		var thisPos = $this.position();
 
 		// 改变目标的定位, 脱离文本流
+		_.$dragItem =
+			$this.clone().
+				addClass('clone').
+				css({'left':thisPos.left,'top':thisPos.top});
 
-		var $cloneone = $this.clone().addClass('clone').css({'opacity':1,'position':'absolute', 'font-size':'60px','left':thisPos.left, 'top':thisPos.top, 'z-index': 99});
-
-		_.$ul.append($cloneone);
+		_.$container.append(_.$dragItem);
 
 		/* 计算鼠标相对于对象左上角的坐标XY */
 		// 获取对象先对窗口的坐标XY
 		var tx = $this.offset().left, ty = $this.offset().top;
 		// 计算鼠标相对于对象左上角的坐标XY
 		var eX = _.eventStartX - tx, eY = _.eventStartY - ty;
+		_.eX = eX;
+		_.eY = eY;
 
 		// 计算每个子项的定位
 		// pageXY位置为准, 所以取值offsetXY, 加上li自身尺寸作为范围值,
 		// 然后进行moveEvent时候, 检测e.pageXY位置, 然后遍历每个子项的位置, 对比后获取当今位置
 
 		$('body').on(_.moveEvent, function(event){
-			var Move_ex = page('x', event), Move_ey = page('y', event);
-			$cloneone.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 此处应优化动画
+			var Move_ex = page('x', event),
+				Move_ey = page('y', event);
+
+			_.dragCSS({'left':Move_ex, 'top':Move_ey});
+			//_.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 没有优化动画的模式
 
 			// 监听触控点位置来插入空白格子
 			// 思路1
@@ -306,11 +368,11 @@
 				if(_.MEMOmoveTargetIndex == _.moveTargetIndex){ return }
 
 				if(_.moveTargetIndex < _.startTargetIndex){
-					_.$li.eq(_.moveTargetIndex).before($this);
+					_.$item.eq(_.moveTargetIndex).before($this);
 				}else if(_.moveTargetIndex > _.startTargetIndex){
-					_.$li.eq(_.moveTargetIndex).after($this);
+					_.$item.eq(_.moveTargetIndex).after($this);
 				}else if(_.moveTargetIndex == _.startTargetIndex){
-					_.$li.eq(_.moveTargetIndex - 1).after($this);
+					_.$item.eq(_.moveTargetIndex - 1).after($this);
 				}
 
 			}
