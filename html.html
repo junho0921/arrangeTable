@@ -6,23 +6,41 @@
 	<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-<h2 class="junDragtittle" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">junDrag</h2>
-<ul class="junDrag">
-	<li data-index="1"><span>01</span></li><!--
-	--><li data-index="2"><span>02</span></li><!--
-	--><li data-index="3"><span>03</span></li><!--
-	--><li data-index="4"><span>04</span></li><!--
-	--><li data-index="5"><span>05</span></li><!--
-	--><li data-index="6"><span>06</span></li><!--
-	--><li data-index="7"><span>07</span></li><!--
-	--><li data-index="8"><span>08</span></li><!--
-	--><li data-index="9"><span>09</span></li>
-</ul>
+<h2 class="junDragtittle" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">YCdrag</h2>
+<!--<ul class="junDrag">-->
+	<!--<li data-index="1"><span>01</span></li>&lt;!&ndash;-->
+	<!--&ndash;&gt;<li data-index="2"><span>02</span></li>&lt;!&ndash;-->
+	<!--&ndash;&gt;<li data-index="3"><span>03</span></li>&lt;!&ndash;-->
+	<!--&ndash;&gt;<li data-index="4"><span>04</span></li>&lt;!&ndash;-->
+	<!--&ndash;&gt;<li data-index="5"><span>05</span></li>&lt;!&ndash;-->
+	<!--&ndash;&gt;<li data-index="6"><span>06</span></li>&lt;!&ndash;-->
+	<!--&ndash;&gt;<li data-index="7"><span>07</span></li>&lt;!&ndash;-->
+	<!--&ndash;&gt;<li data-index="8"><span>08</span></li>&lt;!&ndash;-->
+	<!--&ndash;&gt;<li data-index="9"><span>09</span></li>-->
+<!--</ul>-->
+
+<div class="junDrag">
+	<!--content-->
+</div>
 
 <script src="libs/jquery.js"></script>
 <script src="junDrag.js"></script>
 <script>
-	new YCdrag();
+	new YCdrag({
+		Container:".junDrag",
+		ItemClass: "",
+		dataList:[
+			{name:'drag 1',src:'./img/1.png',id:1},
+			{name:'drag 2',src:'./img/2.png',id:2},
+			{name:'drag 3',src:'./img/3.png',id:3},
+			{name:'drag 4',src:'./img/4.png',id:4},
+			{name:'drag 5',src:'./img/5.png',id:5},
+			{name:'drag 6',src:'./img/6.png',id:5},
+			{name:'drag 7',src:'./img/7.png',id:5},
+			{name:'drag 8',src:'./img/8.png',id:5},
+			{name:'drag 9',src:'./img/9.png',id:5}
+		]
+	});
 </script>
 </body>
 </html>

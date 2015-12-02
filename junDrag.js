@@ -32,17 +32,23 @@
 		// 默认选项
 		var defalutOptions = {
 			Container: '.junDrag',
-			Item:"li",
-			timeDuration: 300,
-			resetDuration: 3000,
+			ItemNode:"div",
+			ItemClassName:"dragItem",
+			timeDuration: 250,
+			resetDuration: 600,
 			// 动画选项,默认选择translate的CSS效果
 			useTransform: true, // <1>
-			useCSS: true
+			useCSS: true,
+			// 允许触控边缘
+			RangeXY: 10,
+			// 内容
+			dataList:[]
 		};
 
 		// 关于动画效果的设置
 		var thisSettings = {
 
+			dragCapable:false,
 			// 对象
 			$container: null,
 			$item: null,
@@ -78,6 +84,9 @@
 			cssTransitions:null, // <1>
 			transformsEnabled:null,
 
+			// 时间
+			startTime: null,
+
 			// css属性前缀
 			transitionType:null,
 			transformType:null,
@@ -88,9 +97,9 @@
 
 		this.options = $.extend({}, defalutOptions, options);
 
+		this.options.ItemClass = "." + this.options.ItemClassName;
 		// 添加对象jQuery包装集
 		this.$container = $(this.options.Container);
-		this.$item = this.$container.find(this.options.Item);
 
 		console.log('options = ', this.options);
 
@@ -101,6 +110,8 @@
 
 		this.render();
 
+		this.$item = this.$container.find(this.options.ItemClass);
+
 		this.size();
 
 		this.setProps();
@@ -109,7 +120,28 @@
 
 	};
 
-	YCdrag.prototype.render = function(){
+	YCdrag.prototype.render = function(oElement,aAppList,flag){
+		var _ = this,
+			sLiContent = '',
+			data = _.options.dataList,
+			len = data.length;
+			//sBtnClass = '',
+			//aAppDivList = this.getnodeName(oElement,'div'),
+			//aAppPList = this.getnodeName(oElement,'p');
+
+		//sBtnClass = flag==0?'minus':'plus';
+
+		//遍历数组中的 应用，创建DOM
+		for(var i = 0; i < len; i ++){
+			$('<' + _.options.ItemNode + '>')
+				.addClass(_.options.ItemClassName)
+				.append($('<h2>').text(data[i].name))
+				.append($('<img>').attr('src',data[i].src))
+				.appendTo(_.$container);
+			//sLiContent += ('<h2>' + data[i].name + "</h2>" + "");
+		}
+
+		console.log('模板', sLiContent);
 
 	};
 
@@ -239,7 +271,9 @@
 
 			_.startTargetIndex = $this.addClass('active').index();
 
-			//startTime = event.timeStamp || +new Date();
+			_.startTime = event.timeStamp || +new Date();
+
+			console.log('startTime', _.startTime);
 
 			// 记录初始位置
 			_.eventStartX = page('x', event);
@@ -287,7 +321,7 @@
 			positionProps= {};
 
 		//var MouseUp_ex = page('x', event),
-		//	MouseUp_ey = page('y', event);
+		//	MouseUp_ey = page('y', event); // 保留
 
 		// 获取目标定位
 		var targetPos = $item.position();
@@ -301,9 +335,10 @@
 
 		setTimeout(function(){
 			_.$container.find('.clone').remove();
-			_.$container.find(_.options.Item).removeClass('active host');
+			_.$container.find(_.options.ItemClass).removeClass('active host');
 			_.disableTransition(_.$dragItem);
 		}, _.options.resetDuration);
+		_.dragCapable = false;
 
 	};
 
@@ -311,7 +346,7 @@
 		var _ = this;
 
 		// 需要重新获取$item, 不然出现Bug: 多次排序出错
-		_.$item = _.$container.find(_.options.Item);
+		_.$item = _.$container.find(_.options.ItemClass);
 
 		/*动画效果放大对象*/
 		//...
@@ -340,6 +375,19 @@
 		// 然后进行moveEvent时候, 检测e.pageXY位置, 然后遍历每个子项的位置, 对比后获取当今位置
 
 		$('body').on(_.moveEvent, function(event){
+			// 每次初始拖动必须检查触控点位移情况, 若位置已经变化很大,就退出
+			if(!_.dragCapable){
+				if(event.pageX - _.eventStartX > _.options.RangeXY ||
+					event.pageY - _.eventStartY > _.options.RangeXY
+				){
+					$('body').off(_.moveEvent);
+					_.dragCapable = false;
+					return;
+				}else{
+					_.dragCapable = true
+				}
+			}
+
 			var Move_ex = page('x', event),
 				Move_ey = page('y', event);
 

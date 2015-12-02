@@ -126,37 +126,36 @@ ul.junDrag.flex-justyfied {
 
 
 
-ul.junDrag {
+.junDrag {
     list-style: none;
     position: relative;
 }
 
-ul.junDrag li{
+.junDrag .dragItem{
     display: inline-block;
 
-    width:200px;
-    height: 200px;
+    min-width:200px;
+    min-height: 200px;
     border:7px solid white;
     background: lightcyan;
-    font-size: 46px;
     text-align: center;
     line-height: 200px;
 }
-ul.junDrag li.active{
+.junDrag .dragItem.active{
     background: lightblue;
 }
-ul.junDrag li.active.host {
+.junDrag .dragItem.active.host {
     opacity: 0.3
 }
-ul.junDrag li.active.clone {
+.junDrag .dragItem.active.clone {
 opacity:1;
 position:relative;
 /*font-size:60px;*/
 z-index: 99;
 }
 
-ul.junDrag li, /*不应该是li但现在暂不管*/
-ul.junDrag {
+.junDrag .dragItem, /*不应该是.dragItem但现在暂不管*/
+.junDrag {
     -webkit-transform: translate3d(0, 0, 0);
     -moz-transform: translate3d(0, 0, 0);
     -ms-transform: translate3d(0, 0, 0);
