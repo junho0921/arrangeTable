@@ -30,8 +30,8 @@
 		]
 	});
 
-	dragControl.addEvent("click", function() {
-		console.log('点击了一下');
+	dragControl.addEvent("click", function(type) {
+		console.log('点击了一下', type);
 	});
 
 	dragControl.addEvent("press", function(type, $target) {
@@ -43,6 +43,7 @@
 	});
 
 	dragControl.addEvent("beforeDrag", function(type, $dragItem){
+		console.log(type);
 		$dragItem.append($('<span>').text('X').addClass('closebtn'));
 		$('.closebtn').on('mousedown', function(){
 			$dragItem.remove();
@@ -50,7 +51,7 @@
 		})
 	});
 	dragControl.addEvent("afterDrag", function(type, $target){
-		console.log('sssss33333333333', $dragItem.text());
+		console.log(type);
 		$target.append($('<span>').text('X').addClass('closebtn'))
 	});
 	dragControl.addEvent("mouseDown", function(type, $targets){
