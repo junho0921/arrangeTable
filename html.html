@@ -15,54 +15,114 @@
 <script src="libs/jquery.js"></script>
 <script src="junDrag.js"></script>
 <script>
+//	var dragControl = new YCdrag({
+//		Container:".junDrag",
+//		ItemClass: "",
+//		dataList:[
+//			{name:'drag 1',src:'./img/icon_1.png',id:1},
+//			{name:'drag 2',src:'./img/icon_2.png',id:2},
+//			{name:'drag 3',src:'./img/icon_3.png',id:3},
+//			{name:'drag 4',src:'./img/icon_4.png',id:4},
+//			{name:'drag 5',src:'./img/icon_5.png',id:5},
+//			{name:'drag 6',src:'./img/icon_6.png',id:6},
+//			{name:'drag 7',src:'./img/icon_7.png',id:7},
+//			{name:'drag 8',src:'./img/icon_8.png',id:8},
+//			{name:'drag 9',src:'./img/icon_9.png',id:9}
+//		]
+//	});
+//
+//	dragControl.addEvent("click", function() {
+//		console.log('点击了一下');
+//	});
+//
+//	dragControl.addEvent("press", function(type, $target) {
+//		$target.append($('<span>').text('X').addClass('closebtn'));
+//		$('.closebtn').on('mousedown', function(){
+//			$target.remove();
+//			return false;
+//		})
+//	});
+//
+//	dragControl.addEvent("beforeDrag", function(type, $dragItem){
+//		$dragItem.append($('<span>').text('X').addClass('closebtn'));
+//		$('.closebtn').on('mousedown', function(){
+//			$dragItem.remove();
+//			return false;
+//		})
+//	});
+//	dragControl.addEvent("afterDrag", function(type, $target){
+//		console.log('sssss33333333333', $dragItem.text());
+//		$target.append($('<span>').text('X').addClass('closebtn'))
+//	});
+//	dragControl.addEvent("mouseDown", function(type, $targets){
+//		$targets.find('.closebtn').remove();
+//	});
+//
+//	$('button').click(function(){
+//		console.log(dragControl.getData());
+//	});
+
+
+	// 根据项目需要改变render方法
+	YCdrag.prototype.render = function(){
+		var _ = this,
+				data = _.options.dataList,
+				len = data.length;
+
+		for(var i = 0; i < len; i ++){
+			$('<' + _.options.ItemNode + '>')
+					.addClass(_.options.ItemClassName)
+					.attr({'id': data[i].id, "data-YClink": data[i].link})
+					.append($("<i class='list-ico'>").addClass(data[i].icon))
+					.append($('<span>').text(data[i].text))
+					.appendTo(_.$container);
+		}
+	};
+
 	var dragControl = new YCdrag({
 		Container:".junDrag",
-		ItemClass: "",
+//		ItemNode:"li",
+//		ItemClassName:"cell",
 		dataList:[
-			{name:'drag 1',src:'./img/icon_1.png',id:1},
-			{name:'drag 2',src:'./img/icon_2.png',id:2},
-			{name:'drag 3',src:'./img/icon_3.png',id:3},
-			{name:'drag 4',src:'./img/icon_4.png',id:4},
-			{name:'drag 5',src:'./img/icon_5.png',id:5},
-			{name:'drag 6',src:'./img/icon_6.png',id:6},
-			{name:'drag 7',src:'./img/icon_7.png',id:7},
-			{name:'drag 8',src:'./img/icon_8.png',id:8},
-			{name:'drag 9',src:'./img/icon_9.png',id:9}
+			{text:'信用卡', icon:"c", id:"credit", link:"example/index/mycountDetail"},
+			{text:'理财交易', icon:"d", id:"product", link:"example/index/iwant"},
+			{text:'生活缴费', icon:"e", id:"life", link:"example/index/lifePayment"},
+			{text:'关联转账', icon:"f", id:"", link:""},
+			{text:'周边', icon:"g", id:"bankNodes", link:"example/index/bankNodes"},
+			{text:'话费充值', icon:"h", id:"recharge", link:"example/index/recharge"},
+			{text:'无卡取款', icon:"i", id:"", link:""},
+			{text:'组件展示', icon:"d", id:"toComponentsList", link:"demo/demo/list"}
 		]
 	});
 
-	dragControl.addEvent("click", function() {
-		console.log('点击了一下');
-	});
+	var modifyMode = false;
 
-	dragControl.addEvent("press", function(type, $target) {
-		$target.append($('<span>').text('X').addClass('closebtn'));
-		$('.closebtn').on('mousedown', function(){
-			$target.remove();
+	dragControl.addEvent("click", function(type, $target) {
+		if(!modifyMode){
+			var link = $target.attr("data-YClink");
+			App.navigate(link, true);
 			return false;
-		})
+		}else{ // 若是在修改模式的情况下的点击是返回非修改模式
+			modifyMode = false;
+		}
 	});
 
-	dragControl.addEvent("beforeDrag", function(type, $dragItem){
-		$dragItem.append($('<span>').text('X').addClass('closebtn'));
-		$('.closebtn').on('mousedown', function(){
-			$dragItem.remove();
-			return false;
-		})
-	});
-	dragControl.addEvent("afterDrag", function(type, $target){
-		console.log('sssss33333333333', $dragItem.text());
-		$target.append($('<span>').text('X').addClass('closebtn'))
-	});
-	dragControl.addEvent("mouseDown", function(type, $targets){
-		$targets.find('.closebtn').remove();
+	dragControl.addEvent(["press", "beforeDrag", "afterDrag"], function(type, $target) {
+		modifyMode = true;
+		$target.append(
+				$('<span>')
+						.text('X')
+						.addClass('YCdragCloneBtn')
+						.on('touchstart', function(){
+							$target.remove();
+							return false;
+						})
+		);
 	});
 
-	$('button').click(function(){
-		console.log(dragControl.getData());
+	dragControl.addEvent("touchStart", function(type, $targets){
+		$targets.find('.YCdragCloneBtn').remove();
 	});
-
-
 
 
 </script>

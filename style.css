@@ -33,7 +33,7 @@
     transform: translate3d(0, 0, 0);
 }
 
-.closebtn, .addClose::after {
+.YCdragCloneBtn, .addClose::after {
     position: absolute;
     right:3px;
     top:3px;

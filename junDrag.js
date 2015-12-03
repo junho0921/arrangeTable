@@ -76,6 +76,9 @@
 			stopEvent: null,
 			moveEvent: null,
 
+			// 修改状态
+			MoveMode:false,
+
 			// 事件相关的基本属性
 			eventStartX: null,
 			eventStartY: null,
@@ -165,7 +168,7 @@
 
 			_.$dragTarget = $(this);
 
-			_.fireEvent("mouseDown", [_.$container]);
+			_.fireEvent("touchStart", [_.$container]);
 
 			_.startTargetIndex = _.$dragTarget.addClass('active').index();
 
@@ -201,13 +204,22 @@
 			_.dragItemReset();
 		}else{ // 没有拖拽后的mouseUp, 判断为click
 			_.$container.find(_.options.ItemClass).removeClass('active host');
-			var newTime = new Date();
-			if(newTime - _.startTime < 250){
-				_.fireEvent("click", [_.$dragTarget]);
+
+			if(_.MoveMode === false){// 不能再移动触控的情况触发点击事件!
+
+				var newTime = new Date();
+
+				if(newTime - _.startTime < 250){ // 只有在时间限制内才是click事件
+
+					_.fireEvent("click", [_.$dragTarget]);
+
+				}
+
 			}
 		}
 
 		_.dragCapable = false;
+		_.MoveMode = false;
 	};
 
 	YCdrag.prototype.dragItemReset = function(){
@@ -241,9 +253,12 @@
 
 		$('body').on(_.moveEvent, function(event){
 			// 每次初始拖动必须检查触控点位移情况, 若位置已经变化很大,就退出
+
 			event.stopImmediatePropagation();
 			event.stopPropagation();
 			event.preventDefault();
+
+			_.MoveMode = true;
 
 			var Move_ex = page('x', event),
 				Move_ey = page('y', event);
@@ -283,8 +298,11 @@
 					// 原item与新添加item的距离
 					_.dx = _.$dragTarget.position().left - _.$dragItem.position().left;
 					_.dy = _.$dragTarget.position().top - _.$dragItem.position().top;
-
+					
 					_.$dragItem.css({'position':'relative','left': _.dx,'top': _.dy});
+
+					// 提供触发事件:"beforeDrag"
+					_.fireEvent("beforeDrag", [_.$dragItem]);
 
 					_.dragCapable = true
 				}
@@ -292,9 +310,6 @@
 
 			_.dragCSS({'left':Move_ex, 'top':Move_ey});
 			//_.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
-
-			// 提供触发事件:"beforeDrag"
-			_.fireEvent("beforeDrag", [_.$dragItem]);
 
 			// 监听触控点位置来插入空白格子
 			// 思路1
@@ -356,8 +371,13 @@
 
 	// 添加触发事件的方法
 	YCdrag.prototype.addEvent = function(event, func){
-		if(event){
+		if(typeof event === "string"){
 			YCdrag.prototype[event] = func;
+		}else{
+			for(var i = 0 ; i < event.length; i++){
+				var ent = event[i];
+				YCdrag.prototype[ent] = func;
+			}
 		}
 	};
 
@@ -411,7 +431,7 @@
 		// 选择事件类型
 		_.hasTouch = hasTouch ;
 		_.startEvent = _.hasTouch ? 'touchstart' : 'mousedown';
-		_.stopEvent = _.hasTouch ? 'touchend touchcancel' : 'mouseup mouseleave';
+		_.stopEvent = _.hasTouch ? 'touchend' : 'mouseup';
 		_.moveEvent = _.hasTouch ? 'touchmove' : 'mousemove';
 
 		if (bodyStyle.WebkitTransition !== undefined ||
