@@ -7,6 +7,7 @@
 
 // 改进空间:
 // touch事件命名空间
+// 限定拖动范围
 
 (function(factory) {
 	'use strict';
@@ -36,13 +37,13 @@
 			Container: '.junDrag',
 			ItemNode:"div",
 			ItemClassName:"dragItem",
-			timeDuration: 250,
+			timeDuration: 300,
 			resetDuration: 600,
 			// 动画选项,默认选择translate的CSS效果
 			useTransform: true, // <1>
 			useCSS: true,
-			// 允许触控边缘
-			RangeXY: 30,
+			// 允许触控的边缘
+			RangeXY: 60,
 			// 内容
 			dataList:[]
 		};
@@ -52,7 +53,7 @@
 
 			// 对象
 			$container: null,
-			$item: null,
+			$items: null,
 			$dragTarget:null,
 			$dragItem: null,
 
@@ -80,7 +81,10 @@
 			startTargetIndex: null, // startEvent的位置
 
 			// 检测拖动
-			dragCapable:false,
+			dragCapable: false,
+
+			// 定时器
+			setTimeFunc: null,
 
 			// CSS属性
 			cssTransitions:null, // <1>
@@ -111,8 +115,8 @@
 
 		this.render();
 
-		// 添加对象jQuery包装集$item
-		this.$item = this.$container.find(this.options.ItemClass);
+		// 添加对象jQuery包装集$items
+		this.$items = this.$container.find(this.options.ItemClass);
 
 		this.size();
 
@@ -130,34 +134,52 @@
 		for(var i = 0; i < len; i ++){
 			$('<' + _.options.ItemNode + '>')
 				.addClass(_.options.ItemClassName)
+				.attr('YCdrag-id', data[i].id)
 				.append($('<h2>').text(data[i].name))
 				.append($('<img>').attr('src',data[i].src))
 				.appendTo(_.$container);
 		}
 	};
 
+	YCdrag.prototype.getData = function(){
+		var _ = this,
+			$items = _.$container.find(_.options.ItemClass),
+			data = [],
+			len = $items.length;
+
+		for(var i = 0; i < len; i ++){
+			var id = $items.eq(i).attr('YCdrag-id');
+			data.push(id)
+		}
+		return data;
+	};
+
 	YCdrag.prototype.initailizeEvent = function() {
 		// 绑定事件startEvent
 		var _ = this;
 
-		_.$item.on(_.startEvent, function(event){
+		_.$items.on(_.startEvent, function(event){
 
-			var $this = _.$dragTarget = $(this);
+			_.$dragTarget = $(this);
 
-			_.fireEvent("mouseDown", [_.$item]);
+			_.fireEvent("mouseDown", [_.$container]);
 
-			_.startTargetIndex = $this.addClass('active').index();
+			_.startTargetIndex = _.$dragTarget.addClass('active').index();
 
 			_.startTime = event.timeStamp || +new Date();
 
 			// 记录初始位置
 			_.eventStartX = page('x', event);
 			_.eventStartY = page('y', event);
+			_.itemStartPagePos = $(this).offset();
 
+			_.setTimeFunc = setTimeout(function(){
+				_.fireEvent("press",[_.$dragTarget])
+			}, _.options.timeDuration);
 
 			// 绑定事件stopEvent, 本方法必须在绑定拖拽事件之前
-			$('body').one(_.stopEvent, function(event){
-				_.stopEventFunc($this, event);
+			$('body').one(_.stopEvent, function(){
+				_.stopEventFunc();
 			});
 
 			// 绑定拖拽事件
@@ -165,16 +187,21 @@
 		});
 	};
 
-	YCdrag.prototype.stopEventFunc = function(event){
+	YCdrag.prototype.stopEventFunc = function(){
 		var _ = this;
+
+		clearTimeout(_.setTimeFunc);
 
 		$('body').off(_.moveEvent);
 
 		if(_.dragCapable){ // 已拖拽的mouseUp
-			_.dragItemReset(event, _.$dragTarget);
+			_.dragItemReset();
 		}else{ // 没有拖拽后的mouseUp, 判断为click
 			_.$container.find(_.options.ItemClass).removeClass('active host');
-			_.fireEvent("click", [_.$dragTarget]);
+			var newTime = new Date();
+			if(newTime - _.startTime < 250){
+				_.fireEvent("click", [_.$dragTarget]);
+			}
 		}
 
 		_.dragCapable = false;
@@ -182,21 +209,17 @@
 
 	YCdrag.prototype.dragItemReset = function(){
 		// mouseUp动画
-		var _ = this,
-			positionProps= {};
+		var _ = this;
 
-		//var MouseUp_ex = page('x', event),
-		//	MouseUp_ey = page('y', event); // 保留
+		// 获取目标相对于窗口的定位
+		var targetPos = _.$dragTarget.offset();
 
-		// 获取目标定位
-		var targetPos = _.$dragTarget.position();
-
-		var x =  targetPos.left - _.startPos.left,
-		y = targetPos.top - _.startPos.top ;
+		// 计算出模拟触控点拖item到指定位置的触控点坐标
+		var x =  targetPos.left + (_.eventStartX - _.itemStartPagePos.left),
+		y = targetPos.top + (_.eventStartY - _.itemStartPagePos.top) ;
 
 		_.applyTransition(_.$dragItem);
-		positionProps[_.animType] = 'translate3d(' + x + 'px, ' + y + 'px, 0px)'; // 测试用, 应调用dragCSS方法
-		_.$dragItem.css(positionProps);
+		_.dragCSS({'left':x, 'top':y});
 
 		setTimeout(function(){
 			_.$container.find('.clone').remove();
@@ -235,13 +258,13 @@
 				}else{
 					// 初始化
 
-					// 需要重新获取$item, 不然出现Bug: 多次排序出错
-					_.$item = _.$container.find(_.options.ItemClass);
+					// 需要重新获取$items, 不然出现Bug: 多次排序出错
+					_.$items = _.$container.find(_.options.ItemClass);
 
 					_.$dragTarget.addClass('host');
 
 					// 获取点击对象的相对父级的位置
-					_.startPos = _.$dragTarget.position();
+					//_.startPos = _.$dragTarget.position();
 
 					// 复制拖拽目标
 					_.$dragItem =
@@ -289,11 +312,11 @@
 				if(_.MEMOmoveTargetIndex == _.moveTargetIndex){ return }
 
 				if(_.moveTargetIndex < _.startTargetIndex){
-					_.$item.eq(_.moveTargetIndex).before(_.$dragTarget);
+					_.$items.eq(_.moveTargetIndex).before(_.$dragTarget);
 				}else if(_.moveTargetIndex > _.startTargetIndex){
-					_.$item.eq(_.moveTargetIndex).after(_.$dragTarget);
+					_.$items.eq(_.moveTargetIndex).after(_.$dragTarget);
 				}else if(_.moveTargetIndex == _.startTargetIndex){
-					_.$item.eq(_.moveTargetIndex - 1).after(_.$dragTarget);
+					_.$items.eq(_.moveTargetIndex - 1).after(_.$dragTarget);
 				}
 
 			}
@@ -338,14 +361,15 @@
 	// 手动触发事件的方法
 	YCdrag.prototype.fireEvent = function(eventName, args){
 		if(this[eventName]){
+			args = [eventName].concat(args);
 			this[eventName].apply(this, args);
 		}
 	};
 
 	YCdrag.prototype.size = function(){
 		// 获取子项li尺寸
-		this.liH = this.$item.outerHeight(true);
-		this.liW = this.$item.outerWidth(true);
+		this.liH = this.$items.outerHeight(true);
+		this.liW = this.$items.outerWidth(true);
 
 		// 获取容器ul尺寸
 		this.ulH = this.$container.height();
@@ -355,8 +379,8 @@
 		this.rows = Math.floor(this.ulH/this.liH); // 最准确的数字
 		this.cols;
 		// 遍历方法来计算列数
-		for(var i = 0; i < this.$item.length; i++){
-			if(this.$item.eq(i).position().top > 1){
+		for(var i = 0; i < this.$items.length; i++){
+			if(this.$items.eq(i).position().top > 1){
 				this.cols = i;
 				break;
 			}
@@ -364,8 +388,8 @@
 		console.log('ul data : rows = ', this.rows, ', cols = ', this.cols);
 
 		// 计算第一个li的页面坐标, 以此作为参考基准
-		this.li_1_top = this.$item.eq(0).offset().top;
-		this.li_1_left = this.$item.eq(0).offset().left;
+		this.li_1_top = this.$items.eq(0).offset().top;
+		this.li_1_left = this.$items.eq(0).offset().left;
 	};
 
 	YCdrag.prototype.setProps = function() {
@@ -428,7 +452,7 @@
 	};
 
 	YCdrag.prototype.dragCSS = function(position) {
-		// position = {left: ?, top: ?}
+		// position = {left: ?, top: ?} 指示触控点位置
 		var _ = this,
 			positionProps = {},
 			x, y;
