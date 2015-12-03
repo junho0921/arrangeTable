@@ -8,7 +8,7 @@
 // 改进空间:
 // touch事件命名空间
 // 限定拖动范围
-// 禁止页面滚动
+// 模拟slick插件的做法
 
 (function(factory) {
 	'use strict';
@@ -397,6 +397,8 @@
 		// 获取容器ul尺寸
 		this.ulH = this.$container.height();
 		this.ulW = this.$container.width();
+
+		// 修复bug的权宜之计
 		this.$container.css({'height':this.ulH, 'width':this.ulW, 'overfolow':'hidden'});
 
 		// 计算ul排列了多少列,与项
@@ -476,7 +478,7 @@
 	};
 
 	YCdrag.prototype.dragCSS = function(position) {
-		// position = {left: ?, top: ?} 指示触控点位置
+		// position = {left: ?, top: ?} 触控点位置
 		var _ = this,
 			positionProps = {},
 			x, y;

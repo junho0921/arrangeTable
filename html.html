@@ -100,7 +100,8 @@
 	dragControl.addEvent("click", function(type, $target) {
 		if(!modifyMode){
 			var link = $target.attr("data-YClink");
-			App.navigate(link, true);
+//			App.navigate(link, true);
+			console.log('link: ', link);
 			return false;
 		}else{ // 若是在修改模式的情况下的点击是返回非修改模式
 			modifyMode = false;
