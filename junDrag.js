@@ -5,6 +5,12 @@
 // 拖动状态时候, 触控点的位置差生新的空白格(先忽略动画效果), li重新排序(动画效果先忽略)
 // 放开触控, 判断触控点位置, 移除空白格, 重新排位(先忽略动画效果)
 
+// 具体实现的原理:
+// 基于item都是文本流的position:relative布局
+// 绑定item对象touchstart事件(事件里绑定touchend事件, 然后绑定touchmove事件)
+// 在touchmove事件里, 首先判断: 对比touchstart的时间间断和触控点变化距离, 正则拖拽, 否则暂停事件
+// 拖拽效果: 赋值item并添加到队列最后, 使用position:relative,相对定位在本item位置, 优选选择translate方法来拖拽位置
+
 // 改进空间:
 // touch事件命名空间
 // 限定拖动范围
@@ -212,7 +218,6 @@
 				if(newTime - _.startTime < 250){ // 只有在时间限制内才是click事件
 
 					_.fireEvent("click", [_.$dragTarget]);
-
 				}
 
 			}
