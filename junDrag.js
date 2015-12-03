@@ -8,6 +8,7 @@
 // 改进空间:
 // touch事件命名空间
 // 限定拖动范围
+// 禁止页面滚动
 
 (function(factory) {
 	'use strict';
@@ -42,6 +43,8 @@
 			// 动画选项,默认选择translate的CSS效果
 			useTransform: true, // <1>
 			useCSS: true,
+			// 类
+			dragClass:"YCdragClone",
 			// 允许触控的边缘
 			RangeXY: 60,
 			// 内容
@@ -106,7 +109,7 @@
 		this.options.ItemClass = "." + this.options.ItemClassName;
 
 		// 添加对象jQuery包装集$container
-		this.$container = $(this.options.Container);
+		this.$container = $(this.options.Container).css('position','relative');
 
 		this.init();
 	};
@@ -216,13 +219,13 @@
 
 		// 计算出模拟触控点拖item到指定位置的触控点坐标
 		var x =  targetPos.left + (_.eventStartX - _.itemStartPagePos.left),
-		y = targetPos.top + (_.eventStartY - _.itemStartPagePos.top) ;
+			y = targetPos.top + (_.eventStartY - _.itemStartPagePos.top) ;
 
 		_.applyTransition(_.$dragItem);
 		_.dragCSS({'left':x, 'top':y});
 
 		setTimeout(function(){
-			_.$container.find('.clone').remove();
+			_.$container.find('.' + _.options.dragClass).remove();
 			_.$container.find(_.options.ItemClass).removeClass('active host');
 			_.disableTransition(_.$dragItem);
 			_.fireEvent("afterDrag", [_.$dragTarget]);
@@ -238,6 +241,9 @@
 
 		$('body').on(_.moveEvent, function(event){
 			// 每次初始拖动必须检查触控点位移情况, 若位置已经变化很大,就退出
+			event.stopImmediatePropagation();
+			event.stopPropagation();
+			event.preventDefault();
 
 			var Move_ex = page('x', event),
 				Move_ey = page('y', event);
@@ -269,7 +275,7 @@
 					// 复制拖拽目标
 					_.$dragItem =
 						_.$dragTarget.clone()
-							.addClass('clone')
+							.addClass(_.options.dragClass)
 							.appendTo(_.$container);// Bug: 改变了$container的高度! 但可通过css固定高度
 
 					// fixBug:
@@ -278,7 +284,7 @@
 					_.dx = _.$dragTarget.position().left - _.$dragItem.position().left;
 					_.dy = _.$dragTarget.position().top - _.$dragItem.position().top;
 
-					_.$dragItem.css({'left': _.dx,'top': _.dy});
+					_.$dragItem.css({'position':'relative','left': _.dx,'top': _.dy});
 
 					_.dragCapable = true
 				}
@@ -325,11 +331,8 @@
 		});
 	};
 
-
-
 	/*-----------------------------------------------------------------------------------------------*/
-
-
+	/*-----------------------------------------------------------------------------------------------*/
 
 	YCdrag.prototype.applyTransition = function($dragItem) {
 		// 添加css  Transition
@@ -374,6 +377,7 @@
 		// 获取容器ul尺寸
 		this.ulH = this.$container.height();
 		this.ulW = this.$container.width();
+		this.$container.css({'height':this.ulH, 'width':this.ulW, 'overfolow':'hidden'});
 
 		// 计算ul排列了多少列,与项
 		this.rows = Math.floor(this.ulH/this.liH); // 最准确的数字
@@ -479,8 +483,6 @@
 			}
 		}
 	};
-
-
 
 }));
 
