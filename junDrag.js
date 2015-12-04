@@ -15,6 +15,7 @@
 // touch事件命名空间
 // 限定拖动范围
 // 模拟slick插件的做法
+// 改进点击拖动后touchmove在时间限制内的活动判断
 
 (function(factory) {
 	'use strict';
@@ -41,8 +42,11 @@
 	YCdrag = function (container ,options) {
 		// 默认选项
 		var defalutOptions = {
-			ItemNode:"div",
+			// 容器属性
+			ItemNode:"li",
 			ItemClassName:"dragItem",
+			ItemAttrs:{'data-YC':'drag'},
+			// 时间
 			timeDuration: 300,
 			resetDuration: 600,
 			// 动画选项,默认选择translate的CSS效果
@@ -64,6 +68,7 @@
 			$items: null,
 			$dragTarget:null,
 			$dragItem: null,
+			$el:null,
 
 			// html
 			template:[],
@@ -126,71 +131,81 @@
 	};
 
 	YCdrag.prototype.init = function() {
-var _ = this;
-	setTimeout(function(){
-		_.render();
+		var _ = this;
+		setTimeout(function(){// 设置延时执行, 提供可修改YCdrag原型方法,
+			_.render();
 
-		// 添加对象jQuery包装集$items
-		_.$items = _.$container.find(_.options.ItemClass);
+			// 添加对象jQuery包装集$items
+			_.$items = _.$container.find(_.options.ItemClass);
 
-		_.size();
+			_.size();
 
-		_.setProps();
+			_.setProps();
 
-		// 执行绑定事件
-		_.initailizeEvent();
-	},1);
+			// 执行绑定事件
+			_.initailizeEvent();
+		},1);
 	};
 
+	//function templatelist (i, data){
+	//	$(this).
+	//};
+
+	// YCdrag.prototype.renderEl = function(){
+	// 	// 本方法产生容器$el, 最终返回容器$el的jQuery包装集
+	// 	// 获取设定的属性
+	// 	var attrs = $.extend({}, this.options.ItemAttrs);
+
+	// 	// ItemAttrs是用来赋值给$el的html属性
+
+	// 	// 示例:
+	// 	this.$el = $('<' + this.options.ItemNode + '>').addClass(this.options.ItemClassName).attr(attrs);
+
+	// 	return this.$el;
+	// };
+
+	YCdrag.prototype.templatelist = function(data, i, datas){
+		// 本方法提供给用户修改, 但要求必须返回html字符串作为每个item的内容
+		return $('<div>')
+			.attr({'id': data.id, "data-YClink": data.link})
+				.append($("<i class='list-ico'>").addClass(data.icon))
+				.append($('<span>').text(data.text))
+				[0].outerHTML
+	};
+	// 思考可不可以直接使用templaterequire灵活
+	// 提供几个例子来使用
 	YCdrag.prototype.templatefn = function(){
-		console.log('templatefn 1');
+		console.log('templatefn 默认方法');
 		var _ = this,
 			data = _.options.dataList,
 			len = data.length;
 
 		for(var i = 0; i < len; i ++){
-			_.template.push(
-				$('<' + _.options.ItemNode + '>')
-					.addClass(_.options.ItemClassName)
-					.attr({'id': data[i].id, "data-YClink": data[i].link})
-					.append($("<i class='list-ico'>").addClass(data[i].icon))
-					.append($('<span>').text(data[i].text))
-					[0].outerHTML
+			// 产生容器$itemli
+			// 获取设定的属性
+			var attrs = $.extend({}, this.options.ItemAttrs);
+			// ItemAttrs是用来赋值给$el的html属性
+			var $itemli = $('<' + this.options.ItemNode + '>').addClass(this.options.ItemClassName).attr(attrs);
+			$itemli.html(
+				_.templatelist(data[i], i, data)
 			);
+			_.template.push($itemli[0].outerHTML);
 		}
 	};
 
 	YCdrag.prototype.render = function(){
-		//var _ = this,
-		//	data = _.options.dataList,
-		//	len = data.length;
-		//
-		//for(var i = 0; i < len; i ++){
-		//	$('<' + _.options.ItemNode + '>')
-		//		.addClass(_.options.ItemClassName)
-		//		.attr('YCdrag-id', data[i].id)
-		//		.append($('<h2>').text(data[i].name))
-		//		.append($('<img>').attr('src',data[i].src))
-		//		.appendTo(_.$container);
-		//}
-		//
+		// 先清空html
 		this.template = [];
+		// 填充template内容并收集所有item的html字符串
 		this.templatefn();
-		console.log('render nn');
+		// 把所有item的html渲染到容器里
 		this.$container.html(this.template.join(""));
 	};
 
-	YCdrag.prototype.getData = function(){
-		var _ = this,
-			$items = _.$container.find(_.options.ItemClass),
-			data = [],
-			len = $items.length;
-
-		for(var i = 0; i < len; i ++){
-			var id = $items.eq(i).attr('YCdrag-id');
-			data.push(id)
-		}
-		return data;
+	YCdrag.prototype.getData = function(fnc){
+		// 此方法作为数据绑定获取数据, 但可通过DOM操作就完成, 仅作参考
+		 var items = this.$container.find(this.options.ItemClass);
+		return fnc(items);
 	};
 
 	YCdrag.prototype.initailizeEvent = function() {
@@ -213,6 +228,7 @@ var _ = this;
 			_.itemStartPagePos = $(this).offset();
 
 			_.setTimeFunc = setTimeout(function(){
+				// 以timeDuration为间隔触发press事件
 				_.fireEvent("press",[_.$dragTarget])
 			}, _.options.timeDuration);
 
@@ -227,13 +243,20 @@ var _ = this;
 	};
 
 	YCdrag.prototype.stopEventFunc = function(){
+		// 停止事件方法stopEventFunc功能: 
+		// 1,取消绑定moveEvent事件(但不负责取消stopEvent事件); 
+		// 2,清理定时器;
+		// 3,判断停止事件后触发的事件: A,有拖动item的话就动画执行item的回归
+		// B,没有拖动的话, 思考是什么情况: 
+		// YCdrag有三个应用情况: a, stopEvent情况应用; b,moveEvent里的取消拖动的两种情况:太快, 触控变位(闪拉情况)
+
 		var _ = this;
 
 		clearTimeout(_.setTimeFunc);
 
 		$('body').off(_.moveEvent);
 
-		if(_.dragCapable){ // 已拖拽的mouseUp
+		if(_.dragCapable){// 已拖拽的mouseUp
 			_.dragItemReset();
 		}else{ // 没有拖拽后的mouseUp, 判断为click
 			_.$container.find(_.options.ItemClass).removeClass('active host');
@@ -284,8 +307,9 @@ var _ = this;
 		// 然后进行moveEvent时候, 检测e.pageXY位置, 然后遍历每个子项的位置, 对比后获取当今位置
 
 		$('body').on(_.moveEvent, function(event){
-			// 每次初始拖动必须检查触控点位移情况, 若位置已经变化很大,就退出
+			// moveEvent的理念是按住后拖动, 非立即拖动
 
+			// 禁止滚动屏幕
 			event.stopImmediatePropagation();
 			event.stopPropagation();
 			event.preventDefault();
@@ -296,15 +320,28 @@ var _ = this;
 				Move_ey = page('y', event);
 
 			if(!_.dragCapable){
+				// 判断两个重要变量: 延时与范围
+				// 都满足: 按住拉动
+				// 都不满足: swipe
+				// 满足2, 不满足1: 是触控微动, 不停止, 只是忽略
+				// 满足1, 不满足2: 是错位, 可以理解是双触点, 按住了一点, 满足时间后立即同时点下第二点
+				// 
+
+				//var timelimited ;
 
 				if (event.timeStamp - _.startTime < _.options.timeDuration){
-					console.warn('失效: 拖动太快');
-					_.stopEventFunc();
+					// 这里应该优化, 其实在限定时间里有moveEvent也是可以的, 只要不超范围就可以了, 因为触控本来就不是稳定的
+					
+					// 所以这里添加范围判断, 没有超范围就仅仅return, 不用执行stopEventFunc, 否则都执行且console.warn('失效: 拖动太快');
+					
+					// 添加事件: 若有mousemove, 在限时内超过活动范围, 那就认定是立即拉动事件swipe
+					// _.stopEventFunc();
 					return;
 				}
 
 				if(Move_ex - _.eventStartX > _.options.RangeXY ||
 					Move_ey - _.eventStartY > _.options.RangeXY){
+					// 触控点位移超范围, 就退出, 否则这就不是按住拖动, 而是定时拖动了
 					console.warn('失效: 超过距离');
 					_.stopEventFunc();
 					return;

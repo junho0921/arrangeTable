@@ -93,52 +93,52 @@
 		]
 	});
 
-	var modifyMode = false;
+//	var modifyMode = false;
 
-	dragController.YCdrag.addEvent("templatefn", function() {
-		console.log('templatefn 2');
-		var _ = this,
-				data = _.options.dataList,
-				len = data.length;
+//dragController.YCdrag.addEvent("templatelist", function() {
+//				return $('<' + _.options.ItemNode + '>')
+//						.addClass(_.options.ItemClassName)
+//						.attr({'id': data[i].id, "data-YClink": data[i].link})
+//						.append($("<i class='list-ico'>").addClass(data[i].icon))
+//						.append($('<span>').text("j1jj"+data[i].text))[0].outerHTML
+//});
 
-		for(var i = 0; i < len; i ++){
-			_.template.push(
-					$('<' + _.options.ItemNode + '>')
-							.addClass(_.options.ItemClassName)
-							.attr({'id': data[i].id, "data-YClink": data[i].link})
-							.append($("<i class='list-ico'>").addClass(data[i].icon))
-							.append($('<span>').text("jjj"+data[i].text))[0].outerHTML
-			);
-		}
-	});
+//YCdrag.prototype.templatelist = function(){
+//	return $('<' + _.options.ItemNode + '>')
+//			.addClass(_.options.ItemClassName)
+//			.attr({'id': data[i].id, "data-YClink": data[i].link})
+//			.append($("<i class='list-ico'>").addClass(data[i].icon))
+//			.append($('<span>').text(data[i].text))
+//			[0].outerHTML
+//};
 
-	dragController.YCdrag.addEvent("click", function(type, $target) {
-		if(!modifyMode){
-			var link = $target.attr("data-YClink");
-//			App.navigate(link, true);
-			console.log('link: ', link);
-			return false;
-		}else{ // 若是在修改模式的情况下的点击是返回非修改模式
-			modifyMode = false;
-		}
-	});
+//	dragController.YCdrag.addEvent("click", function(type, $target) {
+//		if(!modifyMode){
+//			var link = $target.attr("data-YClink");
+////			App.navigate(link, true);
+//			console.log('link: ', link);
+//			return false;
+//		}else{ // 若是在修改模式的情况下的点击是返回非修改模式
+//			modifyMode = false;
+//		}
+//	});
+//
+//	dragController.YCdrag.addEvent(["press", "beforeDrag", "afterDrag"], function(type, $target) {
+//		modifyMode = true;
+//		$target.append(
+//				$('<span>')
+//						.text('X')
+//						.addClass('YCdragCloneBtn')
+//						.on('touchstart', function(){
+//							$target.remove();
+//							return false;
+//						})
+//		);
+//	});
 
-	dragController.YCdrag.addEvent(["press", "beforeDrag", "afterDrag"], function(type, $target) {
-		modifyMode = true;
-		$target.append(
-				$('<span>')
-						.text('X')
-						.addClass('YCdragCloneBtn')
-						.on('touchstart', function(){
-							$target.remove();
-							return false;
-						})
-		);
-	});
-
-	dragController.YCdrag.addEvent("touchStart", function(type, $targets){
-		$targets.find('.YCdragCloneBtn').remove();
-	});
+//	dragController.YCdrag.addEvent("touchStart", function(type, $targets){
+//		$targets.find('.YCdragCloneBtn').remove();
+//	});
 
 
 </script>
