@@ -6,7 +6,6 @@
 	<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-<div style="height:1000px;"></div>
 <h2 class="junDragtittle" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">YCdrag</h2>
 <button>获取数据</button>
 <div class="junDrag"></div>
@@ -64,23 +63,22 @@
 
 
 	// 根据项目需要改变render方法
-	YCdrag.prototype.render = function(){
-		var _ = this,
-				data = _.options.dataList,
-				len = data.length;
+//	YCdrag.prototype.render = function(){
+//		var _ = this,
+//				data = _.options.dataList,
+//				len = data.length;
+//
+//		for(var i = 0; i < len; i ++){
+//			$('<' + _.options.ItemNode + '>')
+//					.addClass(_.options.ItemClassName)
+//					.attr({'id': data[i].id, "data-YClink": data[i].link})
+//					.append($("<i class='list-ico'>").addClass(data[i].icon))
+//					.append($('<span>').text(data[i].text))
+//					.appendTo(_.$container);
+//		}
+//	};
 
-		for(var i = 0; i < len; i ++){
-			$('<' + _.options.ItemNode + '>')
-					.addClass(_.options.ItemClassName)
-					.attr({'id': data[i].id, "data-YClink": data[i].link})
-					.append($("<i class='list-ico'>").addClass(data[i].icon))
-					.append($('<span>').text(data[i].text))
-					.appendTo(_.$container);
-		}
-	};
-
-	var dragControl = new YCdrag({
-		Container:".junDrag",
+	var dragController = $('.junDrag').YCdrag({
 //		ItemNode:"li",
 //		ItemClassName:"cell",
 		dataList:[
@@ -97,7 +95,24 @@
 
 	var modifyMode = false;
 
-	dragControl.addEvent("click", function(type, $target) {
+	dragController.YCdrag.addEvent("templatefn", function() {
+		console.log('templatefn 2');
+		var _ = this,
+				data = _.options.dataList,
+				len = data.length;
+
+		for(var i = 0; i < len; i ++){
+			_.template.push(
+					$('<' + _.options.ItemNode + '>')
+							.addClass(_.options.ItemClassName)
+							.attr({'id': data[i].id, "data-YClink": data[i].link})
+							.append($("<i class='list-ico'>").addClass(data[i].icon))
+							.append($('<span>').text("jjj"+data[i].text))[0].outerHTML
+			);
+		}
+	});
+
+	dragController.YCdrag.addEvent("click", function(type, $target) {
 		if(!modifyMode){
 			var link = $target.attr("data-YClink");
 //			App.navigate(link, true);
@@ -108,7 +123,7 @@
 		}
 	});
 
-	dragControl.addEvent(["press", "beforeDrag", "afterDrag"], function(type, $target) {
+	dragController.YCdrag.addEvent(["press", "beforeDrag", "afterDrag"], function(type, $target) {
 		modifyMode = true;
 		$target.append(
 				$('<span>')
@@ -121,7 +136,7 @@
 		);
 	});
 
-	dragControl.addEvent("touchStart", function(type, $targets){
+	dragController.YCdrag.addEvent("touchStart", function(type, $targets){
 		$targets.find('.YCdragCloneBtn').remove();
 	});
 

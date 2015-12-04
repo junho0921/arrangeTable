@@ -37,11 +37,10 @@
 		return (hasTouch? event.originalEvent.touches[0] : event)['page' + coord.toUpperCase()];
 	};
 
-	//var YCdrag = window.YCdrag || {};
-	window.YCdrag = function (options) {
+	var YCdrag = window.YCdrag || {};
+	YCdrag = function (container ,options) {
 		// 默认选项
 		var defalutOptions = {
-			Container: '.junDrag',
 			ItemNode:"div",
 			ItemClassName:"dragItem",
 			timeDuration: 300,
@@ -61,10 +60,13 @@
 		var thisSettings = {
 
 			// 对象
-			$container: null,
+			$container: $(container),
 			$items: null,
 			$dragTarget:null,
 			$dragItem: null,
+
+			// html
+			template:[],
 
 			// 尺寸属性
 			liw: null,
@@ -118,39 +120,64 @@
 		this.options.ItemClass = "." + this.options.ItemClassName;
 
 		// 添加对象jQuery包装集$container
-		this.$container = $(this.options.Container).css('position','relative');
+		this.$container.css('position','relative');
 
 		this.init();
 	};
 
 	YCdrag.prototype.init = function() {
-
-		this.render();
+var _ = this;
+	setTimeout(function(){
+		_.render();
 
 		// 添加对象jQuery包装集$items
-		this.$items = this.$container.find(this.options.ItemClass);
+		_.$items = _.$container.find(_.options.ItemClass);
 
-		this.size();
+		_.size();
 
-		this.setProps();
+		_.setProps();
 
 		// 执行绑定事件
-		this.initailizeEvent();
+		_.initailizeEvent();
+	},1);
 	};
 
-	YCdrag.prototype.render = function(){
+	YCdrag.prototype.templatefn = function(){
+		console.log('templatefn 1');
 		var _ = this,
 			data = _.options.dataList,
 			len = data.length;
 
 		for(var i = 0; i < len; i ++){
-			$('<' + _.options.ItemNode + '>')
-				.addClass(_.options.ItemClassName)
-				.attr('YCdrag-id', data[i].id)
-				.append($('<h2>').text(data[i].name))
-				.append($('<img>').attr('src',data[i].src))
-				.appendTo(_.$container);
+			_.template.push(
+				$('<' + _.options.ItemNode + '>')
+					.addClass(_.options.ItemClassName)
+					.attr({'id': data[i].id, "data-YClink": data[i].link})
+					.append($("<i class='list-ico'>").addClass(data[i].icon))
+					.append($('<span>').text(data[i].text))
+					[0].outerHTML
+			);
 		}
+	};
+
+	YCdrag.prototype.render = function(){
+		//var _ = this,
+		//	data = _.options.dataList,
+		//	len = data.length;
+		//
+		//for(var i = 0; i < len; i ++){
+		//	$('<' + _.options.ItemNode + '>')
+		//		.addClass(_.options.ItemClassName)
+		//		.attr('YCdrag-id', data[i].id)
+		//		.append($('<h2>').text(data[i].name))
+		//		.append($('<img>').attr('src',data[i].src))
+		//		.appendTo(_.$container);
+		//}
+		//
+		this.template = [];
+		this.templatefn();
+		console.log('render nn');
+		this.$container.html(this.template.join(""));
 	};
 
 	YCdrag.prototype.getData = function(){
@@ -384,6 +411,7 @@
 				YCdrag.prototype[ent] = func;
 			}
 		}
+		return this;
 	};
 
 	// 手动触发事件的方法
@@ -509,6 +537,25 @@
 				console.log(positionProps)
 			}
 		}
+	};
+
+	$.fn.YCdrag = function() {
+		var _ = this,
+			opt = arguments[0],// 获取传入参数,不用管什么对象了
+			args = Array.prototype.slice.call(arguments, 1),
+			l = _.length,
+			i,
+			ret;
+
+		this.YCdrag = new YCdrag(this, opt);
+		//for (i = 0; i < l; i++) {
+		//	if (typeof opt == 'object' || typeof opt == 'undefined')
+		//		_[i].YCdrag = new YCdrag(_[i], opt);
+		//	else
+		//		ret = _[i].YCdrag[opt].apply(_[i].YCdrag, args);
+		//	if (typeof ret != 'undefined') return ret;
+		//}
+		return this;
 	};
 
 }));
