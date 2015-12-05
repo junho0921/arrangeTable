@@ -564,11 +564,11 @@
 			if (_.cssTransitions === false) {
 				positionProps[_.animType] = 'translate(' + x + ', ' + y + ')';
 				_.$dragItem.css(positionProps);
-				console.log(positionProps)
+				//console.log(positionProps)
 			} else {
 				positionProps[_.animType] = 'translate3d(' + x + ', ' + y + ', 0px)';
 				_.$dragItem.css(positionProps);
-				console.log(positionProps)
+				//console.log(positionProps)
 			}
 		}
 	};
