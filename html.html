@@ -95,13 +95,12 @@
 
 //	var modifyMode = false;
 
-//dragController.YCdrag.addEvent("templatelist", function() {
-//				return $('<' + _.options.ItemNode + '>')
-//						.addClass(_.options.ItemClassName)
-//						.attr({'id': data[i].id, "data-YClink": data[i].link})
-//						.append($("<i class='list-ico'>").addClass(data[i].icon))
-//						.append($('<span>').text("j1jj"+data[i].text))[0].outerHTML
-//});
+dragController.YCdrag.addEvent("templatelist", function(data) {
+				return $('<div>')
+						.attr({'id': data.id, "data-YClink": data.link})
+						.append($("<i class='list-ico'>").addClass(data.icon))
+						.append($('<span>').text("j1jj"+data.text))[0].outerHTML
+});
 
 //YCdrag.prototype.templatelist = function(){
 //	return $('<' + _.options.ItemNode + '>')

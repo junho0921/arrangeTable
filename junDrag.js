@@ -15,7 +15,7 @@
 // touch事件命名空间
 // 限定拖动范围
 // 模拟slick插件的做法
-// 改进点击拖动后touchmove在时间限制内的活动判断
+// 剥离transition等的方法成为一个组件
 
 (function(factory) {
 	'use strict';
@@ -42,7 +42,7 @@
 	YCdrag = function (container ,options) {
 		// 默认选项
 		var defalutOptions = {
-			// 容器属性
+			// 子容器属性
 			ItemNode:"li",
 			ItemClassName:"dragItem",
 			ItemAttrs:{'data-YC':'drag'},
@@ -55,7 +55,7 @@
 			// 类
 			dragClass:"YCdragClone",
 			// 允许触控的边缘
-			RangeXY: 60,
+			RangeXY: 6,
 			// 内容
 			dataList:[]
 		};
@@ -99,8 +99,8 @@
 			MEMOmoveTargetIndex: null, // 记录moveEvent的位置
 			startTargetIndex: null, // startEvent的位置
 
-			// 检测拖动
-			dragCapable: false,
+			// 初始拖拽
+			InitializeMoveEvent: false,
 
 			// 定时器
 			setTimeFunc: null,
@@ -124,7 +124,7 @@
 
 		this.options.ItemClass = "." + this.options.ItemClassName;
 
-		// 添加对象jQuery包装集$container
+		// 调整css
 		this.$container.css('position','relative');
 
 		this.init();
@@ -147,23 +147,6 @@
 		},1);
 	};
 
-	//function templatelist (i, data){
-	//	$(this).
-	//};
-
-	// YCdrag.prototype.renderEl = function(){
-	// 	// 本方法产生容器$el, 最终返回容器$el的jQuery包装集
-	// 	// 获取设定的属性
-	// 	var attrs = $.extend({}, this.options.ItemAttrs);
-
-	// 	// ItemAttrs是用来赋值给$el的html属性
-
-	// 	// 示例:
-	// 	this.$el = $('<' + this.options.ItemNode + '>').addClass(this.options.ItemClassName).attr(attrs);
-
-	// 	return this.$el;
-	// };
-
 	YCdrag.prototype.templatelist = function(data, i, datas){
 		// 本方法提供给用户修改, 但要求必须返回html字符串作为每个item的内容
 		return $('<div>')
@@ -172,8 +155,10 @@
 				.append($('<span>').text(data.text))
 				[0].outerHTML
 	};
+
 	// 思考可不可以直接使用templaterequire灵活
 	// 提供几个例子来使用
+
 	YCdrag.prototype.templatefn = function(){
 		console.log('templatefn 默认方法');
 		var _ = this,
@@ -256,7 +241,7 @@
 
 		$('body').off(_.moveEvent);
 
-		if(_.dragCapable){// 已拖拽的mouseUp
+		if(_.InitializeMoveEvent){// 已拖拽的mouseUp
 			_.dragItemReset();
 		}else{ // 没有拖拽后的mouseUp, 判断为click
 			_.$container.find(_.options.ItemClass).removeClass('active host');
@@ -273,7 +258,7 @@
 			}
 		}
 
-		_.dragCapable = false;
+		_.InitializeMoveEvent = false;
 		_.MoveMode = false;
 	};
 
@@ -288,6 +273,7 @@
 		var x =  targetPos.left + (_.eventStartX - _.itemStartPagePos.left),
 			y = targetPos.top + (_.eventStartY - _.itemStartPagePos.top) ;
 
+		// 添加css的transition属性, 使得有translate的效果
 		_.applyTransition(_.$dragItem);
 		_.dragCSS({'left':x, 'top':y});
 
@@ -319,34 +305,46 @@
 			var Move_ex = page('x', event),
 				Move_ey = page('y', event);
 
-			if(!_.dragCapable){
-				// 判断两个重要变量: 延时与范围
+			// 初始化MoveEvent
+			if(!_.InitializeMoveEvent){
+				// move过程中对事件的判断有两个重要变量: 延时与范围
 				// 都满足: 按住拉动
 				// 都不满足: swipe
 				// 满足2, 不满足1: 是触控微动, 不停止, 只是忽略
 				// 满足1, 不满足2: 是错位, 可以理解是双触点, 按住了一点, 满足时间后立即同时点下第二点
-				// 
+				// YCdrag不考虑??
 
-				//var timelimited ;
+				// 条件1: 限时内
+				var inShort = (event.timeStamp - _.startTime) < _.options.timeDuration;
 
-				if (event.timeStamp - _.startTime < _.options.timeDuration){
-					// 这里应该优化, 其实在限定时间里有moveEvent也是可以的, 只要不超范围就可以了, 因为触控本来就不是稳定的
-					
-					// 所以这里添加范围判断, 没有超范围就仅仅return, 不用执行stopEventFunc, 否则都执行且console.warn('失效: 拖动太快');
-					
-					// 添加事件: 若有mousemove, 在限时内超过活动范围, 那就认定是立即拉动事件swipe
-					// _.stopEventFunc();
-					return;
+				// 条件2: 范围外
+				// 建议范围RangeXY不要太大, 否则变成了定时拖动.
+				var outRang = (Move_ex - _.eventStartX ) > _.options.RangeXY ||
+				(Move_ey - _.eventStartY) > _.options.RangeXY;
+
+				console.log('outRang', outRang, 'inShort', inShort);
+
+				if (inShort){
+					if(outRang){
+						console.log('非拖拽的swipe');
+						_.fireEvent("swipe", []);
+						_.stopEventFunc();
+						return;
+					} else {
+						// 允许微动, 忽略(return)本次操作, 可继续绑定触发moveEvent
+						console.log('允许微动, 忽略(return)本次操作, 可继续绑定触发moveEvent');
+						// 思考: 这里不能停止绑定事件, 因为只是微动或震动, 是允许范围
+						// 这里应该提供允许click事件的属性
+						return;
+					}
 				}
 
-				if(Move_ex - _.eventStartX > _.options.RangeXY ||
-					Move_ey - _.eventStartY > _.options.RangeXY){
-					// 触控点位移超范围, 就退出, 否则这就不是按住拖动, 而是定时拖动了
-					console.warn('失效: 超过距离');
+				if(outRang){
+					console.warn('按住达到一定时间后瞬间move超距离, 认为是操作失误');
 					_.stopEventFunc();
 					return;
 				}else{
-					// 初始化
+					// 满足两个条件后, 初始化(仅进行一次)
 
 					// 需要重新获取$items, 不然出现Bug: 多次排序出错
 					_.$items = _.$container.find(_.options.ItemClass);
@@ -362,18 +360,17 @@
 							.addClass(_.options.dragClass)
 							.appendTo(_.$container);// Bug: 改变了$container的高度! 但可通过css固定高度
 
-					// fixBug:
-
 					// 原item与新添加item的距离
 					_.dx = _.$dragTarget.position().left - _.$dragItem.position().left;
 					_.dy = _.$dragTarget.position().top - _.$dragItem.position().top;
 					
+					// fixBug:
 					_.$dragItem.css({'position':'relative','left': _.dx,'top': _.dy});
 
 					// 提供触发事件:"beforeDrag"
 					_.fireEvent("beforeDrag", [_.$dragItem]);
 
-					_.dragCapable = true
+					_.InitializeMoveEvent = true
 				}
 			}
 
