@@ -20,6 +20,12 @@
 // 优化绑定事件, 直接绑定在$container就可以
 // 应该分开slideHandler来作为resetitem方法(参考slick的animateSlide方法), setCss作为拖拽方法(参考slick的setCSS方法)!
 
+// 重要修改:
+// 拖动的单位不再以li为单位, 会以li里的内容wrap"div".addClass(li.class), 以这div为拖动的对象, 而且是基于position:relative的模式
+// 这样就可以避免了复制模式, 也可以避免bug:container的尺寸变化, 有利于setCSS的三种模式的统一位置(不再担心降级方法的css({"left":??}))的特殊处理,
+// 这是因为, 原来clone的情况, 必须要cloneItem先改变css的坐标位置, 这样使得setCSS的三种模式里translate是基于改变后的css坐标, 而降级方案还是基于原来未改变的css坐标
+// 这样的话, animateslide的情况也可以
+
 // 有可能的bug
 // dragItemReset使用定时方法来清理动画, 可能由于浏览器线程不可预计的情况有偏差,
 // slick组件是1,对于translate是产生一个虚拟对象执行aniamite的方法来添加callback; 2,对于translate3D的话就是采取setTimeout的callback措施
@@ -295,7 +301,8 @@
 
 		// 添加css的transition属性, 使得有translate的效果
 		_.applyTransition(_.$dragItem);
-		_.dragCSS({'left':x, 'top':y});
+		//_.setCSS({'left':x, 'top':y});
+		_.animateSlide({'left':x, 'top':y});
 
 		// 可能的bug: dragItemReset使用定时方法来清理动画, 可能由于浏览器线程不可预计的情况有偏差, 所以建议模拟slick的产生一个虚拟对象执行aniamite的方法来添加callback来清理动画效果!
 		setTimeout(function(){
@@ -323,8 +330,8 @@
 
 			_.dragging = true;
 
-			var Move_ex = page('x', event),
-				Move_ey = page('y', event);
+			var Move_ex = _.mvX = page('x', event),
+				Move_ey = _.mvY=  page('y', event);
 
 			// 初始化MoveEvent
 			if(!_.InitializeMoveEvent){
@@ -395,7 +402,7 @@
 				}
 			}
 
-			_.dragCSS({'left':Move_ex, 'top':Move_ey});
+			_.setCSS({'left':Move_ex, 'top':Move_ey});
 			//_.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
 
 			// 监听触控点位置来插入空白格子
@@ -566,33 +573,91 @@
 		//_.transformsEnabled = false;// 测试用
 	};
 
-	YCdrag.prototype.dragCSS = function(position) {
+	YCdrag.prototype.setCSS = function(position) {
 		// position = {left: ?, top: ?} 触控点位置
+		// 提供拖拽的item的css定位
 		var _ = this,
 			positionProps = {},
+			$obj = _.$dragItem,
 			x, y;
 
 		if (_.transformsEnabled === false) {
 			// css位置, 基于$dragItem是position:relative的基础
 			x = Math.ceil(position.left - _.eventStartX + _.dx) + 'px';
 			y = Math.ceil(position.top - _.eventStartY + _.dy) + 'px';
-			_.$dragItem.css({'left': x, "top": y});
+			$obj.css({'left': x, "top": y});
 		} else {
 			positionProps = {};
 			// 这里的原理是不同的, 因为这里使用了位移, 是在原基础上的位移多少, 可以说是直接追踪触控点的距离
-			x = Math.ceil(position.left - _.eventStartX) + 'px';
-			y = Math.ceil(position.top - _.eventStartY) + 'px';
+			x =  Math.ceil(position.left - _.eventStartX) + 'px';
+			y =  Math.ceil(position.top - _.eventStartY) + 'px';
 
 			if (_.cssTransitions === false) {
 				positionProps[_.animType] = 'translate(' + x + ', ' + y + ')';
-				_.$dragItem.css(positionProps);
+				$obj.css(positionProps);
 				//console.log(positionProps)
 			} else {
 				positionProps[_.animType] = 'translate3d(' + x + ', ' + y + ', 0px)';
-				_.$dragItem.css(positionProps);
+				$obj.css(positionProps);
 				//console.log(positionProps)
 			}
 		}
+	};
+
+	YCdrag.prototype.animateSlide = function(position, callback) {
+		// 动画效果的滑动, 且接收callback
+		// position是什么位置, 应该是最终位置好了, 但为何setCSS不是最终位置, 而是触控点位置?
+		var animProps = {},
+			$obj = _.$dragItem,
+			_ = this;
+
+		if (_.transformsEnabled === false) {
+			// 降级方案 使用animate方案
+			$obj.animate(position, _.options.timeDuration, _.options.easing, callback);
+
+		} else {
+
+			if (_.cssTransitions === false) {
+				// 使用translate的CSS方法
+				var startPosition = {"left":_.mvX, "top":_.mvY},curPosition = {"left":_.mvX, "top":_.mvY}, pr = {};
+				$(startPosition)// 这个位置是拖拽的最后的位置, 也就是moveEvent的位置
+					.animate(position, {
+						duration: _.options.timeDuration,
+						easing: _.options.easing,
+						step: function(now, data) {
+							pr[data.prop] = now;
+							$.extend(curPosition, pr);
+								animProps[_.animType] = 'translate(' +
+									curPosition.left + 'px, ' + curPosition.top + 'px)';
+								$obj.css(animProps);
+						},
+						complete: function() {
+							if (callback) {
+								callback.call();
+							}
+						}
+					});
+
+			} else {
+				// 使用translate3D的CSS方法
+				_.applyTransition();
+
+				animProps[_.animType] = 'translate3d(' + position.left + 'px, ' + position.top + 'px, 0px)';
+
+				$obj.css(animProps);
+
+				if (callback) {
+					setTimeout(function() {
+
+						_.disableTransition();
+
+						callback.call();
+					}, _.options.timeDuration);
+				}
+			}
+
+		}
+
 	};
 
 	$.fn.YCdrag = function() {
@@ -613,6 +678,9 @@
 		//}
 		return _;
 	};
+
+
+
 
 }));
 
