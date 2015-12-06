@@ -12,10 +12,20 @@
 // 拖拽效果: 赋值item并添加到队列最后, 使用position:relative,相对定位在本item位置, 优选选择translate方法来拖拽位置
 
 // 改进空间:
+// 考虑转屏问题orientationchange, resize??
+// 禁止多点触控(参考slick的swipeHandler里的方法)
 // touch事件命名空间
 // 限定拖动范围
-// 模拟slick插件的做法
 // 剥离transition等的方法成为一个组件
+// 优化绑定事件, 直接绑定在$container就可以
+// 应该分开slideHandler来作为resetitem方法(参考slick的animateSlide方法), setCss作为拖拽方法(参考slick的setCSS方法)!
+
+// 有可能的bug
+// dragItemReset使用定时方法来清理动画, 可能由于浏览器线程不可预计的情况有偏差,
+// slick组件是1,对于translate是产生一个虚拟对象执行aniamite的方法来添加callback; 2,对于translate3D的话就是采取setTimeout的callback措施
+
+// 思考:
+// 点击后才绑定拖拽的事件是否不好?
 
 (function(factory) {
 	'use strict';
@@ -40,12 +50,16 @@
 
 	var YCdrag = window.YCdrag || {};
 	YCdrag = function (container ,options) {
+		var _ = this;
 		// 默认选项
 		var defalutOptions = {
 			// 子容器属性
 			ItemNode:"li",
 			ItemClassName:"dragItem",
 			ItemAttrs:{'data-YC':'drag'},
+			// 或添加关闭按钮:
+			closeBtnAdd: false,
+			closebtnthml:"<span class='YCdragCloseBtn'>X</span>",
 			// 时间
 			timeDuration: 300,
 			resetDuration: 600,
@@ -61,7 +75,7 @@
 		};
 
 		// 关于动画效果的设置
-		var thisSettings = {
+		var initialSettings = {
 
 			// 对象
 			$container: $(container),
@@ -90,7 +104,7 @@
 			moveEvent: null,
 
 			// 修改状态
-			MoveMode:false,
+			dragging:false,
 
 			// 事件相关的基本属性
 			eventStartX: null,
@@ -118,16 +132,16 @@
 			animType:null
 		};
 
-		$.extend(this, thisSettings);
+		$.extend(_, initialSettings);
 
-		this.options = $.extend({}, defalutOptions, options);
+		_.options = $.extend({}, defalutOptions, options);
 
-		this.options.ItemClass = "." + this.options.ItemClassName;
+		_.options.ItemClass = "." + _.options.ItemClassName;
 
 		// 调整css
-		this.$container.css('position','relative');
+		_.$container.css('position','relative');
 
-		this.init();
+		_.init();
 	};
 
 	YCdrag.prototype.init = function() {
@@ -198,10 +212,16 @@
 		var _ = this;
 
 		_.$items.on(_.startEvent, function(event){
+			// 禁止多点触控
+			var fingerCount = event.originalEvent && event.originalEvent.touches !== undefined ?
+				event.originalEvent.touches.length : 1;
+			if(fingerCount > 1){return;}
 
 			_.$dragTarget = $(this);
 
 			_.fireEvent("touchStart", [_.$container]);
+
+			_.$container.trigger('touchStartsetPosition', [_]);
 
 			_.startTargetIndex = _.$dragTarget.addClass('active').index();
 
@@ -246,7 +266,7 @@
 		}else{ // 没有拖拽后的mouseUp, 判断为click
 			_.$container.find(_.options.ItemClass).removeClass('active host');
 
-			if(_.MoveMode === false){// 不能再移动触控的情况触发点击事件!
+			if(_.dragging === false){// 不能在移动触控的情况触发点击事件!
 
 				var newTime = new Date();
 
@@ -259,7 +279,7 @@
 		}
 
 		_.InitializeMoveEvent = false;
-		_.MoveMode = false;
+		_.dragging = false;
 	};
 
 	YCdrag.prototype.dragItemReset = function(){
@@ -277,6 +297,7 @@
 		_.applyTransition(_.$dragItem);
 		_.dragCSS({'left':x, 'top':y});
 
+		// 可能的bug: dragItemReset使用定时方法来清理动画, 可能由于浏览器线程不可预计的情况有偏差, 所以建议模拟slick的产生一个虚拟对象执行aniamite的方法来添加callback来清理动画效果!
 		setTimeout(function(){
 			_.$container.find('.' + _.options.dragClass).remove();
 			_.$container.find(_.options.ItemClass).removeClass('active host');
@@ -300,7 +321,7 @@
 			event.stopPropagation();
 			event.preventDefault();
 
-			_.MoveMode = true;
+			_.dragging = true;
 
 			var Move_ex = page('x', event),
 				Move_ey = page('y', event);
@@ -457,32 +478,33 @@
 	};
 
 	YCdrag.prototype.size = function(){
+		var _ = this;
 		// 获取子项li尺寸
-		this.liH = this.$items.outerHeight(true);
-		this.liW = this.$items.outerWidth(true);
+		_.liH = _.$items.outerHeight(true);
+		_.liW = _.$items.outerWidth(true);
 
 		// 获取容器ul尺寸
-		this.ulH = this.$container.height();
-		this.ulW = this.$container.width();
+		_.ulH = _.$container.height();
+		_.ulW = _.$container.width();
 
 		// 修复bug的权宜之计
-		this.$container.css({'height':this.ulH, 'width':this.ulW, 'overfolow':'hidden'});
+		_.$container.css({'height':_.ulH, 'width':_.ulW, 'overfolow':'hidden'});
 
 		// 计算ul排列了多少列,与项
-		this.rows = Math.floor(this.ulH/this.liH); // 最准确的数字
-		this.cols;
+		_.rows = Math.floor(_.ulH/_.liH); // 最准确的数字
+		//_.cols;
 		// 遍历方法来计算列数
-		for(var i = 0; i < this.$items.length; i++){
-			if(this.$items.eq(i).position().top > 1){
-				this.cols = i;
+		for(var i = 0; i < _.$items.length; i++){
+			if(_.$items.eq(i).position().top > 1){
+				_.cols = i;
 				break;
 			}
 		}
-		console.log('ul data : rows = ', this.rows, ', cols = ', this.cols);
+		console.log('ul data : rows = ', _.rows, ', cols = ', _.cols);
 
 		// 计算第一个li的页面坐标, 以此作为参考基准
-		this.li_1_top = this.$items.eq(0).offset().top;
-		this.li_1_left = this.$items.eq(0).offset().left;
+		_.li_1_top = _.$items.eq(0).offset().top;
+		_.li_1_left = _.$items.eq(0).offset().left;
 	};
 
 	YCdrag.prototype.setProps = function() {
@@ -497,11 +519,11 @@
 		var _ = this,
 			bodyStyle = document.body.style;
 
-		// 选择事件类型
+		// 选择事件类型, 添加命名空间, 不会与其他插件冲突
 		_.hasTouch = hasTouch ;
-		_.startEvent = _.hasTouch ? 'touchstart' : 'mousedown';
-		_.stopEvent = _.hasTouch ? 'touchend' : 'mouseup';
-		_.moveEvent = _.hasTouch ? 'touchmove' : 'mousemove';
+		_.startEvent = _.hasTouch ? 'touchstart.YCdrag' : 'mousedown.YCdrag';
+		_.stopEvent = _.hasTouch ? 'touchend.YCdrag' : 'mouseup.YCdrag';
+		_.moveEvent = _.hasTouch ? 'touchmove.YCdrag' : 'mousemove.YCdrag';
 
 		if (bodyStyle.WebkitTransition !== undefined ||
 			bodyStyle.MozTransition !== undefined ||
@@ -581,7 +603,7 @@
 			i,
 			ret;
 
-		this.YCdrag = new YCdrag(this, opt);
+		_.YCdrag = new YCdrag(_, opt);
 		//for (i = 0; i < l; i++) {
 		//	if (typeof opt == 'object' || typeof opt == 'undefined')
 		//		_[i].YCdrag = new YCdrag(_[i], opt);
@@ -589,7 +611,7 @@
 		//		ret = _[i].YCdrag[opt].apply(_[i].YCdrag, args);
 		//	if (typeof ret != 'undefined') return ret;
 		//}
-		return this;
+		return _;
 	};
 
 }));
