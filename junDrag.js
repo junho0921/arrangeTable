@@ -11,19 +11,25 @@
 // 在touchmove事件里, 首先判断: 对比touchstart的时间间断和触控点变化距离, 正则拖拽, 否则暂停事件
 // 拖拽效果: 赋值item并添加到队列最后, 使用position:relative,相对定位在本item位置, 优选选择translate方法来拖拽位置
 
-// 改进空间:
-// 考虑转屏问题orientationchange, resize??
+// 已优化的:
+// 使用类方法
+// 或添加关闭按钮
+// 限定拖动范围
 // 禁止多点触控(参考slick的swipeHandler里的方法)
 // touch事件命名空间
-// 限定拖动范围
+
+// 改进空间:
+// 考虑转屏问题orientationchange, resize??
 // 剥离transition等的方法成为一个组件
 // 优化绑定事件, 直接绑定在$container就可以
-// 应该分开slideHandler来作为resetitem方法(参考slick的animateSlide方法), setCss作为拖拽方法(参考slick的setCSS方法)!
-// 或添加关闭按钮:
+
+// 项目组版本
 // 阉割html的生成方法, 减少开发接口, 只开放结束编辑
-// 使用类方法
-// 排序的动画效果是之后版本考虑的
-// 改名称DraggableMenu
+// 改名称DraggableMenu, 更改_为this
+// 点击跳转怎么处理, 由项目组生产html且绑定绑定事件来跳转
+
+// 升级
+// 排序的动画效果
 
 // 思考:
 // 点击后才绑定拖拽的事件是否不好?
@@ -148,6 +154,8 @@
 		_.$container = $(_.options.container).css('position','relative');
 
 		_.init();
+
+		return _.$container;
 	};
 
 	YCdrag.prototype.init = function() {
@@ -225,12 +233,12 @@
 			if(event.currentTarget.className === _.options.ItemClassName){
 				_.$touchTarget =  $(event.currentTarget);
 			}else {
-				console.log('非点击正确'); return
+				console.log('非点击拖动对象'); return
 			}
 
 			_.fireEvent("touchStart", [_.$container]);
 
-			_.$container.trigger('touchStartsetPosition', [_]);
+			_.$container.trigger('touchStasssrt', [_.$container]);
 
 			_.startTargetIndex = _.$touchTarget.addClass(_.options.activeClass).index();
 
