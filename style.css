@@ -1,9 +1,9 @@
-.junDrag {
+.DraggableMenu {
     list-style: none;
     position: relative;
 }
 
-.junDrag .dragItem{
+.DraggableMenu .dragItem{
     display: inline-block;
 
     min-width:200px;
@@ -12,20 +12,20 @@
     background: lightcyan;
     text-align: center;
 }
-.junDrag .dragItem.activeYCdrag{
+.DraggableMenu .dragItem.activeDraggableMenu{
     background: lightblue;
 }
-.YCdraggingItem {
+.DraggingItem {
     opacity: 0.3;
 }
-.junDrag .dragItem.activeYCdrag.YCdragClone {
+.DraggableMenu .dragItem.activeDraggableMenu.DraggableMenuClone {
     opacity:1;
     position:relative;
     background: deepskyblue;
     z-index: 99;
 }
 
-.junDrag .dragItem, .junDrag {
+.DraggableMenu .dragItem, .DraggableMenu {
     -webkit-transform: translate3d(0, 0, 0);
     -moz-transform: translate3d(0, 0, 0);
     -ms-transform: translate3d(0, 0, 0);
@@ -33,7 +33,7 @@
     transform: translate3d(0, 0, 0);
 }
 
-.YCdragCloseBtn, .addClose::after {
+.DraggableMenuCloseBtn, .addClose::after {
     position: absolute;
     right:3px;
     top:3px;
@@ -52,7 +52,7 @@
     content:"X";
 }
 
-.YCdragCloseBtnd{
+.DraggableMenuCloseBtnd{
     position: absolute;
     right:3px;
     top:3px;

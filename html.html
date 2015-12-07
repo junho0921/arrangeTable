@@ -2,23 +2,23 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>junDrag</title>
+	<title>DraggableMenu</title>
 	<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-<h2 class="junDragtittle" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">YCdrag</h2>
+<h2 class="DraggableMenutittle" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">DraggableMenu</h2>
 <button>获取数据</button>
-<div class="junDrag"></div>
+<div class="DraggableMenu"></div>
 
 
 <script src="libs/jquery.js"></script>
 <script src="junDrag.js"></script>
 <script>
-	var dragControl = new YCdrag({
-		container:".junDrag",
+	var dragControl = new DraggableMenu({
+		container:".DraggableMenu",
 		ItemNode:"li",
 //		ItemClassName: "cell",
-		closebtnthml:"<span class='YCdragCloseBtnd'>2</span>",
+		closebtnthml:"<span class='DraggableMenuCloseBtnd'>2</span>",
 		dataList:[
 			{text:'信用卡', icon:"c", id:"credit", link:"example/index/mycountDetail"},
 			{text:'理财交易', icon:"d", id:"product", link:"example/index/iwant"},
@@ -68,7 +68,7 @@
 
 
 	// 根据项目需要改变render方法
-//	YCdrag.prototype.render = function(){
+//	DraggableMenu.prototype.render = function(){
 //		var _ = this,
 //				data = _.options.dataList,
 //				len = data.length;
@@ -83,7 +83,7 @@
 //		}
 //	};
 
-//	var dragController = $('.junDrag').YCdrag({
+//	var dragController = $('.DraggableMenu').DraggableMenu({
 ////		ItemNode:"li",
 ////		ItemClassName:"cell",
 //		closehtml:"<span></span>",
@@ -101,14 +101,14 @@
 
 //	var modifyMode = false;
 
-//dragController.YCdrag.addEvent("templatelist", function(data) {
+//dragController.DraggableMenu.addEvent("templatelist", function(data) {
 //				return $('<div>')
 //						.attr({'id': data.id, "data-YClink": data.link})
 //						.append($("<i class='list-ico'>").addClass(data.icon))
 //						.append($('<span>').text("j1jj"+data.text))[0].outerHTML
 //});
 
-//YCdrag.prototype.templatelist = function(){
+//DraggableMenu.prototype.templatelist = function(){
 //	return $('<' + _.options.ItemNode + '>')
 //			.addClass(_.options.ItemClassName)
 //			.attr({'id': data[i].id, "data-YClink": data[i].link})
@@ -117,7 +117,7 @@
 //			[0].outerHTML
 //};
 
-//	dragController.YCdrag.addEvent("click", function(type, $target) {
+//	dragController.DraggableMenu.addEvent("click", function(type, $target) {
 //		if(!modifyMode){
 //			var link = $target.attr("data-YClink");
 ////			App.navigate(link, true);
@@ -128,12 +128,12 @@
 //		}
 //	});
 ////
-//	dragController.YCdrag.addEvent(["press", "beforeDrag", "afterDrag"], function(type, $target) {
+//	dragController.DraggableMenu.addEvent(["press", "beforeDrag", "afterDrag"], function(type, $target) {
 //		modifyMode = true;
 //		$target.append(
 //				$('<span>')
 //						.text('X')
-//						.addClass('YCdragCloneBtn')
+//						.addClass('DraggableMenuCloneBtn')
 //						.on('touchstart', function(){
 //							$target.remove();
 //							return false;
@@ -141,8 +141,8 @@
 //		);
 //	});
 
-//	dragController.YCdrag.addEvent("touchStart", function(type, $targets){
-//		$targets.find('.YCdragCloneBtn').remove();
+//	dragController.DraggableMenu.addEvent("touchStart", function(type, $targets){
+//		$targets.find('.DraggableMenuCloneBtn').remove();
 //	});
 
 
