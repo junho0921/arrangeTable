@@ -618,7 +618,7 @@
 		}
 		this.transformsEnabled = this.options.useTransform && (this.animType !== null && this.animType !== false);
 		//this.transformsEnabled = false;// 测试用
-		this.cssTransitions = false;// 测试用
+		//this.cssTransitions = false;// 测试用
 	};
 
 	DraggableMenu.prototype.setCSS = function(position) {
