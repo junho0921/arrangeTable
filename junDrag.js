@@ -19,12 +19,10 @@
 // 剥离transition等的方法成为一个组件
 // 优化绑定事件, 直接绑定在$container就可以
 // 应该分开slideHandler来作为resetitem方法(参考slick的animateSlide方法), setCss作为拖拽方法(参考slick的setCSS方法)!
-
-// 重要修改:
-// 拖动的单位不再以li为单位, 会以li里的内容wrap"div".addClass(li.class), 以这div为拖动的对象, 而且是基于position:relative的模式
-// 这样就可以避免了复制模式, 也可以避免bug:container的尺寸变化, 有利于setCSS的三种模式的统一位置(不再担心降级方法的css({"left":??}))的特殊处理,
-// 这是因为, 原来clone的情况, 必须要cloneItem先改变css的坐标位置, 这样使得setCSS的三种模式里translate是基于改变后的css坐标, 而降级方案还是基于原来未改变的css坐标
-// 这样的话, animateslide的情况也可以
+// 或添加关闭按钮:
+// 阉割html的生成方法, 减少开发接口, 只开放结束编辑
+// 使用类方法
+// 排序的动画效果是之后版本考虑的
 
 // 有可能的bug
 // dragItemReset使用定时方法来清理动画, 可能由于浏览器线程不可预计的情况有偏差,
@@ -63,6 +61,8 @@
 			ItemNode:"li",
 			ItemClassName:"dragItem",
 			ItemAttrs:{'data-YC':'drag'},
+			activeClass:"activeYCdrag",
+			draggingClass:"YCdraggingItem",
 			// 或添加关闭按钮:
 			closeBtnAdd: false,
 			closebtnthml:"<span class='YCdragCloseBtn'>X</span>",
@@ -229,7 +229,7 @@
 
 			_.$container.trigger('touchStartsetPosition', [_]);
 
-			_.startTargetIndex = _.$dragTarget.addClass('active').index();
+			_.startTargetIndex = _.$dragTarget.addClass(_.options.activeClass).index();
 
 			_.startTime = event.timeStamp || +new Date();
 
@@ -244,8 +244,8 @@
 			}, _.options.timeDuration);
 
 			// 绑定事件stopEvent, 本方法必须在绑定拖拽事件之前
-			$('body').one(_.stopEvent, function(){
-				_.stopEventFunc();
+			$('body').one(_.stopEvent, function(event){
+				_.stopEventFunc(event);
 			});
 
 			// 绑定拖拽事件
@@ -253,7 +253,7 @@
 		});
 	};
 
-	YCdrag.prototype.stopEventFunc = function(){
+	YCdrag.prototype.stopEventFunc = function(event){
 		// 停止事件方法stopEventFunc功能: 
 		// 1,取消绑定moveEvent事件(但不负责取消stopEvent事件); 
 		// 2,清理定时器;
@@ -261,6 +261,7 @@
 		// B,没有拖动的话, 思考是什么情况: 
 		// YCdrag有三个应用情况: a, stopEvent情况应用; b,moveEvent里的取消拖动的两种情况:太快, 触控变位(闪拉情况)
 
+		console.log('stop', event.pageX, event.pageY);
 		var _ = this;
 
 		clearTimeout(_.setTimeFunc);
@@ -270,7 +271,7 @@
 		if(_.InitializeMoveEvent){// 已拖拽的mouseUp
 			_.dragItemReset();
 		}else{ // 没有拖拽后的mouseUp, 判断为click
-			_.$container.find(_.options.ItemClass).removeClass('active host');
+			_.$container.find(_.options.ItemClass).removeClass(_.options.activeClass).removeClass(_.options.draggingClass);
 
 			if(_.dragging === false){// 不能在移动触控的情况触发点击事件!
 
@@ -287,34 +288,56 @@
 		_.InitializeMoveEvent = false;
 		_.dragging = false;
 	};
-
+// DraggableMenu
 	YCdrag.prototype.dragItemReset = function(){
 		// mouseUp动画
 		var _ = this;
 
-		// 获取目标相对于窗口的定位
+		// 计算dragItem基于touchStart位置面向的最终滑向位置
+		// 方法是计算touchStart时dragTarget的坐标和最终滑向位置$dragTarget的坐标之间的差距
+		// touchStart时dragItem的坐标: _.itemStartPagePos
+		// 最终dragItem滑向位置的坐标:$(this).offset();
 		var targetPos = _.$dragTarget.offset();
+		var resetX =  targetPos.left - _.itemStartPagePos.left,
+			resetY = targetPos.top - _.itemStartPagePos.top;
 
-		// 计算出模拟触控点拖item到指定位置的触控点坐标
-		var x =  targetPos.left + (_.eventStartX - _.itemStartPagePos.left),
-			y = targetPos.top + (_.eventStartY - _.itemStartPagePos.top) ;
+		// 若不适用CSS3的属性transform, 只能使用css坐标通过animate来实现
+		if (_.transformsEnabled === false) {
+			// 基于css坐标的话不能像translate那样参考触控位移的距离, 只参考dragItem原本产生时的css坐标和最后的$dragTarget的坐标
+			// $dragItem最终的css坐标 = 最终$dragTarget相对父级的位置 - 原本$dragItem相对父级的位置
+			resetX =
+				_.$container.find("."+ _.options.activeClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
+				- _.dragItemOriginalpos.left;
+			resetY = _.$container.find("."+ _.options.activeClass).position().top - _.dragItemOriginalpos.top;
+		}
 
-		// 添加css的transition属性, 使得有translate的效果
-		_.applyTransition(_.$dragItem);
-		//_.setCSS({'left':x, 'top':y});
-		_.animateSlide({'left':x, 'top':y});
+		// 获取目标相对于窗口的定位
+		//var targetPos = _.$dragTarget.offset();
+		//
+		//// 计算出模拟触控点拖item到指定位置的触控点坐标
+		//var x =  targetPos.left + (_.eventStartX - _.itemStartPagePos.left),
+		//	y = targetPos.top + (_.eventStartY - _.itemStartPagePos.top) ;
+
+		// 添加css3的transition属性, 使translate有动画效果
+		//_.applyTransition(_.$dragItem);
+
+		_.animateSlide({'left': resetX, 'top': resetY}, function(){
+			_.$container.find('.' + _.options.dragClass).remove();
+			_.$container.find(_.options.ItemClass).removeClass(_.options.activeClass).removeClass(_.options.draggingClass);
+			_.fireEvent("afterDrag", [_.$dragTarget]);
+		});
 
 		// 可能的bug: dragItemReset使用定时方法来清理动画, 可能由于浏览器线程不可预计的情况有偏差, 所以建议模拟slick的产生一个虚拟对象执行aniamite的方法来添加callback来清理动画效果!
-		setTimeout(function(){
-			_.$container.find('.' + _.options.dragClass).remove();
-			_.$container.find(_.options.ItemClass).removeClass('active host');
-			_.disableTransition(_.$dragItem);
-			_.fireEvent("afterDrag", [_.$dragTarget]);
-		}, _.options.resetDuration);
+		//setTimeout(function(){
+		//	_.$container.find('.' + _.options.dragClass).remove();
+		//	_.$container.find(_.options.ItemClass).removeClass('active host');
+		//	_.disableTransition(_.$dragItem);
+		//	_.fireEvent("afterDrag", [_.$dragTarget]);
+		//}, _.options.resetDuration);
 	};
 
 	YCdrag.prototype.drag = function(){
-		var _ = this;
+		var _ = this, dragItemStartX, dragItemStartY;
 
 		// 计算每个子项的定位
 		// pageXY位置为准, 所以取值offsetXY, 加上li自身尺寸作为范围值,
@@ -377,7 +400,7 @@
 					// 需要重新获取$items, 不然出现Bug: 多次排序出错
 					_.$items = _.$container.find(_.options.ItemClass);
 
-					_.$dragTarget.addClass('host');
+					_.$dragTarget.addClass(_.options.draggingClass);
 
 					// 获取点击对象的相对父级的位置
 					//_.startPos = _.$dragTarget.position();
@@ -388,12 +411,13 @@
 							.addClass(_.options.dragClass)
 							.appendTo(_.$container);// Bug: 改变了$container的高度! 但可通过css固定高度
 
-					// 原item与新添加item的距离
-					_.dx = _.$dragTarget.position().left - _.$dragItem.position().left;
-					_.dy = _.$dragTarget.position().top - _.$dragItem.position().top;
+					_.dragItemOriginalpos = _.$dragItem.position();
+					// $dragTarget的坐标
+					dragItemStartX = _.dragItemStartX = _.$dragTarget.position().left - _.$dragItem.position().left;
+					dragItemStartY = _.dragItemStartY = _.$dragTarget.position().top - _.$dragItem.position().top;
 					
-					// fixBug:
-					_.$dragItem.css({'position':'relative','left': _.dx,'top': _.dy});
+					// $dragItem的坐标调整等于$dragTarget的坐标
+					_.$dragItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
 
 					// 提供触发事件:"beforeDrag"
 					_.fireEvent("beforeDrag", [_.$dragItem]);
@@ -402,7 +426,20 @@
 				}
 			}
 
-			_.setCSS({'left':Move_ex, 'top':Move_ey});
+			// 计算
+			var cssX, cssY;
+			// 触控点移动距离
+			cssX = Move_ex - _.eventStartX;
+			cssY = Move_ey - _.eventStartY;
+			// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
+			if (_.transformsEnabled === false) {
+				//$dragItem拖拽时的位置 = 它的坐标 + 拖拽距离
+				cssX = dragItemStartX + cssX;
+				cssY = dragItemStartY + cssY;
+			}
+
+			// 执行
+			_.setCSS({'left': cssX, 'top': cssY});
 			//_.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
 
 			// 监听触控点位置来插入空白格子
@@ -443,24 +480,24 @@
 	/*-----------------------------------------------------------------------------------------------*/
 	/*-----------------------------------------------------------------------------------------------*/
 
-	YCdrag.prototype.applyTransition = function($dragItem) {
+	YCdrag.prototype.applyTransition = function() {
 		// 添加css  Transition
 		var _ = this,
 			transition = {};
 
 		transition[_.transitionType] = _.transformType + ' ' + _.options.resetDuration + 'ms ease';
 
-		$dragItem.css(transition);
+		_.$dragItem.css(transition);
 	};
 
-	YCdrag.prototype.disableTransition = function($dragItem) {
+	YCdrag.prototype.disableTransition = function() {
 		// 去掉css  Transition
 		var _ = this,
 			transition = {};
 
 		transition[_.transitionType] = '';
 
-		$dragItem.css(transition);
+		_.$dragItem.css(transition);
 	};
 
 	// 添加触发事件的方法
@@ -507,7 +544,7 @@
 				break;
 			}
 		}
-		console.log('ul data : rows = ', _.rows, ', cols = ', _.cols);
+		//console.log('ul data : rows = ', _.rows, ', cols = ', _.cols);
 
 		// 计算第一个li的页面坐标, 以此作为参考基准
 		_.li_1_top = _.$items.eq(0).offset().top;
@@ -571,28 +608,25 @@
 		}
 		_.transformsEnabled = _.options.useTransform && (_.animType !== null && _.animType !== false);
 		//_.transformsEnabled = false;// 测试用
+		_.cssTransitions = false;// 测试用
 	};
 
 	YCdrag.prototype.setCSS = function(position) {
-		// position = {left: ?, top: ?} 触控点位置
-		// 提供拖拽的item的css定位
+		// 方法setCSS: 即时位置调整
 		var _ = this,
 			positionProps = {},
 			$obj = _.$dragItem,
 			x, y;
 
+		x =  Math.ceil(position.left) + 'px';
+		y =  Math.ceil(position.top) + 'px';
+
 		if (_.transformsEnabled === false) {
-			// css位置, 基于$dragItem是position:relative的基础
-			x = Math.ceil(position.left - _.eventStartX + _.dx) + 'px';
-			y = Math.ceil(position.top - _.eventStartY + _.dy) + 'px';
 			$obj.css({'left': x, "top": y});
 		} else {
 			positionProps = {};
-			// 这里的原理是不同的, 因为这里使用了位移, 是在原基础上的位移多少, 可以说是直接追踪触控点的距离
-			x =  Math.ceil(position.left - _.eventStartX) + 'px';
-			y =  Math.ceil(position.top - _.eventStartY) + 'px';
-
 			if (_.cssTransitions === false) {
+				console.log('setCSS    使用translate的CSS方法');
 				positionProps[_.animType] = 'translate(' + x + ', ' + y + ')';
 				$obj.css(positionProps);
 				//console.log(positionProps)
@@ -605,24 +639,30 @@
 	};
 
 	YCdrag.prototype.animateSlide = function(position, callback) {
-		// 动画效果的滑动, 且接收callback
-		// position是什么位置, 应该是最终位置好了, 但为何setCSS不是最终位置, 而是触控点位置?
-		var animProps = {},
-			$obj = _.$dragItem,
-			_ = this;
+		// 方法animateSlide: 位置调整的动画滑动效果, 且接收callback
+		var _ = this,
+			animProps = {},
+			$obj = _.$dragItem;
 
 		if (_.transformsEnabled === false) {
 			// 降级方案 使用animate方案
-			$obj.animate(position, _.options.timeDuration, _.options.easing, callback);
-
+			$obj.animate(position, _.options.resetDuration, _.options.easing, callback);
 		} else {
 
 			if (_.cssTransitions === false) {
-				// 使用translate的CSS方法
-				var startPosition = {"left":_.mvX, "top":_.mvY},curPosition = {"left":_.mvX, "top":_.mvY}, pr = {};
+				// 使用translate的CSS方法, 需要获取到$dragItem的translate位置
+				// 获取本对象$dragItem的css属性translate的值:
+				var objOriginal =_.$dragItem[0].style.transform,
+					objOriginalX = Number(objOriginal.substring(10, objOriginal.indexOf("px"))),
+					objOriginalY = Number(objOriginal.substring(objOriginal.lastIndexOf(",") + 1, objOriginal.lastIndexOf("px")));
+
+				var startPosition = {"left":objOriginalX, "top":objOriginalY},
+					curPosition = {"left":objOriginalX, "top":objOriginalY},
+					pr = {};
+
 				$(startPosition)// 这个位置是拖拽的最后的位置, 也就是moveEvent的位置
 					.animate(position, {
-						duration: _.options.timeDuration,
+						duration: _.options.resetDuration,
 						easing: _.options.easing,
 						step: function(now, data) {
 							pr[data.prop] = now;
@@ -652,7 +692,7 @@
 						_.disableTransition();
 
 						callback.call();
-					}, _.options.timeDuration);
+					}, _.options.resetDuration);
 				}
 			}
 
@@ -669,13 +709,13 @@
 			ret;
 
 		_.YCdrag = new YCdrag(_, opt);
-		//for (i = 0; i < l; i++) {
-		//	if (typeof opt == 'object' || typeof opt == 'undefined')
-		//		_[i].YCdrag = new YCdrag(_[i], opt);
-		//	else
-		//		ret = _[i].YCdrag[opt].apply(_[i].YCdrag, args);
-		//	if (typeof ret != 'undefined') return ret;
-		//}
+		for (i = 0; i < l; i++) {
+			if (typeof opt == 'object' || typeof opt == 'undefined')
+				_[i].YCdrag = new YCdrag(_[i], opt);
+			else
+				ret = _[i].YCdrag[opt].apply(_[i].YCdrag, args);
+			if (typeof ret != 'undefined') return ret;
+		}
 		return _;
 	};
 

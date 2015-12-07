@@ -12,13 +12,13 @@
     background: lightcyan;
     text-align: center;
 }
-.junDrag .dragItem.active{
+.junDrag .dragItem.activeYCdrag{
     background: lightblue;
 }
-.junDrag .dragItem.active.host {
-    opacity: 0.3
+.YCdraggingItem {
+    opacity: 0.3;
 }
-.junDrag .dragItem.active.clone {
+.junDrag .dragItem.activeYCdrag.YCdragClone {
     opacity:1;
     position:relative;
     background: deepskyblue;
