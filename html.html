@@ -14,22 +14,23 @@
 <script src="libs/jquery.js"></script>
 <script src="junDrag.js"></script>
 <script>
-//	var dragControl = new YCdrag({
-//		Container:".junDrag",
-//		ItemClass: "",
-//		dataList:[
-//			{name:'drag 1',src:'./img/icon_1.png',id:1},
-//			{name:'drag 2',src:'./img/icon_2.png',id:2},
-//			{name:'drag 3',src:'./img/icon_3.png',id:3},
-//			{name:'drag 4',src:'./img/icon_4.png',id:4},
-//			{name:'drag 5',src:'./img/icon_5.png',id:5},
-//			{name:'drag 6',src:'./img/icon_6.png',id:6},
-//			{name:'drag 7',src:'./img/icon_7.png',id:7},
-//			{name:'drag 8',src:'./img/icon_8.png',id:8},
-//			{name:'drag 9',src:'./img/icon_9.png',id:9}
-//		]
-//	});
-//
+	var dragControl = new YCdrag({
+		container:".junDrag",
+		ItemNode:"li",
+//		ItemClassName: "cell",
+		closebtnthml:"<span class='YCdragCloseBtnd'>2</span>",
+		dataList:[
+			{text:'信用卡', icon:"c", id:"credit", link:"example/index/mycountDetail"},
+			{text:'理财交易', icon:"d", id:"product", link:"example/index/iwant"},
+			{text:'生活缴费', icon:"e", id:"life", link:"example/index/lifePayment"},
+			{text:'关联转账', icon:"f", id:"", link:""},
+			{text:'周边', icon:"g", id:"bankNodes", link:"example/index/bankNodes"},
+			{text:'话费充值', icon:"h", id:"recharge", link:"example/index/recharge"},
+			{text:'无卡取款', icon:"i", id:"", link:""},
+			{text:'组件展示', icon:"d", id:"toComponentsList", link:"demo/demo/list"}
+		]
+	});
+
 //	dragControl.addEvent("click", function() {
 //		console.log('点击了一下');
 //	});
@@ -78,21 +79,21 @@
 //		}
 //	};
 
-	var dragController = $('.junDrag').YCdrag({
-//		ItemNode:"li",
-//		ItemClassName:"cell",
-		closehtml:"<span></span>",
-		dataList:[
-			{text:'信用卡', icon:"c", id:"credit", link:"example/index/mycountDetail"},
-			{text:'理财交易', icon:"d", id:"product", link:"example/index/iwant"},
-			{text:'生活缴费', icon:"e", id:"life", link:"example/index/lifePayment"},
-			{text:'关联转账', icon:"f", id:"", link:""},
-			{text:'周边', icon:"g", id:"bankNodes", link:"example/index/bankNodes"},
-			{text:'话费充值', icon:"h", id:"recharge", link:"example/index/recharge"},
-			{text:'无卡取款', icon:"i", id:"", link:""},
-			{text:'组件展示', icon:"d", id:"toComponentsList", link:"demo/demo/list"}
-		]
-	});
+//	var dragController = $('.junDrag').YCdrag({
+////		ItemNode:"li",
+////		ItemClassName:"cell",
+//		closehtml:"<span></span>",
+//		dataList:[
+//			{text:'信用卡', icon:"c", id:"credit", link:"example/index/mycountDetail"},
+//			{text:'理财交易', icon:"d", id:"product", link:"example/index/iwant"},
+//			{text:'生活缴费', icon:"e", id:"life", link:"example/index/lifePayment"},
+//			{text:'关联转账', icon:"f", id:"", link:""},
+//			{text:'周边', icon:"g", id:"bankNodes", link:"example/index/bankNodes"},
+//			{text:'话费充值', icon:"h", id:"recharge", link:"example/index/recharge"},
+//			{text:'无卡取款', icon:"i", id:"", link:""},
+//			{text:'组件展示', icon:"d", id:"toComponentsList", link:"demo/demo/list"}
+//		]
+//	});
 
 //	var modifyMode = false;
 

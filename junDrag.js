@@ -23,10 +23,7 @@
 // 阉割html的生成方法, 减少开发接口, 只开放结束编辑
 // 使用类方法
 // 排序的动画效果是之后版本考虑的
-
-// 有可能的bug
-// dragItemReset使用定时方法来清理动画, 可能由于浏览器线程不可预计的情况有偏差,
-// slick组件是1,对于translate是产生一个虚拟对象执行aniamite的方法来添加callback; 2,对于translate3D的话就是采取setTimeout的callback措施
+// 改名称DraggableMenu
 
 // 思考:
 // 点击后才绑定拖拽的事件是否不好?
@@ -52,15 +49,17 @@
 		return (hasTouch? event.originalEvent.touches[0] : event)['page' + coord.toUpperCase()];
 	};
 
-	var YCdrag = window.YCdrag || {};
-	YCdrag = function (container ,options) {
+	window.YCdrag = function (options) {
 		var _ = this;
 		// 默认选项
 		var defalutOptions = {
 			// 子容器属性
+			container:".junDrag",
 			ItemNode:"li",
 			ItemClassName:"dragItem",
-			ItemAttrs:{'data-YC':'drag'},
+			ItemAttrs:{
+				//'data-YC':'drag'
+			},
 			activeClass:"activeYCdrag",
 			draggingClass:"YCdraggingItem",
 			// 或添加关闭按钮:
@@ -84,11 +83,12 @@
 		var initialSettings = {
 
 			// 对象
-			$container: $(container),
+			$container: null,
 			$items: null,
-			$dragTarget:null,
+			$Target:null,
 			$dragItem: null,
 			$el:null,
+			$touchTarget:null,
 
 			// html
 			template:[],
@@ -111,6 +111,7 @@
 
 			// 修改状态
 			dragging:false,
+			editing:false, // 编辑模式是针对长按状态里添加"添加或删除"按钮进行编辑, 逻辑是长按进入编辑状态
 
 			// 事件相关的基本属性
 			eventStartX: null,
@@ -144,27 +145,25 @@
 
 		_.options.ItemClass = "." + _.options.ItemClassName;
 
-		// 调整css
-		_.$container.css('position','relative');
+		_.$container = $(_.options.container).css('position','relative');
 
 		_.init();
 	};
 
 	YCdrag.prototype.init = function() {
 		var _ = this;
-		setTimeout(function(){// 设置延时执行, 提供可修改YCdrag原型方法,
-			_.render();
 
-			// 添加对象jQuery包装集$items
-			_.$items = _.$container.find(_.options.ItemClass);
+		_.render();
 
-			_.size();
+		// 添加对象jQuery包装集$items
+		_.$items = _.$container.find(_.options.ItemClass);
 
-			_.setProps();
+		_.size();
 
-			// 执行绑定事件
-			_.initailizeEvent();
-		},1);
+		_.setProps();
+
+		// 执行绑定事件
+		_.initailizeEvent();
 	};
 
 	YCdrag.prototype.templatelist = function(data, i, datas){
@@ -223,13 +222,17 @@
 				event.originalEvent.touches.length : 1;
 			if(fingerCount > 1){return;}
 
-			_.$dragTarget = $(this);
+			if(event.currentTarget.className === _.options.ItemClassName){
+				_.$touchTarget =  $(event.currentTarget);
+			}else {
+				console.log('非点击正确'); return
+			}
 
 			_.fireEvent("touchStart", [_.$container]);
 
 			_.$container.trigger('touchStartsetPosition', [_]);
 
-			_.startTargetIndex = _.$dragTarget.addClass(_.options.activeClass).index();
+			_.startTargetIndex = _.$touchTarget.addClass(_.options.activeClass).index();
 
 			_.startTime = event.timeStamp || +new Date();
 
@@ -240,12 +243,26 @@
 
 			_.setTimeFunc = setTimeout(function(){
 				// 以timeDuration为间隔触发press事件
-				_.fireEvent("press",[_.$dragTarget])
+				if(_.editing){
+					_.$Target.find("." + $(_.options.closebtnthml)[0].className).remove();
+				} else {
+					_.editing = true;
+				}
+
+				_.$Target = _.$touchTarget;
+
+				_.$Target.append(
+					$(_.options.closebtnthml).on(_.startEvent, function(){
+						_.$Target.remove();
+					})
+				);
+
+				_.fireEvent("press",[_.$Target]);
 			}, _.options.timeDuration);
 
 			// 绑定事件stopEvent, 本方法必须在绑定拖拽事件之前
 			$('body').one(_.stopEvent, function(){
-				_.stopEventFunc();
+				_.stopEventFunc(this);
 			});
 
 			// 绑定拖拽事件
@@ -278,7 +295,12 @@
 
 				if(newTime - _.startTime < 250){ // 只有在时间限制内才是click事件
 
-					_.fireEvent("click", [_.$dragTarget]);
+					_.fireEvent("click", [_.$Target]);
+
+					if(_.editing){
+						_.$Target.find("." + $(_.options.closebtnthml)[0].className).remove();
+						_.editing = false;
+					}
 				}
 
 			}
@@ -287,7 +309,7 @@
 		_.InitializeMoveEvent = false;
 		_.dragging = false;
 	};
-// DraggableMenu
+
 	YCdrag.prototype.dragItemReset = function(){
 		// mouseUp动画
 		var _ = this;
@@ -296,7 +318,7 @@
 		// 方法是计算touchStart时dragTarget的坐标和最终滑向位置$dragTarget的坐标之间的差距
 		// touchStart时dragItem的坐标: _.itemStartPagePos
 		// 最终dragItem滑向位置的坐标:$(this).offset();
-		var targetPos = _.$dragTarget.offset();
+		var targetPos = _.$Target.offset();
 		var resetX =  targetPos.left - _.itemStartPagePos.left,
 			resetY = targetPos.top - _.itemStartPagePos.top;
 
@@ -310,29 +332,12 @@
 			resetY = _.$container.find("."+ _.options.activeClass).position().top - _.dragItemOriginalpos.top;
 		}
 
-		// 获取目标相对于窗口的定位
-		//var targetPos = _.$dragTarget.offset();
-		//
-		//// 计算出模拟触控点拖item到指定位置的触控点坐标
-		//var x =  targetPos.left + (_.eventStartX - _.itemStartPagePos.left),
-		//	y = targetPos.top + (_.eventStartY - _.itemStartPagePos.top) ;
-
-		// 添加css3的transition属性, 使translate有动画效果
-		//_.applyTransition(_.$dragItem);
-
+		// 执行滑动效果
 		_.animateSlide({'left': resetX, 'top': resetY}, function(){
 			_.$container.find('.' + _.options.dragClass).remove();
 			_.$container.find(_.options.ItemClass).removeClass(_.options.activeClass).removeClass(_.options.draggingClass);
-			_.fireEvent("afterDrag", [_.$dragTarget]);
+			_.fireEvent("afterDrag", [_.$Target]);
 		});
-
-		// 可能的bug: dragItemReset使用定时方法来清理动画, 可能由于浏览器线程不可预计的情况有偏差, 所以建议模拟slick的产生一个虚拟对象执行aniamite的方法来添加callback来清理动画效果!
-		//setTimeout(function(){
-		//	_.$container.find('.' + _.options.dragClass).remove();
-		//	_.$container.find(_.options.ItemClass).removeClass('active host');
-		//	_.disableTransition(_.$dragItem);
-		//	_.fireEvent("afterDrag", [_.$dragTarget]);
-		//}, _.options.resetDuration);
 	};
 
 	YCdrag.prototype.drag = function(){
@@ -399,21 +404,23 @@
 					// 需要重新获取$items, 不然出现Bug: 多次排序出错
 					_.$items = _.$container.find(_.options.ItemClass);
 
-					_.$dragTarget.addClass(_.options.draggingClass);
+					_.$Target = _.$touchTarget;
+
+					_.$Target.addClass(_.options.draggingClass);
 
 					// 获取点击对象的相对父级的位置
-					//_.startPos = _.$dragTarget.position();
+					//_.startPos = _.$Target.position();
 
 					// 复制拖拽目标
 					_.$dragItem =
-						_.$dragTarget.clone()
+						_.$Target.clone()
 							.addClass(_.options.dragClass)
 							.appendTo(_.$container);// Bug: 改变了$container的高度! 但可通过css固定高度
 
 					_.dragItemOriginalpos = _.$dragItem.position();
 					// $dragTarget的坐标
-					dragItemStartX = _.dragItemStartX = _.$dragTarget.position().left - _.$dragItem.position().left;
-					dragItemStartY = _.dragItemStartY = _.$dragTarget.position().top - _.$dragItem.position().top;
+					dragItemStartX = _.dragItemStartX = _.$Target.position().left - _.$dragItem.position().left;
+					dragItemStartY = _.dragItemStartY = _.$Target.position().top - _.$dragItem.position().top;
 					
 					// $dragItem的坐标调整等于$dragTarget的坐标
 					_.$dragItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
@@ -463,11 +470,11 @@
 				if(_.MEMOmoveTargetIndex == _.moveTargetIndex){ return }
 
 				if(_.moveTargetIndex < _.startTargetIndex){
-					_.$items.eq(_.moveTargetIndex).before(_.$dragTarget);
+					_.$items.eq(_.moveTargetIndex).before(_.$Target);
 				}else if(_.moveTargetIndex > _.startTargetIndex){
-					_.$items.eq(_.moveTargetIndex).after(_.$dragTarget);
+					_.$items.eq(_.moveTargetIndex).after(_.$Target);
 				}else if(_.moveTargetIndex == _.startTargetIndex){
-					_.$items.eq(_.moveTargetIndex - 1).after(_.$dragTarget);
+					_.$items.eq(_.moveTargetIndex - 1).after(_.$Target);
 				}
 
 			}
@@ -698,24 +705,24 @@
 
 	};
 
-	$.fn.YCdrag = function() {
-		var _ = this,
-			opt = arguments[0],// 获取传入参数,不用管什么对象了
-			args = Array.prototype.slice.call(arguments, 1),
-			l = _.length,
-			i,
-			ret;
-
-		_.YCdrag = new YCdrag(_, opt);
-		for (i = 0; i < l; i++) {
-			if (typeof opt == 'object' || typeof opt == 'undefined')
-				_[i].YCdrag = new YCdrag(_[i], opt);
-			else
-				ret = _[i].YCdrag[opt].apply(_[i].YCdrag, args);
-			if (typeof ret != 'undefined') return ret;
-		}
-		return _;
-	};
+	//$.fn.YCdrag = function() {
+	//	var _ = this,
+	//		opt = arguments[0],// 获取传入参数,不用管什么对象了
+	//		args = Array.prototype.slice.call(arguments, 1),
+	//		l = _.length,
+	//		i,
+	//		ret;
+	//
+	//	_.YCdrag = new YCdrag(_, opt);
+	//	for (i = 0; i < l; i++) {
+	//		if (typeof opt == 'object' || typeof opt == 'undefined')
+	//			_[i].YCdrag = new YCdrag(_[i], opt);
+	//		else
+	//			ret = _[i].YCdrag[opt].apply(_[i].YCdrag, args);
+	//		if (typeof ret != 'undefined') return ret;
+	//	}
+	//	return _;
+	//};
 
 }));
 

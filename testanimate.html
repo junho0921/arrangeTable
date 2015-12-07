@@ -63,6 +63,10 @@
 </script>
 
 <script>
+	var closebtnthml = "<span class = 'jjj'></span><span class = '222'></span>";
+	console.log('closebtnthml', $(closebtnthml)[0].className);
+//	console.log($('<div>').append(closebtnthml).children().attr('class'));
+//	console.log('remove', tt);
 	$('button').click(function(){
 		$('.sec').append($('.container').children().addClass('sssss'));
 	})
