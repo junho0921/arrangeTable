@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>animate</title>
+</head>
+<body>
+<style>li{
+	background: lightpink;
+	border: 2px solid lightgoldenrodyellow;
+	display: inline-block;
+	font-size: 32px;}</style>
+<div class="container" style="padding:30px; background: lightgreen;">
+	<ul class="list">
+		<li class="item">01</li>
+		<li class="item">02</li>
+		<li class="item">03</li>
+		<li class="item">04</li>
+		<li class="item">05</li>
+		<li class="item">06</li>
+		<li class="item">07</li>
+		<li class="item">08</li>
+		<li class="item">09</li>
+	</ul>
+</div>
+<button>按钮</button>
+<div class="sec" style="padding:30px; background: lightcoral;">
+
+</div>
+<script src="./libs/jquery.js"></script>
+<script>
+//	var _ = {
+//		currentLeft:60,
+//		targetLeft:600,
+//		animProps:{},
+//		animType: "transform",
+//		callback:function(){
+//			console.log('ok')
+//		},
+//		options:{
+//			speed: 1000
+//		}
+//	};
+//	var cr = {"top":60, "left":180};
+//	var tr = {"top":-40, "left":999};
+//	var nr = {"top":cr.top, "left":cr.left};
+//	var pr = {};
+//	$(cr)
+//			.animate(tr, {
+//				duration: _.options.speed,
+//				step: function(now, nowe) {// 规定动画的每一步完成之后要执行的函数
+//					// now是每步更新的修改值
+//					pr[nowe.prop] = now;
+//					$.extend(nr,pr);
+//					console.log(nr);
+//				},
+//				complete: function() {
+//					if (_.callback) {
+//						_.callback.call();
+//					}
+//				}// 为何要使用模拟对象的方法？ 可能需要animate的callback函数回调
+//			});
+</script>
+
+<script>
+	$('button').click(function(){
+		$('.sec').append($('.container').children().addClass('sssss'));
+	})
+</script>
+</body>
+</html>
