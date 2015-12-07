@@ -244,8 +244,8 @@
 			}, _.options.timeDuration);
 
 			// 绑定事件stopEvent, 本方法必须在绑定拖拽事件之前
-			$('body').one(_.stopEvent, function(event){
-				_.stopEventFunc(event);
+			$('body').one(_.stopEvent, function(){
+				_.stopEventFunc();
 			});
 
 			// 绑定拖拽事件
@@ -253,7 +253,7 @@
 		});
 	};
 
-	YCdrag.prototype.stopEventFunc = function(event){
+	YCdrag.prototype.stopEventFunc = function(){
 		// 停止事件方法stopEventFunc功能: 
 		// 1,取消绑定moveEvent事件(但不负责取消stopEvent事件); 
 		// 2,清理定时器;
@@ -261,7 +261,6 @@
 		// B,没有拖动的话, 思考是什么情况: 
 		// YCdrag有三个应用情况: a, stopEvent情况应用; b,moveEvent里的取消拖动的两种情况:太快, 触控变位(闪拉情况)
 
-		console.log('stop', event.pageX, event.pageY);
 		var _ = this;
 
 		clearTimeout(_.setTimeFunc);
@@ -373,17 +372,17 @@
 				var outRang = (Move_ex - _.eventStartX ) > _.options.RangeXY ||
 				(Move_ey - _.eventStartY) > _.options.RangeXY;
 
-				console.log('outRang', outRang, 'inShort', inShort);
+				//console.log('outRang', outRang, 'inShort', inShort);
 
 				if (inShort){
 					if(outRang){
-						console.log('非拖拽的swipe');
+						//console.log('非拖拽的swipe');
 						_.fireEvent("swipe", []);
 						_.stopEventFunc();
 						return;
 					} else {
 						// 允许微动, 忽略(return)本次操作, 可继续绑定触发moveEvent
-						console.log('允许微动, 忽略(return)本次操作, 可继续绑定触发moveEvent');
+						//console.log('允许微动, 忽略(return)本次操作, 可继续绑定触发moveEvent');
 						// 思考: 这里不能停止绑定事件, 因为只是微动或震动, 是允许范围
 						// 这里应该提供允许click事件的属性
 						return;
@@ -608,7 +607,7 @@
 		}
 		_.transformsEnabled = _.options.useTransform && (_.animType !== null && _.animType !== false);
 		//_.transformsEnabled = false;// 测试用
-		_.cssTransitions = false;// 测试用
+		//_.cssTransitions = false;// 测试用
 	};
 
 	YCdrag.prototype.setCSS = function(position) {
@@ -626,7 +625,6 @@
 		} else {
 			positionProps = {};
 			if (_.cssTransitions === false) {
-				console.log('setCSS    使用translate的CSS方法');
 				positionProps[_.animType] = 'translate(' + x + ', ' + y + ')';
 				$obj.css(positionProps);
 				//console.log(positionProps)
@@ -718,9 +716,6 @@
 		}
 		return _;
 	};
-
-
-
 
 }));
 
