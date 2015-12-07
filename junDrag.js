@@ -88,7 +88,6 @@
 
 		// 关于动画效果的设置
 		var initialSettings = {
-
 			// 对象
 			$container: null,
 			$items: null,
@@ -344,7 +343,7 @@
 		var DrM = this;
 		this.animateSlide({'left': resetX, 'top': resetY}, function(){
 			DrM.$container.find('.' + DrM.options.dragClass).remove();
-			DrM.$container.find(DrM.options.ItemClass).removeClass(DrM.options.activeClass + " " +DrM.options.draggingClass);
+			DrM.$container.find(DrM.options.ItemClass).removeClass(DrM.options.activeClass + " " + DrM.options.draggingClass);
 			DrM.fireEvent("afterDrag", [DrM.$Target]);
 		});
 	};
@@ -619,7 +618,7 @@
 		}
 		this.transformsEnabled = this.options.useTransform && (this.animType !== null && this.animType !== false);
 		//this.transformsEnabled = false;// 测试用
-		//this.cssTransitions = false;// 测试用
+		this.cssTransitions = false;// 测试用
 	};
 
 	DraggableMenu.prototype.setCSS = function(position) {
@@ -649,7 +648,7 @@
 
 	DraggableMenu.prototype.animateSlide = function(position, callback) {
 		// 方法animateSlide: 位置调整的动画滑动效果, 且接收callback
-		var animProps = {},
+		var animProps = {}, DrM = this,
 			$obj = this.$dragItem;
 
 		if (this.transformsEnabled === false) {
@@ -660,7 +659,7 @@
 			if (this.cssTransitions === false) {
 				// 使用translate的CSS方法, 需要获取到$dragItem的translate位置
 				// 获取本对象$dragItem的css属性translate的值:
-				var objOriginal =this.$dragItem[0].style.transform,
+				var objOriginal = this.$dragItem[0].style.transform,
 					objOriginalX = Number(objOriginal.substring(10, objOriginal.indexOf("px"))),
 					objOriginalY = Number(objOriginal.substring(objOriginal.lastIndexOf(",") + 1, objOriginal.lastIndexOf("px")));
 
@@ -668,14 +667,16 @@
 					curPosition = {"left":objOriginalX, "top":objOriginalY},
 					pr = {};
 
+				console.log(startPosition);
+
 				$(startPosition)// 这个位置是拖拽的最后的位置, 也就是moveEvent的位置
 					.animate(position, {
 						duration: this.options.resetDuration,
-						easing: this.options.easing,
+						//easing: this.options.easing,
 						step: function(now, data) {
 							pr[data.prop] = now;
 							$.extend(curPosition, pr);
-								animProps[this.animType] = 'translate(' +
+								animProps[DrM.animType] = 'translate(' +
 									curPosition.left + 'px, ' + curPosition.top + 'px)';
 								$obj.css(animProps);
 						},
@@ -694,7 +695,6 @@
 
 				$obj.css(animProps);
 
-				var DrM = this;
 
 				if (callback) {
 					setTimeout(function() {
