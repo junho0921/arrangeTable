@@ -61,15 +61,11 @@
 		var defalutOptions = {
 			// 子容器属性
 			container:".DraggableMenu",
-			ItemNode:"li",
-			ItemClassName:"dragItem",
-			ItemAttrs:{
-				//'data-YC':'drag'
-			},
 			activeClass:"activeDraggableMenu",
 			draggingClass:"DraggingItem",
+			dragClass:"DraggableMenuClone",
+
 			// 或添加关闭按钮:
-			closeBtnAdd: false,
 			closebtnthml:"<span class='DraggableMenuCloseBtn'>X</span>",
 			// 时间
 			timeDuration: 300,
@@ -78,14 +74,26 @@
 			useTransform: true, // <1>
 			useCSS: true,
 			easing: "ease",
-			// 类
-			dragClass:"DraggableMenuClone",
 			// 允许触控的边缘
-			RangeXY: 60,
+			RangeXY: 12,
 			// 内容
 			dataList:[],
 			// 选择模板
-			templateRender:true
+			templateRender:true,
+
+			// 公开方法:
+			renderer: function(data, i, datas){
+			// 本方法提供给用户修改, 但要求必须返回html字符串作为每个item的内容
+				return $('<li>').addClass('dragItem').append(
+					$('<div>')
+						.attr({'id': data.id})
+						.append($("<i class='list-ico'>").addClass(data.icon))
+						.append($('<span>').text(data.text))
+				)[0].outerHTML
+			},
+			onItemTap:null,
+			onDragEnd:null,
+			onClose:null
 		};
 
 		// 关于动画效果的设置
@@ -151,8 +159,6 @@
 
 		this.options = $.extend({}, defalutOptions, options);
 
-		this.options.ItemClass = "." + this.options.ItemClassName;
-
 		this.$container = $(this.options.container).css('position','relative');
 
 		this.init();
@@ -164,8 +170,12 @@
 
 		if(this.options.templateRender && this.options.dataList.length){this.render();}
 
+		var DrM = this;
 		// 添加对象jQuery包装集$items
-		this.$items = this.$container.find(this.options.ItemClass);
+		//this.$items = this.$container.find(this.options.ItemClass);
+		this.$items = this.$container.children().each(function(i, item){
+			$(item).data('DraggableMenuData', DrM.options.dataList[i])
+		});
 
 		this.size();
 
@@ -175,17 +185,15 @@
 		this.initailizeEvent();
 	};
 
-	DraggableMenu.prototype.templatelist = function(data, i, datas){
-		// 本方法提供给用户修改, 但要求必须返回html字符串作为每个item的内容
-		return $('<div>')
-			.attr({'id': data.id, "data-YClink": data.link})
-				.append($("<i class='list-ico'>").addClass(data.icon))
-				.append($('<span>').text(data.text))
-				[0].outerHTML
-	};
-
-	// 思考可不可以直接使用templaterequire灵活
-	// 提供几个例子来使用
+	//DraggableMenu.prototype.templatelist = function(data, i, datas){
+	//	// 本方法提供给用户修改, 但要求必须返回html字符串作为每个item的内容
+	//	return $('<li>').addClass('dragItem').append(
+	//		$('<div>')
+	//			.attr({'id': data.id})
+	//			.append($("<i class='list-ico'>").addClass(data.icon))
+	//			.append($('<span>').text(data.text))
+	//	)[0].outerHTML
+	//};
 
 	DraggableMenu.prototype.templatefn = function(){
 		console.log('templatefn 默认方法');
@@ -193,15 +201,12 @@
 			len = data.length;
 
 		for(var i = 0; i < len; i ++){
-			// 产生容器$itemli
-			// 获取设定的属性
-			var attrs = $.extend({}, this.options.ItemAttrs);
 			// ItemAttrs是用来赋值给$el的html属性
-			var $itemli = $('<' + this.options.ItemNode + '>').addClass(this.options.ItemClassName).attr(attrs);
-			$itemli.html(
-				this.templatelist(data[i], i, data)
-			);
-			this.template.push($itemli[0].outerHTML);
+			var $itemli = this.options.renderer(data[i], i, data);
+
+			this.ItemClassName = $($itemli)[0].className;
+
+			this.template.push($itemli);
 		}
 	};
 
@@ -216,7 +221,7 @@
 
 	DraggableMenu.prototype.getData = function(fnc){
 		// 此方法作为数据绑定获取数据, 但可通过DOM操作就完成, 仅作参考
-		 var items = this.$container.find(this.options.ItemClass);
+		 var items = this.$container.children();
 		return fnc(items);
 	};
 
@@ -230,15 +235,13 @@
 				event.originalEvent.touches.length : 1;
 			if(fingerCount > 1){return;}
 
-			if(event.currentTarget.className.indexOf(DrM.options.ItemClassName > -1)){
+			if(event.currentTarget.className.indexOf(DrM.ItemClassName > -1)){
 				DrM.$touchTarget =  $(event.currentTarget);
 			}else {
 				console.log('非点击拖动对象'); return
 			}
-
+			console.log('---> ', DrM.$touchTarget, DrM.$Target);
 			//DrM.fireEvent("touchStart", [DrM.$container]);
-
-			//DrM.$container.trigger('touchStasssrt', [DrM.$container]);
 
 			DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeClass).index();
 
@@ -250,21 +253,10 @@
 			DrM.itemStartPagePos = $(this).offset();
 
 			DrM.setTimeFunc = setTimeout(function(){
+
+				DrM.enterEditingMode();
+
 				// 以timeDuration为间隔触发press事件
-				if(DrM.editing){
-					DrM.$Target.find("." + $(DrM.options.closebtnthml)[0].className).remove();
-				} else {
-					DrM.editing = true;
-				}
-
-				DrM.$Target = DrM.$touchTarget;
-
-				DrM.$Target.append(
-					$(DrM.options.closebtnthml).on(DrM.startEvent, function(){
-						DrM.$Target.remove();
-					})
-				);
-
 				//DrM.fireEvent("press",[DrM.$Target]);
 			}, DrM.options.timeDuration);
 
@@ -278,7 +270,29 @@
 		});
 	};
 
-	DraggableMenu.prototype.stopEventFunc = function(){
+	DraggableMenu.prototype.enterEditingMode = function(){
+		var DrM = this;
+
+		if(!this.editing){
+			this.editing = true;
+		}else{
+			if(this.$Target === this.$touchTarget){
+				return
+			}else{
+				this.$Target.find("." + $(this.options.closebtnthml)[0].className).remove();
+			}
+		}
+
+		this.$Target = this.$touchTarget
+			.append(
+			$(this.options.closebtnthml).on(this.startEvent, function(){
+				DrM.$Target.remove();
+				DrM.options.onClose();
+			})
+		);
+	};
+
+	DraggableMenu.prototype.stopEventFunc = function(rrrrr){
 		// 停止事件方法stopEventFunc功能: 
 		// 1,取消绑定moveEvent事件(但不负责取消stopEvent事件); 
 		// 2,清理定时器;
@@ -295,7 +309,7 @@
 			this.dragItemReset();
 
 		}else{ // 没有拖拽后的mouseUp, 判断为click
-			this.$container.find(this.options.ItemClass).removeClass(this.options.activeClass + " " +this.options.draggingClass);
+			this.$container.children().removeClass(this.options.activeClass + " " +this.options.draggingClass);
 
 			if(this.dragging === false){// 不能在移动触控的情况触发点击事件!
 
@@ -314,6 +328,8 @@
 						this.$container.trigger("editEnd", [this.$Target]);
 
 						this.editing = false;
+					} else{
+						this.options.onItemTap(this.$touchTarget.data('DraggableMenuData'));
 					}
 				}
 
@@ -349,7 +365,8 @@
 		var DrM = this;
 		this.animateSlide({'left': resetX, 'top': resetY}, function(){
 			DrM.$container.find('.' + DrM.options.dragClass).remove();
-			DrM.$container.find(DrM.options.ItemClass).removeClass(DrM.options.activeClass + " " + DrM.options.draggingClass);
+			DrM.options.onDragEnd();
+			DrM.$container.children().removeClass(DrM.options.activeClass + " " + DrM.options.draggingClass);
 			//DrM.fireEvent("afterDrag", [DrM.$Target]);
 		});
 	};
@@ -416,9 +433,10 @@
 					// 满足两个条件后, 初始化(仅进行一次)
 
 					// 需要重新获取$items, 不然出现Bug: 多次排序出错
-					DrM.$items = DrM.$container.find(DrM.options.ItemClass);
 
-					DrM.$Target = DrM.$touchTarget;
+					DrM.enterEditingMode();
+
+					DrM.$items = DrM.$container.children();
 
 					// 获取点击对象的相对父级的位置
 					//DrM.startPos = DrM.$Target.position();

@@ -10,14 +10,6 @@
 <button>获取数据</button>
 <!--<div class="DraggableMenu"></div>-->
 <ul class="table-col-4 DraggableMenu">
-	<li class="cell dragItem" id="credit"><i class="list-ico c"></i><span>信用卡</span></li><!--
-				--><li class="cell dragItem" id="product"><i class="list-ico d"></i><span>理财交易</span></li><!--
-				--><li class="cell dragItem" id="life"><i class="list-ico e"></i><span>生活缴费</span></li><!--
-				--><li class="cell dragItem"><i class="list-ico f"></i><span>关联转账</span></li><!--
-				--><li class="cell dragItem" id="bankNodes"><i class="list-ico g"></i><span>周边</span></li><!--
-				--><li class="cell dragItem" id="recharge"><i class="list-ico h"></i><span>话费充值</span></li><!--
-				--><li class="cell dragItem"><i class="list-ico i"></i><span>无卡取款</span></li><!--
-				--><li class="cell dragItem" id="toComponentsList"><i class="list-ico d"></i><span>组件展示</span></li>
 
 </ul>
 
@@ -46,14 +38,43 @@
 //	});
 
 	var dragControl = new DraggableMenu({
+
 		container:".DraggableMenu",
-		ItemClassName: "dragItem",
-		closebtnthml:"<span class='DraggableMenuCloseBtn'>X</span>"
+
+		dataList:[
+			{text:'信用卡', icon:"c", id:"credit", url:"example/index/mycountDetail"},
+			{text:'理财交易', icon:"d", id:"product", url:"example/index/iwant"},
+			{text:'生活缴费', icon:"e", id:"life", url:"example/index/lifePayment"},
+			{text:'关联转账', icon:"f", id:"", url:""},
+			{text:'周边', icon:"g", id:"bankNodes", url:"example/index/bankNodes"},
+			{text:'话费充值', icon:"h", id:"recharge", url:"example/index/recharge"},
+			{text:'无卡取款', icon:"i", id:"", url:""},
+			{text:'组件展示', icon:"d", id:"toComponentsList", url:"demo/demo/list"}
+		],
+
+		renderer: function(data, i){
+			// <li class="dragItem" id="recharge"><i class="list-ico h"></i><span>话费充值</span></li>
+			return $('<li>').addClass('dragItem').attr({'id': data.id})
+							.append($("<i class='list-ico'>").addClass(data.icon))
+							.append($('<span>').text(data.text))[0].outerHTML
+		},
+
+		onItemTap: function(data){
+			console.log('app.navigate = ', data);
+		},
+
+		onDragEnd:function(){
+			console.log('onDragEnd');
+		},
+
+		onClose:function(){
+			console.log('onClose');
+		}
+
 	});
 
-	dragControl.on('touchStasssrt', function(){
-		console.log('sssss111111111111111111')
-	});
+
+
 
 //	dragControl.addEvent("click", function() {
 //		console.log('点击了一下');
