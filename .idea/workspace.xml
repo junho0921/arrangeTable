@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="3d6f705b-ebdc-405d-99df-be8f38840f8f" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DraggableMenu.js" afterPath="$PROJECT_DIR$/DraggableMenu.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/html.html" afterPath="$PROJECT_DIR$/html.html" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="junDrag.iws" />
@@ -38,8 +37,8 @@
       <file leaf-file-name="DraggableMenu.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.30325288">
-              <caret line="285" column="40" selection-start-line="285" selection-start-column="40" selection-end-line="285" selection-end-column="40" />
+            <state vertical-scroll-proportion="0.6677454">
+              <caret line="42" column="52" selection-start-line="42" selection-start-column="52" selection-end-line="42" selection-end-column="52" />
               <folding />
             </state>
           </provider>
@@ -418,7 +417,13 @@
       <option name="project" value="LOCAL" />
       <updated>1449546213368</updated>
     </task>
-    <option name="localTasksCounter" value="33" />
+    <task id="LOCAL-00033" summary="重要修改, 把之前的添加关闭按钮的代码统一修改为一个原型方法enterEditingMode方法, 有效管理关闭按钮的生成, 不会错误生成或漏掉生成">
+      <created>1449569634493</created>
+      <option name="number" value="00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1449569634493</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="TodoView" selected-index="2">
@@ -487,7 +492,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="优化了拖动判断, 避免随意的拉动" />
     <MESSAGE value="取消拖动的基础是setTimeout的原理, 使用直接绑定mouseMove事件后判断触控点位置来进行拖拽" />
     <MESSAGE value="接近完成了, 修改了很多逻辑工作" />
     <MESSAGE value="基本完成" />
@@ -512,7 +516,8 @@
     <MESSAGE value="项目组版本v1.0" />
     <MESSAGE value="改名DraggableMenu" />
     <MESSAGE value="项目版本正式v1.0" />
-    <option name="LAST_COMMIT_MESSAGE" value="项目版本正式v1.0" />
+    <MESSAGE value="重要修改, 把之前的添加关闭按钮的代码统一修改为一个原型方法enterEditingMode方法, 有效管理关闭按钮的生成, 不会错误生成或漏掉生成" />
+    <option name="LAST_COMMIT_MESSAGE" value="重要修改, 把之前的添加关闭按钮的代码统一修改为一个原型方法enterEditingMode方法, 有效管理关闭按钮的生成, 不会错误生成或漏掉生成" />
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.83806145" />
   </component>
   <component name="XDebuggerManager">
@@ -807,8 +812,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.30325288">
-          <caret line="285" column="40" selection-start-line="285" selection-start-column="40" selection-end-line="285" selection-end-column="40" />
+        <state vertical-scroll-proportion="0.6677454">
+          <caret line="42" column="52" selection-start-line="42" selection-start-column="52" selection-end-line="42" selection-end-column="52" />
           <folding />
         </state>
       </provider>

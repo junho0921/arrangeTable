@@ -185,18 +185,7 @@
 		this.initailizeEvent();
 	};
 
-	//DraggableMenu.prototype.templatelist = function(data, i, datas){
-	//	// 本方法提供给用户修改, 但要求必须返回html字符串作为每个item的内容
-	//	return $('<li>').addClass('dragItem').append(
-	//		$('<div>')
-	//			.attr({'id': data.id})
-	//			.append($("<i class='list-ico'>").addClass(data.icon))
-	//			.append($('<span>').text(data.text))
-	//	)[0].outerHTML
-	//};
-
 	DraggableMenu.prototype.templatefn = function(){
-		console.log('templatefn 默认方法');
 		var data = this.options.dataList,
 			len = data.length;
 
@@ -240,7 +229,7 @@
 			}else {
 				console.log('非点击拖动对象'); return
 			}
-			console.log('---> ', DrM.$touchTarget, DrM.$Target);
+
 			//DrM.fireEvent("touchStart", [DrM.$container]);
 
 			DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeClass).index();
@@ -690,8 +679,6 @@
 				var startPosition = {"left":objOriginalX, "top":objOriginalY},
 					curPosition = {"left":objOriginalX, "top":objOriginalY},
 					pr = {};
-
-				console.log(startPosition);
 
 				$(startPosition)// 这个位置是拖拽的最后的位置, 也就是moveEvent的位置
 					.animate(position, {
