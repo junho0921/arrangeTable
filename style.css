@@ -18,6 +18,10 @@
 .DraggingItem {
     opacity: 0.3;
 }
+.DraggingItem .DraggableMenuCloseBtn{
+    opacity: 0;
+}
+
 .DraggableMenu .dragItem.activeDraggableMenu.DraggableMenuClone {
     opacity:1;
     position:relative;

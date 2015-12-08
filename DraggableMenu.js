@@ -60,7 +60,7 @@
 		// 默认选项
 		var defalutOptions = {
 			// 子容器属性
-			container:".DraggingItem",
+			container:".DraggableMenu",
 			ItemNode:"li",
 			ItemClassName:"dragItem",
 			ItemAttrs:{
@@ -81,9 +81,11 @@
 			// 类
 			dragClass:"DraggableMenuClone",
 			// 允许触控的边缘
-			RangeXY: 6,
+			RangeXY: 60,
 			// 内容
-			dataList:[]
+			dataList:[],
+			// 选择模板
+			templateRender:true
 		};
 
 		// 关于动画效果的设置
@@ -160,7 +162,7 @@
 
 	DraggableMenu.prototype.init = function() {
 
-		this.render();
+		if(this.options.templateRender && this.options.dataList.length){this.render();}
 
 		// 添加对象jQuery包装集$items
 		this.$items = this.$container.find(this.options.ItemClass);
@@ -228,15 +230,15 @@
 				event.originalEvent.touches.length : 1;
 			if(fingerCount > 1){return;}
 
-			if(event.currentTarget.className === DrM.options.ItemClassName){
+			if(event.currentTarget.className.indexOf(DrM.options.ItemClassName > -1)){
 				DrM.$touchTarget =  $(event.currentTarget);
 			}else {
 				console.log('非点击拖动对象'); return
 			}
 
-			DrM.fireEvent("touchStart", [DrM.$container]);
+			//DrM.fireEvent("touchStart", [DrM.$container]);
 
-			DrM.$container.trigger('touchStasssrt', [DrM.$container]);
+			//DrM.$container.trigger('touchStasssrt', [DrM.$container]);
 
 			DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeClass).index();
 
@@ -263,7 +265,7 @@
 					})
 				);
 
-				DrM.fireEvent("press",[DrM.$Target]);
+				//DrM.fireEvent("press",[DrM.$Target]);
 			}, DrM.options.timeDuration);
 
 			// 绑定事件stopEvent, 本方法必须在绑定拖拽事件之前
@@ -301,11 +303,15 @@
 
 				if(newTime - this.startTime < 250){ // 只有在时间限制内才是click事件
 
-					this.fireEvent("click", [this.$Target]);
+					//this.fireEvent("click", [this.$Target]);
 
 					if(this.editing){
 
 						this.$Target.find("." + $(this.options.closebtnthml)[0].className).remove();
+
+						console.log('关闭编辑模式');
+
+						this.$container.trigger("editEnd", [this.$Target]);
 
 						this.editing = false;
 					}
@@ -344,7 +350,7 @@
 		this.animateSlide({'left': resetX, 'top': resetY}, function(){
 			DrM.$container.find('.' + DrM.options.dragClass).remove();
 			DrM.$container.find(DrM.options.ItemClass).removeClass(DrM.options.activeClass + " " + DrM.options.draggingClass);
-			DrM.fireEvent("afterDrag", [DrM.$Target]);
+			//DrM.fireEvent("afterDrag", [DrM.$Target]);
 		});
 	};
 
@@ -390,7 +396,7 @@
 				if (inShort){
 					if(outRang){
 						//console.log('非拖拽的swipe');
-						DrM.fireEvent("swipe", []);
+						//DrM.fireEvent("swipe", []);
 						DrM.stopEventFunc();
 						return;
 					} else {
@@ -432,7 +438,7 @@
 					DrM.$dragItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
 
 					// 提供触发事件:"beforeDrag"
-					DrM.fireEvent("beforeDrag", [DrM.$dragItem]);
+					//DrM.fireEvent("beforeDrag", [DrM.$dragItem]);
 
 					DrM.InitializeMoveEvent = true;
 

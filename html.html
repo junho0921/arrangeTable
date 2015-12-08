@@ -8,27 +8,47 @@
 <body>
 <h2 class="DraggableMenutittle" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">DraggableMenu</h2>
 <button>获取数据</button>
-<div class="DraggableMenu"></div>
+<!--<div class="DraggableMenu"></div>-->
+<ul class="table-col-4 DraggableMenu">
+	<li class="cell dragItem" id="credit"><i class="list-ico c"></i><span>信用卡</span></li><!--
+				--><li class="cell dragItem" id="product"><i class="list-ico d"></i><span>理财交易</span></li><!--
+				--><li class="cell dragItem" id="life"><i class="list-ico e"></i><span>生活缴费</span></li><!--
+				--><li class="cell dragItem"><i class="list-ico f"></i><span>关联转账</span></li><!--
+				--><li class="cell dragItem" id="bankNodes"><i class="list-ico g"></i><span>周边</span></li><!--
+				--><li class="cell dragItem" id="recharge"><i class="list-ico h"></i><span>话费充值</span></li><!--
+				--><li class="cell dragItem"><i class="list-ico i"></i><span>无卡取款</span></li><!--
+				--><li class="cell dragItem" id="toComponentsList"><i class="list-ico d"></i><span>组件展示</span></li>
 
+</ul>
 
 <script src="libs/jquery.js"></script>
 <script src="DraggableMenu.js"></script>
 <script>
+//	var dragControl = new DraggableMenu({
+//		container:".DraggableMenu",
+//		ItemNode:"li",
+////		ItemClassName: "cell",
+//		closebtnthml:"<span class='DraggableMenuCloseBtnd'>2</span>",
+//		dataList:[
+//			{text:'信用卡', icon:"c", id:"credit", link:"example/index/mycountDetail"},
+//			{text:'理财交易', icon:"d", id:"product", link:"example/index/iwant"},
+//			{text:'生活缴费', icon:"e", id:"life", link:"example/index/lifePayment"},
+//			{text:'关联转账', icon:"f", id:"", link:""},
+//			{text:'周边', icon:"g", id:"bankNodes", link:"example/index/bankNodes"},
+//			{text:'话费充值', icon:"h", id:"recharge", link:"example/index/recharge"},
+//			{text:'无卡取款', icon:"i", id:"", link:""},
+//			{text:'组件展示', icon:"d", id:"toComponentsList", link:"demo/demo/list"}
+//		]
+//	});
+//
+//	dragControl.on('touchStasssrt', function(){
+//		console.log('sssss111111111111111111')
+//	});
+
 	var dragControl = new DraggableMenu({
 		container:".DraggableMenu",
-		ItemNode:"li",
-//		ItemClassName: "cell",
-		closebtnthml:"<span class='DraggableMenuCloseBtnd'>2</span>",
-		dataList:[
-			{text:'信用卡', icon:"c", id:"credit", link:"example/index/mycountDetail"},
-			{text:'理财交易', icon:"d", id:"product", link:"example/index/iwant"},
-			{text:'生活缴费', icon:"e", id:"life", link:"example/index/lifePayment"},
-			{text:'关联转账', icon:"f", id:"", link:""},
-			{text:'周边', icon:"g", id:"bankNodes", link:"example/index/bankNodes"},
-			{text:'话费充值', icon:"h", id:"recharge", link:"example/index/recharge"},
-			{text:'无卡取款', icon:"i", id:"", link:""},
-			{text:'组件展示', icon:"d", id:"toComponentsList", link:"demo/demo/list"}
-		]
+		ItemClassName: "dragItem",
+		closebtnthml:"<span class='DraggableMenuCloseBtn'>X</span>"
 	});
 
 	dragControl.on('touchStasssrt', function(){
