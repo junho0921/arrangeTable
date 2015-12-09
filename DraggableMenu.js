@@ -261,6 +261,10 @@
 			DrM.itemStartPagePos = $(this).offset();
 			DrM.itemStartPos = $(this).position();
 
+			// 1, 计算target中心的初始位置targetCenterStart
+			DrM.targetCenterStartX = DrM.itemStartPos.left + DrM.liW/2;
+			DrM.targetCenterStartY = DrM.itemStartPos.top + DrM.liH/2;
+
 			// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
 			DrM.setTimeFunc = setTimeout(function(){
 
@@ -459,31 +463,31 @@
 
 					DrM.$Target.addClass(DrM.options.draggingClass);
 				}
-			} else {
-				// 在初始化拖动后才可禁止默认事件行为
-				event.stopImmediatePropagation();
-				event.stopPropagation();
-				event.preventDefault();
-
-				// 计算
-				var cssX, cssY;
-				// 触控点移动距离
-				cssX = Move_ex - DrM.eventStartX;
-				cssY = Move_ey - DrM.eventStartY;
-				// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
-				if (DrM.transformsEnabled === false) {
-					//$dragItem拖拽时的位置 = 它的坐标 + 拖拽距离
-					cssX = dragItemStartX + cssX;
-					cssY = dragItemStartY + cssY;
-				}
-
-				// 拖拽
-				DrM.setCSS({'left': cssX, 'top': cssY});
-				//DrM.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
-
-				// 重新排序
-				DrM.reorder(cssX, cssY);
 			}
+
+			// 在初始化拖动后才可禁止默认事件行为
+			event.stopImmediatePropagation();
+			event.stopPropagation();
+			event.preventDefault();
+
+			// 计算
+			var cssX, cssY;
+			// 触控点移动距离
+			cssX = Move_ex - DrM.eventStartX;
+			cssY = Move_ey - DrM.eventStartY;
+			// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
+			if (DrM.transformsEnabled === false) {
+				//$dragItem拖拽时的位置 = 它的坐标 + 拖拽距离
+				cssX = dragItemStartX + cssX;
+				cssY = dragItemStartY + cssY;
+			}
+
+			// 拖拽
+			DrM.setCSS({'left': cssX, 'top': cssY});
+			//DrM.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
+
+			// 重新排序
+			DrM.reorder(cssX, cssY);
 		});
 	};
 
@@ -495,12 +499,10 @@
 		// 但Bug!!! 缩放屏幕会出现偏差. 根本原因是步骤1与2的获取位置的原理不同, 缩放时各自变化比例不同, 所以不能同时使用思路1
 
 		/* 思路2 : 监听拖动项的中心位置来插入空白格子 */
-		// 1, 计算target中心的初始位置targetCenterStart
-		var targetCenterStartX = this.itemStartPos.left + this.liW/2;
-		var targetCenterStartY = this.itemStartPos.top + this.liH/2;
+		// 1, 计算target中心的初始位置targetCenterStart, 直接获取this.targetCenterStartX,this.targetCenterStartY
 		// 2, 计算拖拽时target中心位置的坐标targetCenterPos
-		var targetCenterPosX = targetCenterStartX + cssX;
-		var targetCenterPosY = targetCenterStartY + cssY;
+		var targetCenterPosX = this.targetCenterStartX + cssX;
+		var targetCenterPosY = this.targetCenterStartY + cssY;
 		// 当坐标超出方位时的修正
 		targetCenterPosX = targetCenterPosX > 0 ? (targetCenterPosX < this.ulW ? targetCenterPosX: this.ulW) : 0;
 		targetCenterPosY = targetCenterPosY > 0 ? (targetCenterPosY < this.ulH ? targetCenterPosY: this.ulH) : 0;
