@@ -35,6 +35,9 @@
 // 升级
 // 排序的动画效果
 
+// 说明
+// displaynone
+
 /**
  * @class Combox
  * @memberof Nuui
@@ -143,7 +146,7 @@
 						.attr({'id': data.id})
 						.append($("<i class='list-ico'>").addClass(data.icon))
 						.append($('<span>').text(data.text))
-				)[0].outerHTML
+				);
 			},
 			onItemTap:null,
 			onDragEnd:null,
@@ -252,21 +255,31 @@
 
 		templatefn: function(){
 			var data = this.options.dataList,
-				i = data.length,
+				len = data.length,
 				$liHtml;
 
-			while(i--){
-				$liHtml= $(
-					this.options.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
-				).data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
-
-				if(data[i].undraggable){// 不可拖拉的排序最后
+			for(var i = 0; i < len; i++){
+				$liHtml = this.options.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
+					.data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
+				this.template.push($liHtml);// ps: 假设undraggable项写在数组的最后
+				if(data[i].undraggable){// 记数
 					this.undraggableCount++;
-					this.template.push($liHtml);
-				}else{// 可拖拉的排序靠前
-					this.template.unshift($liHtml);
 				}
 			}
+
+			//// 保留简洁的写法
+			//var i = len;
+			//while(i--){
+			//	$liHtml= this.options.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
+			//	.data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
+			//
+			//	if(data[i].undraggable){// 不可拖拉的排序最后
+			//		this.undraggableCount++;
+			//		this.template.push($liHtml);
+			//	}else{// 可拖拉的排序靠前
+			//		this.template.unshift($liHtml);
+			//	}
+			//}
 		},
 
 		initailizeEvent: function() {
@@ -553,27 +566,18 @@
 			// 2, 计算拖拽时target中心位置的坐标targetCenterPos
 			var targetCenterPosX = this.targetCenterStartX + cssX;
 			var targetCenterPosY = this.targetCenterStartY + cssY;
-			// 当坐标超出方位时的修正
-			//targetCenterPosX = targetCenterPosX > 0 ? (targetCenterPosX < this.ulW ? targetCenterPosX: this.ulW): 0;
-			//targetCenterPosY = targetCenterPosY > 0 ? (targetCenterPosY < this.ulH ? targetCenterPosY: this.ulH): 0;
 			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置moveTargetIndex
 			var curCol = Math.floor(targetCenterPosX/this.liW) + 1;
 			var curRow = Math.floor(targetCenterPosY/this.liH);
 			var moveTargetIndex = curRow * this.cols + curCol - 1;
-			// 修正
-			moveTargetIndex = moveTargetIndex < 0 ? 0 :moveTargetIndex;
-			moveTargetIndex = moveTargetIndex >= this.draggableCount ? (this.draggableCount - 1) : moveTargetIndex;
 
-			//if(moveTargetIndex >=  this.draggableCount){
-			//	// 当超过拖拉数量的范围就退出排序
-			//	return false;
-			//}
-
-			if(this.MEMOmoveTargetIndex == moveTargetIndex){
+			if(moveTargetIndex === this.MEMOmoveTargetIndex){
 				// 位移未超出一个li位置, 就取消执行
 				return false;
 			}else{
-				// 4, 以moveTargetIndex作为插入的位置
+				// 4, 修正在0到可拖动数量draggableCount范围内
+				moveTargetIndex = moveTargetIndex < this.draggableCount ? (moveTargetIndex > 0 ? moveTargetIndex : 0) : (this.draggableCount - 1);
+				// 5, 以moveTargetIndex作为插入的位置
 				if(moveTargetIndex < this.startTargetIndex){
 					this.$items.eq(moveTargetIndex).before(this.$Target);
 				} else if (moveTargetIndex > this.startTargetIndex){
