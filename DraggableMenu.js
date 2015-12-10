@@ -229,12 +229,11 @@
 		initailize: function() {
 
 			if(this.options.templateRender && this.options.dataList.length){
-				// 模板模式
 				this.render();
-				this.$items = this.$container.children();
-			}else{
-				this.$items = this.$container.children();
 			}
+
+			this.$items = this.$container.children();
+
 			this.size();
 
 			this.setProps();
@@ -245,28 +244,27 @@
 		render: function(){
 			// 先清空html
 			this.template = [];
-			// 填充template内容并收集所有item的html字符串
+			// 填充template内容并收集所有item的html的jQuery包装集
 			this.templatefn();
-			// 把所有item的html渲染到容器里
+			// 把所有item的html的jQuery包装集渲染到容器里
 			this.$container.html(this.template);
 		},
 
 		templatefn: function(){
 			var data = this.options.dataList,
 				i = data.length,
-				liHtml;
+				$liHtml;
 
 			while(i--){
-
-				liHtml= $(
+				$liHtml= $(
 					this.options.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
 				).data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
 
 				if(data[i].undraggable){// 不可拖拉的排序最后
 					this.undraggableCount++;
-					this.template.push(liHtml);
+					this.template.push($liHtml);
 				}else{// 可拖拉的排序靠前
-					this.template.unshift(liHtml);
+					this.template.unshift($liHtml);
 				}
 			}
 		},
@@ -276,14 +274,14 @@
 			var DrM = this;
 
 			this.$items.on(DrM.startEvent, function(event){
-
 				// 禁止多点触控
 				var fingerCount = event.originalEvent && event.originalEvent.touches !== undefined ?
 					event.originalEvent.touches.length: 1;
 				if(fingerCount > 1){return;}
 
+				DrM.$touchTarget = $(this);
 				//if(event.currentTarget.className.indexOf(DrM.ItemClassName > -1)){
-					DrM.$touchTarget =  $(event.currentTarget);
+				//	DrM.$touchTarget =  $(event.currentTarget);
 				//}else {
 				//	console.log('非点击拖动对象'); return
 				//}
@@ -300,7 +298,7 @@
 				DrM.itemStartPagePos = $(this).offset();
 				DrM.itemStartPos = $(this).position();
 
-				// 1, 计算target中心的初始位置targetCenterStart
+				// 计算target中心的初始位置targetCenterStart
 				DrM.targetCenterStartX = DrM.itemStartPos.left + DrM.liW/2;
 				DrM.targetCenterStartY = DrM.itemStartPos.top + DrM.liH/2;
 
@@ -400,6 +398,7 @@
 			// 本方法是计算dragItem基于touchStart位置面向的最终滑向位置, 最后执行动画
 
 			var resetX, resetY;
+
 			if (this.transformsEnabled) {
 				// 1-1, 基于translate情况:  计算touchStart时dragTarget的坐标和最终滑向位置$dragTarget的坐标之间的差距, 作为translate的xy轴的值
 				// 计算最终dragItem滑向位置的坐标:this.$Target.offset();
