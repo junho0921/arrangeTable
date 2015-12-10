@@ -35,8 +35,42 @@
 // 升级
 // 排序的动画效果
 
-// 思考:
-// 点击后才绑定拖拽的事件是否不好?
+/**
+ * @class Combox
+ * @memberof Nuui
+ * @classdesc 利用input创建的下拉框组件<br/>
+ * 		基本元素item:<br/>
+ * 		item内至少有2个属性:key和text,text用于展示,key为真正的值</br>
+ * 		可以设置更多的值,并可以在selectHandler和itemFilter中访问到</br>
+ * 		如</br>
+ * 		item={key:"USD", text:"美元"}</br>
+ * 		item={key:"6225123412341234", text:"6225****1234", name:"我的账户"}</br>
+ * 		Combox文档中提到的item均是这个形式
+ * @param {$} input - input的$形式
+ * @param {object} config - 配置
+ * @param {boolean} config.readOnly - 渲染之后是否readOnly,默认为true<br/>
+ * @param {int} config.maxHeight - 展开之后的最大高度,最好为一个元素高度的整数倍<br/>
+ * @param {int} config.minHeight - 展开之后的最小高度,最好为一个元素的高度<br/>
+ * @param {array} config.data - item数组<br/>
+ * @param {func} config.selectHandler(item) - 选中一个元素后触发的事件<br/>
+ * @param {func} config.itemFilter(item) - 过滤原数据使用的方法,只有返回值为true的item才会展示
+ * @param {view} view - 当前的view,一定要填
+ * @example var accountCombox = new Combox(view.$("#payAccount"), {
+	 * 	data:[
+	 * 		{key:"6225882121047658", text:"6225****7658(张三)", name:"张三", balance:"1000000"},
+	 * 		{key:"6225882121042536", text:"6225****2536(李四)", name:"李四", balance:"2000000"},
+	 * 		{key:"6225882121049826", text:"6225****9826(王五)", name:"王五", balance:"3000000"},
+	 * 		{key:"6225882121046437", text:"6225****6437(赵茄子)", name:"赵茄子", balance:"4000000"}
+	 * 	],
+	 * 	itemFilter:function(item){
+	 * 		return item.key.endsWith("6");
+	 * 	},
+	 * 	selectHandler:function(item){
+	 * 		view.$("#currentBalance").html(Nuui.utils.toCashWithComma(item.balance));
+	 * 	}
+	 * }, view);
+ */
+
 
 (function(factory) {
 	'use strict';
@@ -51,15 +85,16 @@
 }(function($) {
 	'use strict';
 
-	// 这一句没有写好
 	var hasTouch = 'ontouchstart' in window ;
 
 	// 方法: 获取触控点坐标
 	var page = function (coord, event) {
-		return (hasTouch? event.originalEvent.touches[0] : event)['page' + coord.toUpperCase()];
+		return (hasTouch? event.originalEvent.touches[0]: event)['page' + coord.toUpperCase()];
 	};
 
-	window.DraggableMenu = function (options) {
+	var DraggableMenu;
+
+	DraggableMenu = function (options) {
 		// 默认选项
 		var defalutOptions = {
 			// 子容器属性
@@ -112,7 +147,8 @@
 			},
 			onItemTap:null,
 			onDragEnd:null,
-			onClose:null
+			onClose:null,
+			onEditing:null
 		};
 
 		// 关于动画效果的设置
@@ -167,11 +203,14 @@
 			startTime: null,
 
 			// css属性前缀
-			transitionType:null,
-			transformType:null,
-			animType:null,
+			transitionType: null,
+			transformType: null,
+			animType: null,
 			// 灵敏模式
-			sensitive:true
+			sensitive: true,
+			// 不可拖动的数量
+			undraggableCount: 0,
+			draggableCount: 0
 		};
 
 		$.extend(this, initialSettings);
@@ -180,548 +219,574 @@
 
 		this.$container = $(this.options.container).css('position','relative');
 
-		this.init();
+		this.initailize();
 
-		return this.$container;
+		return this;
 	};
 
-	DraggableMenu.prototype.init = function() {
+	DraggableMenu.prototype = {
 
-		var DrM = this;
+		initailize: function() {
 
-		if(this.options.templateRender && this.options.dataList.length){
-			// 模板模式
-			this.render();
-			this.$items = this.$container.children().each(function(i, item){
-				// 给每个子项保存数据
-				$(item).data('DraggableMenuData', DrM.options.dataList[i])
-			});
-		}else{
-			this.$items = this.$container.children();
-		}
-
-		this.size();
-
-		this.setProps();
-
-		this.initailizeEvent();
-	};
-
-	DraggableMenu.prototype.render = function(){
-		// 先清空html
-		this.template = [];
-		// 填充template内容并收集所有item的html字符串
-		this.templatefn();
-		// 把所有item的html渲染到容器里
-		this.$container.html(this.template.join(""));
-	};
-
-	DraggableMenu.prototype.templatefn = function(){
-		var data = this.options.dataList,
-			len = data.length;
-
-		for(var i = 0; i < len; i ++){
-			// ItemAttrs是用来赋值给$el的html属性
-			var $itemli = this.options.renderer(data[i], i, data);
-
-			this.ItemClassName = $($itemli)[0].className;
-
-			this.template.push($itemli);
-		}
-	};
-
-	DraggableMenu.prototype.initailizeEvent = function() {
-
-		var DrM = this;
-
-		this.$items.on(DrM.startEvent, function(event){
-			// 禁止多点触控
-			var fingerCount = event.originalEvent && event.originalEvent.touches !== undefined ?
-				event.originalEvent.touches.length : 1;
-			if(fingerCount > 1){return;}
-
-			if(event.currentTarget.className.indexOf(DrM.ItemClassName > -1)){
-				DrM.$touchTarget =  $(event.currentTarget);
-			}else {
-				console.log('非点击拖动对象'); return
-			}
-
-			//DrM.fireEvent("touchStart", [DrM.$container]);
-
-			DrM.MEMOmoveTargetIndex = DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeClass).index();
-
-			DrM.startTime = event.timeStamp || +new Date();
-
-			// 记录初始位置
-			DrM.eventStartX = page('x', event);
-			DrM.eventStartY = page('y', event);
-
-			DrM.itemStartPagePos = $(this).offset();
-			DrM.itemStartPos = $(this).position();
-
-			// 1, 计算target中心的初始位置targetCenterStart
-			DrM.targetCenterStartX = DrM.itemStartPos.left + DrM.liW/2;
-			DrM.targetCenterStartY = DrM.itemStartPos.top + DrM.liH/2;
-
-			// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
-			DrM.setTimeFunc = setTimeout(function(){
-
-				DrM.enterEditingMode();
-
-				// 以timeDuration为间隔触发press事件
-				//DrM.fireEvent("press",[DrM.$Target]);
-			}, DrM.options.timeDuration);
-
-			// 绑定事件stopEvent, 本方法必须在绑定拖拽事件之前
-			$('body').one(DrM.stopEvent, function(){
-				DrM.stopEventFunc();
-			});
-
-			// 绑定拖拽事件
-			DrM.drag();
-		});
-	};
-
-	DraggableMenu.prototype.enterEditingMode = function(){
-		var DrM = this;
-
-		if(!this.editing){
-			this.editing = true;
-		}else{
-			if(this.$Target === this.$touchTarget){
-				return
+			if(this.options.templateRender && this.options.dataList.length){
+				// 模板模式
+				this.render();
+				this.$items = this.$container.children();
 			}else{
-				this.$Target.find("." + $(this.options.closebtnthml)[0].className).remove();
+				this.$items = this.$container.children();
 			}
-		}
+			this.size();
 
-		this.$Target = this.$touchTarget
-			.append(
-			$(this.options.closebtnthml).css(this.options.btncss).on(this.startEvent, function(){
-				DrM.$Target.remove();
-				DrM.options.onClose();
-			})
-		);
-	};
+			this.setProps();
 
-	DraggableMenu.prototype.stopEventFunc = function(){
-		// 方法stopEventFunc功能:
-		// 1,取消绑定moveEvent事件(但不负责取消stopEvent事件); 
-		// 2,清理定时器;
-		// 3,判断停止事件后触发的事件: A,有拖动item的话就动画执行item的回归
-		// B,没有拖动的话, 思考是什么情况: 
-		// DraggableMenu有三个应用情况: a, stopEvent情况应用; b,moveEvent里的取消拖动的两种情况:太快, 触控变位(闪拉情况)
-		//$('.DraggableMenutittle3').text(''+ this.dragging);
-		clearTimeout(this.setTimeFunc);
+			this.initailizeEvent();
+		},
 
-		$('body').off(this.moveEvent);
+		render: function(){
+			// 先清空html
+			this.template = [];
+			// 填充template内容并收集所有item的html字符串
+			this.templatefn();
+			// 把所有item的html渲染到容器里
+			this.$container.html(this.template);
+		},
 
-		if(this.InitializeMoveEvent){
-			// 已经拖拽了的情况, 执行拖拽项的归位动画
-			this.dragItemReset();
+		templatefn: function(){
+			var data = this.options.dataList,
+				i = data.length,
+				liHtml;
 
-		}else{
-			this.$container.children().removeClass(this.options.activeClass + " " +this.options.draggingClass);
+			while(i--){
 
-			if(this.dragging === false){
+				liHtml= $(
+					this.options.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
+				).data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
 
-				var newTime = new Date();
-
-				if(newTime - this.startTime < 250){ // 没有拖拽后且没有滑动且只在限制时间内才是click事件
-
-					//this.fireEvent("click", [this.$Target]);
-
-					if(this.editing){
-						// 编辑模式的情况下的点击事件是结束编辑或取消编辑的点击:
-						this.$Target.find("." + $(this.options.closebtnthml)[0].className).remove();
-
-						//this.$container.trigger("editEnd", [this.$Target]);
-
-						this.editing = false;
-					} else{
-						// 非编辑模式的情况下的点击事件是正常点击:
-						this.options.onItemTap(this.$touchTarget.data('DraggableMenuData'));
-					}
+				if(data[i].undraggable){// 不可拖拉的排序最后
+					this.undraggableCount++;
+					this.template.push(liHtml);
+				}else{// 可拖拉的排序靠前
+					this.template.unshift(liHtml);
 				}
-
 			}
-		}
+		},
 
-		this.InitializeMoveEvent = false;
-		this.dragging = false;
-	};
+		initailizeEvent: function() {
 
-	DraggableMenu.prototype.dragItemReset = function(){
-		// 本方法是计算dragItem基于touchStart位置面向的最终滑向位置, 最后执行动画
+			var DrM = this;
 
-		var resetX, resetY;
-		if (this.transformsEnabled) {
-			// 1-1, 基于translate情况:  计算touchStart时dragTarget的坐标和最终滑向位置$dragTarget的坐标之间的差距, 作为translate的xy轴的值
-			// 计算最终dragItem滑向位置的坐标:this.$Target.offset();
-			var targetPos = this.$Target.offset();
-			// 差距 = 最终位置 - touchStart时dragItem的位置
-			resetX =  targetPos.left - this.itemStartPagePos.left;
-			resetY = targetPos.top - this.itemStartPagePos.top;
-		}else{
-			// 1-2, 若不适用CSS3的属性transform, 只能使用css坐标通过animate来实现
-			// 基于css坐标的话不能像translate那样参考触控位移的距离, 只参考dragItem原本产生时的css坐标和最后的$dragTarget的坐标
-			// $dragItem最终的css坐标 = 最终$dragTarget相对父级的位置 - 原本$dragItem相对父级的位置
-			resetX =
-				this.$container.find("."+ this.options.activeClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
-				- this.dragItemOriginalpos.left;
-			resetY = this.$container.find("."+ this.options.activeClass).position().top - this.dragItemOriginalpos.top;
-		}
+			this.$items.on(DrM.startEvent, function(event){
 
-		// 执行滑动效果
-		var DrM = this;
-		this.animateSlide({'left': resetX, 'top': resetY}, function(){
-			DrM.$container.find('.' + DrM.options.dragClass).remove();
-			DrM.options.onDragEnd();
-			DrM.$container.children().removeClass(DrM.options.activeClass + " " + DrM.options.draggingClass);
-			//DrM.fireEvent("afterDrag", [DrM.$Target]);
-		});
-	};
+				// 禁止多点触控
+				var fingerCount = event.originalEvent && event.originalEvent.touches !== undefined ?
+					event.originalEvent.touches.length: 1;
+				if(fingerCount > 1){return;}
 
-	DraggableMenu.prototype.drag = function(){
-		var DrM = this, dragItemStartX, dragItemStartY;
+				//if(event.currentTarget.className.indexOf(DrM.ItemClassName > -1)){
+					DrM.$touchTarget =  $(event.currentTarget);
+				//}else {
+				//	console.log('非点击拖动对象'); return
+				//}
+				//DrM.fireEvent("touchStart", [DrM.$container]);
 
-		$('body').on(this.moveEvent, function(event){
-			// DraggableMenu里moveEvent的理念是按住后拖动, 非立即拖动
-			DrM.dragging = true;// 进入拖动模式
+				DrM.MEMOmoveTargetIndex = DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeClass).index();
 
-			var Move_ex = DrM.mvX = page('x', event),
-				Move_ey = DrM.mvY=  page('y', event);
+				DrM.startTime = event.timeStamp || +new Date();
 
-			// 初始化MoveEvent
-			if(!DrM.InitializeMoveEvent){
-				// move过程中对事件的判断有两个重要变量: 延时与范围
-				// 都满足: 按住拉动
-				// 都不满足: swipe
-				// 满足2, 不满足1: 是触控微动, 不停止, 只是忽略
-				// 满足1, 不满足2: 是错位, 可以理解是双触点, 按住了一点, 满足时间后立即同时点下第二点
-				// 在app实际运行时, 触控滑动监听的moveEvent事件比较灵敏, 即使是快速touchMove, 也计算出触控点位置仅仅移动了1px, 也就是Move_ey - DrM.eventStartY = 1px, 所以这里在未满足时间情况完全不考虑触控点移动而直接停止方法return出来
+				// 记录初始位置
+				DrM.eventStartX = page('x', event);
+				DrM.eventStartY = page('y', event);
 
-				// 条件1: 限时内
-				var inShort = (event.timeStamp - DrM.startTime) < DrM.options.timeDuration;
+				DrM.itemStartPagePos = $(this).offset();
+				DrM.itemStartPos = $(this).position();
 
-				// 条件2: 范围外  ps:建议范围RangeXY不要太大, 否则变成了定时拖动.
-				var outRang = (Move_ex - DrM.eventStartX ) > DrM.options.RangeXY ||
-				(Move_ey - DrM.eventStartY) > DrM.options.RangeXY;
+				// 1, 计算target中心的初始位置targetCenterStart
+				DrM.targetCenterStartX = DrM.itemStartPos.left + DrM.liW/2;
+				DrM.targetCenterStartY = DrM.itemStartPos.top + DrM.liH/2;
 
-				if (inShort){
-					if(DrM.sensitive){
-						// 灵敏模式, 不可能区分触控点变化范围
-						DrM.stopEventFunc();
-						return;
-					}else{
-						// 非灵敏模式, 区分触控点变化范围
-						if((Move_ex - DrM.eventStartX ) > 1 || (Move_ey - DrM.eventStartY) > 1){
-							console.log('非拖拽的swipe');
-							//DrM.fireEvent("swipe", []);
-							DrM.stopEventFunc();
-							return;
-						} else {
-							// 允许微动, 忽略(return)本次操作, 不停止绑定moveEvent事件, 因为只是微动或震动, 是允许范围
-							//console.log('允许微动, 忽略(return)本次操作, 可继续绑定触发moveEvent');
-							return;
-						}
-					}
-				}
-
-				if(outRang){
-					console.warn('按住达到一定时间后瞬间move超距离, 认为是操作失误');
+				// 绑定事件stopEvent, 本方法必须在绑定拖拽事件之前
+				$('body').one(DrM.stopEvent, function(){
 					DrM.stopEventFunc();
-					return false;
-				}else{
-					// 满足两个条件后, 初始化(仅进行一次)
+				});
 
-					// 需要重新获取$items, 否则this.$items仅仅指向旧有的集合, 不是新排序或调整的集合
+				if($(this).data('DraggableMenuData').undraggable){return}
+
+				// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
+				DrM.setTimeFunc = setTimeout(function(){
 
 					DrM.enterEditingMode();
 
-					DrM.$items = DrM.$container.children();
+					// 以timeDuration为间隔触发press事件
+					//DrM.fireEvent("press",[DrM.$Target]);
+				}, DrM.options.timeDuration);
 
-					// 复制目标作为拖拽目标
-					DrM.$dragItem =
-						DrM.$Target.clone()
-							.addClass(DrM.options.dragClass)
-							.appendTo(DrM.$container);// Bug: 改变了$container的高度! 但可通过css固定高度
+				// 绑定拖拽事件
+				DrM.drag();
+			});
+		},
 
-					DrM.dragItemOriginalpos = DrM.$dragItem.position();
-					// $dragTarget的坐标
-					dragItemStartX = DrM.dragItemStartX = DrM.itemStartPos.left - DrM.$dragItem.position().left;
-					dragItemStartY = DrM.dragItemStartY = DrM.itemStartPos.top - DrM.$dragItem.position().top;
-					
-					// $dragItem的坐标调整等于$dragTarget的坐标
-					DrM.$dragItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
+		enterEditingMode: function(){
+			var DrM = this;
 
-					//DrM.fireEvent("beforeDrag", [DrM.$dragItem]);
-
-					DrM.InitializeMoveEvent = true;
-
-					DrM.$Target.addClass(DrM.options.draggingClass);
+			if(!this.editing){
+				this.editing = true;
+			}else{
+				if(this.$Target === this.$touchTarget){
+					return
+				}else{
+					this.$Target.find("." + $(this.options.closebtnthml)[0].className).remove();
 				}
 			}
 
-			// 在初始化拖动后才可禁止默认事件行为
-			event.stopImmediatePropagation();
-			event.stopPropagation();
-			event.preventDefault();
+			this.options.onEditing();
 
-			// 计算
-			var cssX, cssY;
-			// 触控点移动距离
-			cssX = Move_ex - DrM.eventStartX;
-			cssY = Move_ey - DrM.eventStartY;
-			// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
-			if (DrM.transformsEnabled === false) {
-				//$dragItem拖拽时的位置 = 它的坐标 + 拖拽距离
-				cssX = dragItemStartX + cssX;
-				cssY = dragItemStartY + cssY;
+			this.$Target = this.$touchTarget
+				.append(
+				$(this.options.closebtnthml).css(this.options.btncss).on(this.startEvent, function(){
+					DrM.$Target.remove();
+					DrM.options.onClose();
+				})
+			);
+		},
+
+		stopEventFunc: function(){
+			// 方法stopEventFunc功能:
+			// 1,取消绑定moveEvent事件(但不负责取消stopEvent事件);
+			// 2,清理定时器;
+			// 3,判断停止事件后触发的事件: A,有拖动item的话就动画执行item的回归
+			// B,没有拖动的话, 思考是什么情况:
+			// DraggableMenu有三个应用情况: a, stopEvent情况应用; b,moveEvent里的取消拖动的两种情况:太快, 触控变位(闪拉情况)
+			//$('.DraggableMenutittle3').text(''+ this.dragging);
+			clearTimeout(this.setTimeFunc);
+
+			$('body').off(this.moveEvent);
+
+			if(this.InitializeMoveEvent){
+				// 已经拖拽了的情况, 执行拖拽项的归位动画
+				this.dragItemReset();
+
+			}else{
+				this.$container.children().removeClass(this.options.activeClass + " " +this.options.draggingClass);
+
+				if(this.dragging === false){
+
+					var newTime = new Date();
+
+					if(newTime - this.startTime < 250){ // 没有拖拽后且没有滑动且只在限制时间内才是click事件
+
+						//this.fireEvent("click", [this.$Target]);
+
+						if(this.editing){
+							// 编辑模式的情况下的点击事件是结束编辑或取消编辑的点击:
+							this.$Target.find("." + $(this.options.closebtnthml)[0].className).remove();
+
+							//this.$container.trigger("editEnd", [this.$Target]);
+
+							this.editing = false;
+						} else{
+							// 非编辑模式的情况下的点击事件是正常点击:
+							this.options.onItemTap(this.$touchTarget.data('DraggableMenuData'));
+						}
+					}
+
+				}
 			}
 
-			// 拖拽
-			DrM.setCSS({'left': cssX, 'top': cssY});
-			//DrM.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
+			this.InitializeMoveEvent = false;
+			this.dragging = false;
+		},
 
-			// 重新排序
-			DrM.reorder(cssX, cssY);
-		});
-	};
+		dragItemReset: function(){
+			// 本方法是计算dragItem基于touchStart位置面向的最终滑向位置, 最后执行动画
 
-	DraggableMenu.prototype.reorder = function(cssX, cssY) {
-		/* 思路1 : 监听触控点位置来插入空白格子 */
-		// 1, 计算触控点位置
-		// 2, 计算target的文档位置
-		// 3, 以1与2的相对位置, 整除liW和liH得出触控点所在的li的序号index, 以此作为插入的位置
-		// 但Bug!!! 缩放屏幕会出现偏差. 根本原因是步骤1与2的获取位置的原理不同, 缩放时各自变化比例不同, 所以不能同时使用思路1
+			var resetX, resetY;
+			if (this.transformsEnabled) {
+				// 1-1, 基于translate情况:  计算touchStart时dragTarget的坐标和最终滑向位置$dragTarget的坐标之间的差距, 作为translate的xy轴的值
+				// 计算最终dragItem滑向位置的坐标:this.$Target.offset();
+				var targetPos = this.$Target.offset();
+				// 差距 = 最终位置 - touchStart时dragItem的位置
+				resetX =  targetPos.left - this.itemStartPagePos.left;
+				resetY = targetPos.top - this.itemStartPagePos.top;
+			}else{
+				// 1-2, 若不适用CSS3的属性transform, 只能使用css坐标通过animate来实现
+				// 基于css坐标的话不能像translate那样参考触控位移的距离, 只参考dragItem原本产生时的css坐标和最后的$dragTarget的坐标
+				// $dragItem最终的css坐标 = 最终$dragTarget相对父级的位置 - 原本$dragItem相对父级的位置
+				resetX =
+					this.$container.find("."+ this.options.activeClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
+					- this.dragItemOriginalpos.left;
+				resetY = this.$container.find("."+ this.options.activeClass).position().top - this.dragItemOriginalpos.top;
+			}
 
-		/* 思路2 : 监听拖动项的中心位置来插入空白格子 */
-		// 1, 计算target中心的初始位置targetCenterStart, 直接获取this.targetCenterStartX,this.targetCenterStartY
-		// 2, 计算拖拽时target中心位置的坐标targetCenterPos
-		var targetCenterPosX = this.targetCenterStartX + cssX;
-		var targetCenterPosY = this.targetCenterStartY + cssY;
-		// 当坐标超出方位时的修正
-		targetCenterPosX = targetCenterPosX > 0 ? (targetCenterPosX < this.ulW ? targetCenterPosX: this.ulW) : 0;
-		targetCenterPosY = targetCenterPosY > 0 ? (targetCenterPosY < this.ulH ? targetCenterPosY: this.ulH) : 0;
-		// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置moveTargetIndex
-		var curCol = Math.floor(targetCenterPosX/this.liW) + 1;
-		var curRow = Math.floor(targetCenterPosY/this.liH);
-		this.moveTargetIndex = curRow * this.cols + curCol - 1;
+			// 执行滑动效果
+			var DrM = this;
+			this.animateSlide({'left': resetX, 'top': resetY}, function(){
+				DrM.$container.find('.' + DrM.options.dragClass).remove();
+				DrM.options.onDragEnd();
+				DrM.$container.children().removeClass(DrM.options.activeClass + " " + DrM.options.draggingClass);
+				//DrM.fireEvent("afterDrag", [DrM.$Target]);
+			});
+		},
 
-		if(this.MEMOmoveTargetIndex == this.moveTargetIndex){
-			// 位移未超出一个li位置, 就取消执行
-			return false;
-		}else{
-			// 4, 以moveTargetIndex作为插入的位置
-			if(this.moveTargetIndex < this.startTargetIndex){
-				this.$items.eq(this.moveTargetIndex).before(this.$Target);
-			} else if (this.moveTargetIndex > this.startTargetIndex){
-				this.$items.eq(this.moveTargetIndex).after(this.$Target);
-			} else if (this.moveTargetIndex == this.startTargetIndex && this.startTargetIndex == 0){
-				this.$items.eq(1).before(this.$Target);
+		drag: function(){
+			var DrM = this, dragItemStartX, dragItemStartY;
+
+			$('body').on(this.moveEvent, function(event){
+				// DraggableMenu里moveEvent的理念是按住后拖动, 非立即拖动
+				DrM.dragging = true;// 进入拖动模式
+
+				var Move_ex = DrM.mvX = page('x', event),
+					Move_ey = DrM.mvY=  page('y', event);
+
+				// 初始化MoveEvent
+				if(!DrM.InitializeMoveEvent){
+					// move过程中对事件的判断有两个重要变量: 延时与范围
+					// 都满足: 按住拉动
+					// 都不满足: swipe
+					// 满足2, 不满足1: 是触控微动, 不停止, 只是忽略
+					// 满足1, 不满足2: 是错位, 可以理解是双触点, 按住了一点, 满足时间后立即同时点下第二点
+					// 在app实际运行时, 触控滑动监听的moveEvent事件比较灵敏, 即使是快速touchMove, 也计算出触控点位置仅仅移动了1px, 也就是Move_ey - DrM.eventStartY = 1px, 所以这里在未满足时间情况完全不考虑触控点移动而直接停止方法return出来
+
+					// 条件1: 限时内
+					var inShort = (event.timeStamp - DrM.startTime) < DrM.options.timeDuration;
+
+					if (inShort){
+						if(DrM.sensitive){
+							// 灵敏模式, 不可能区分触控点变化范围
+							DrM.stopEventFunc();
+							return;
+						}else{
+							// 非灵敏模式, 区分触控点变化范围
+							if((Move_ex - DrM.eventStartX ) > 1 || (Move_ey - DrM.eventStartY) > 1){
+								console.log('非拖拽的swipe');
+								//DrM.fireEvent("swipe", []);
+								DrM.stopEventFunc();
+								return;
+							} else {
+								// 允许微动, 忽略(return)本次操作, 不停止绑定moveEvent事件, 因为只是微动或震动, 是允许范围
+								//console.log('允许微动, 忽略(return)本次操作, 可继续绑定触发moveEvent');
+								return;
+							}
+						}
+					}
+
+					// 条件2: 范围外  ps:建议范围RangeXY不要太大, 否则变成了定时拖动.
+					var RangeXY = DrM.options.RangeXY;
+
+					if(DrM.sensitive){
+						RangeXY = RangeXY * 3;
+					}
+					var outRang = (Move_ex - DrM.eventStartX ) > RangeXY ||
+						(Move_ey - DrM.eventStartY) > RangeXY;
+
+					if(outRang){
+						console.warn('按住达到一定时间后瞬间move超距离, 认为是操作失误');
+						DrM.stopEventFunc();
+						return false;
+					}else{
+						// 满足两个条件后, 初始化(仅进行一次)
+
+						// 需要重新获取$items, 否则this.$items仅仅指向旧有的集合, 不是新排序或调整的集合
+
+						DrM.enterEditingMode();
+
+						DrM.$items = DrM.$container.children();
+
+						// 重新获取可以拖拉的数量
+						DrM.draggableCount = DrM.$items.length - DrM.undraggableCount;
+
+						// 复制目标作为拖拽目标
+						DrM.$dragItem =
+							DrM.$Target.clone()
+								.addClass(DrM.options.dragClass)
+								.appendTo(DrM.$container);// Bug: 改变了$container的高度! 但可通过css固定高度
+
+						DrM.dragItemOriginalpos = DrM.$dragItem.position();
+						// $dragTarget的坐标
+						dragItemStartX = DrM.dragItemStartX = DrM.itemStartPos.left - DrM.$dragItem.position().left;
+						dragItemStartY = DrM.dragItemStartY = DrM.itemStartPos.top - DrM.$dragItem.position().top;
+
+						// $dragItem的坐标调整等于$dragTarget的坐标
+						DrM.$dragItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
+
+						//DrM.fireEvent("beforeDrag", [DrM.$dragItem]);
+
+						DrM.InitializeMoveEvent = true;
+
+						DrM.$Target.addClass(DrM.options.draggingClass);
+					}
+				}
+
+				// 在初始化拖动后才可禁止默认事件行为
+				event.stopImmediatePropagation();
+				event.stopPropagation();
+				event.preventDefault();
+
+				// 计算
+				var cssX, cssY;
+				// 触控点移动距离
+				cssX = Move_ex - DrM.eventStartX;
+				cssY = Move_ey - DrM.eventStartY;
+				// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
+				if (DrM.transformsEnabled === false) {
+					//$dragItem拖拽时的位置 = 它的坐标 + 拖拽距离
+					cssX = dragItemStartX + cssX;
+					cssY = dragItemStartY + cssY;
+				}
+
+				// 拖拽
+				DrM.setCSS({'left': cssX, 'top': cssY});
+				//DrM.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
+
+				// 重新排序
+				DrM.reorder(cssX, cssY);
+			});
+		},
+
+		reorder: function(cssX, cssY) {
+			/* 思路1: 监听触控点位置来插入空白格子 */
+			// 1, 计算触控点位置
+			// 2, 计算target的文档位置
+			// 3, 以1与2的相对位置, 整除liW和liH得出触控点所在的li的序号index, 以此作为插入的位置
+			// 但Bug!!! 缩放屏幕会出现偏差. 根本原因是步骤1与2的获取位置的原理不同, 缩放时各自变化比例不同, 所以不能同时使用思路1
+
+			/* 思路2: 监听拖动项的中心位置来插入空白格子 */
+			// 1, 计算target中心的初始位置targetCenterStart, 直接获取this.targetCenterStartX,this.targetCenterStartY
+			// 2, 计算拖拽时target中心位置的坐标targetCenterPos
+			var targetCenterPosX = this.targetCenterStartX + cssX;
+			var targetCenterPosY = this.targetCenterStartY + cssY;
+			// 当坐标超出方位时的修正
+			targetCenterPosX = targetCenterPosX > 0 ? (targetCenterPosX < this.ulW ? targetCenterPosX: this.ulW): 0;
+			targetCenterPosY = targetCenterPosY > 0 ? (targetCenterPosY < this.ulH ? targetCenterPosY: this.ulH): 0;
+			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置moveTargetIndex
+			var curCol = Math.floor(targetCenterPosX/this.liW) + 1;
+			var curRow = Math.floor(targetCenterPosY/this.liH);
+			this.moveTargetIndex = curRow * this.cols + curCol - 1;
+
+			if(this.moveTargetIndex >=  this.draggableCount){
+				// 当超过拖拉数量的范围就退出排序
+				return false;
+			}
+
+			if(this.MEMOmoveTargetIndex == this.moveTargetIndex){
+				// 位移未超出一个li位置, 就取消执行
+				return false;
+			}else{
+				// 4, 以moveTargetIndex作为插入的位置
+				if(this.moveTargetIndex < this.startTargetIndex){
+					this.$items.eq(this.moveTargetIndex).before(this.$Target);
+				} else if (this.moveTargetIndex > this.startTargetIndex){
+					this.$items.eq(this.moveTargetIndex).after(this.$Target);
+				} else if (this.moveTargetIndex == this.startTargetIndex && this.startTargetIndex == 0){
+					this.$items.eq(1).before(this.$Target);
+				} else {
+					this.$items.eq(this.moveTargetIndex - 1).after(this.$Target);
+				}
+				// 记录本次位置
+				this.MEMOmoveTargetIndex = this.moveTargetIndex;
+			} // 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
+		},
+
+		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------------------------------------------------------------------------*/
+
+		applyTransition: function() {
+			// 添加css  Transition
+			var transition = {};
+
+			transition[this.transitionType] = this.transformType + ' ' + this.options.resetDuration + 'ms ' + this.options.easing;
+
+			this.$dragItem.css(transition);
+		},
+
+		disableTransition: function() {
+			// 去掉css  Transition
+			var transition = {};
+
+			transition[this.transitionType] = '';
+
+			this.$dragItem.css(transition);
+		},
+
+		size: function(){
+			// 获取子项li尺寸
+			this.liH = this.$items.outerHeight(true);
+			this.liW = this.$items.outerWidth(true);
+
+			// 获取容器ul尺寸
+			this.ulH = this.$container.height();
+			this.ulW = this.$container.width();
+
+			// 修复bug的权宜之计
+			this.$container.css({'height':this.ulH, 'width':this.ulW, 'overfolow':'hidden'});
+
+			// 计算ul排列了多少列,与项
+			this.rows = Math.floor(this.ulH/this.liH); // 最准确的数字
+			//this.cols;
+			// 遍历方法来计算列数
+			for(var i = 0; i < this.$items.length; i++){
+				if(this.$items.eq(i).position().top > 1){
+					this.cols = i;
+					break;
+				}
+			}
+			//console.log('ul data: rows = ', this.rows, ', cols = ', this.cols);
+		},
+
+		setProps: function() {
+			// 1, 选择事件类型
+			// 2, 检测判断:
+			// cssTransitions
+			// 3, 设置前缀:
+			// animType/ transformType/ transitionType
+			// 4, 检测判断:
+			// transformsEnabled = 根据useTransform正反基础, 检测animType不为null与false
+
+			var bodyStyle = document.body.style;
+
+			// 选择事件类型, 添加命名空间, 不会与其他插件冲突
+			this.hasTouch = hasTouch ;
+			this.startEvent = this.hasTouch ? 'touchstart.DraggableMenu': 'mousedown.DraggableMenu';
+			this.stopEvent = this.hasTouch ? 'touchend.DraggableMenu': 'mouseup.DraggableMenu';
+			this.moveEvent = this.hasTouch ? 'touchmove.DraggableMenu': 'mousemove.DraggableMenu';
+
+			if (bodyStyle.WebkitTransition !== undefined ||
+				bodyStyle.MozTransition !== undefined ||
+				bodyStyle.msTransition !== undefined) {
+				if (this.options.useCSS === true) { //options是提供用户的选择, 但要使用的话, 需检测环境能否
+					this.cssTransitions = true;
+				}
+			}
+			/*setProps的主要作用之一:检测可使用的前缀, 可以用来借鉴, Perspective更小众*/
+			if (bodyStyle.OTransform !== undefined) {
+				this.animType = 'OTransform';
+				this.transformType = '-o-transform';
+				this.transitionType = 'OTransition';
+				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) this.animType = false;
+			}
+			if (bodyStyle.MozTransform !== undefined) {
+				this.animType = 'MozTransform';
+				this.transformType = '-moz-transform';
+				this.transitionType = 'MozTransition';
+				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.MozPerspective === undefined) this.animType = false;
+			}
+			if (bodyStyle.webkitTransform !== undefined) {
+				this.animType = 'webkitTransform';
+				this.transformType = '-webkit-transform';
+				this.transitionType = 'webkitTransition';
+				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) this.animType = false;
+			}
+			if (bodyStyle.msTransform !== undefined) {
+				this.animType = 'msTransform';
+				this.transformType = '-ms-transform';
+				this.transitionType = 'msTransition';
+				if (bodyStyle.msTransform === undefined) this.animType = false;
+			}
+			if (bodyStyle.transform !== undefined && this.animType !== false) {
+				this.animType = 'transform';
+				this.transformType = 'transform';
+				this.transitionType = 'transition';
+			}
+			this.transformsEnabled = this.options.useTransform && (this.animType !== null && this.animType !== false);
+			//this.transformsEnabled = false;// 测试用
+			//this.cssTransitions = false;// 测试用
+		},
+
+		setCSS: function(position) {
+			// 方法setCSS: 即时位置调整
+			var positionProps = {},
+				$obj = this.$dragItem,
+				x, y;
+
+			x =  Math.ceil(position.left) + 'px';
+			y =  Math.ceil(position.top) + 'px';
+
+			if (this.transformsEnabled === false) {
+				$obj.css({'left': x, "top": y});
 			} else {
-				this.$items.eq(this.moveTargetIndex - 1).after(this.$Target);
+				positionProps = {};
+				if (this.cssTransitions === false) {
+					positionProps[this.animType] = 'translate(' + x + ', ' + y + ')';
+					$obj.css(positionProps);
+					//console.log(positionProps)
+				} else {
+					positionProps[this.animType] = 'translate3d(' + x + ', ' + y + ', 0px)';
+					$obj.css(positionProps);
+					//console.log(positionProps)
+				}
 			}
-			// 记录本次位置
-			this.MEMOmoveTargetIndex = this.moveTargetIndex;
-		} // 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
-	};
+		},
 
-	/*-----------------------------------------------------------------------------------------------*/
-	/*-----------------------------------------------------------------------------------------------*/
-	/*-----------------------------------------------------------------------------------------------*/
-	/*-----------------------------------------------------------------------------------------------*/
-	/*-----------------------------------------------------------------------------------------------*/
+		animateSlide: function(position, callback) {
+			// 方法animateSlide: 位置调整的动画滑动效果, 且接收callback
+			var animProps = {}, DrM = this,
+				$obj = this.$dragItem;
 
-	DraggableMenu.prototype.applyTransition = function() {
-		// 添加css  Transition
-		var transition = {};
-
-		transition[this.transitionType] = this.transformType + ' ' + this.options.resetDuration + 'ms ' + this.options.easing;
-
-		this.$dragItem.css(transition);
-	};
-
-	DraggableMenu.prototype.disableTransition = function() {
-		// 去掉css  Transition
-		var transition = {};
-
-		transition[this.transitionType] = '';
-
-		this.$dragItem.css(transition);
-	};
-
-	DraggableMenu.prototype.size = function(){
-		// 获取子项li尺寸
-		this.liH = this.$items.outerHeight(true);
-		this.liW = this.$items.outerWidth(true);
-
-		// 获取容器ul尺寸
-		this.ulH = this.$container.height();
-		this.ulW = this.$container.width();
-
-		// 修复bug的权宜之计
-		this.$container.css({'height':this.ulH, 'width':this.ulW, 'overfolow':'hidden'});
-
-		// 计算ul排列了多少列,与项
-		this.rows = Math.floor(this.ulH/this.liH); // 最准确的数字
-		//this.cols;
-		// 遍历方法来计算列数
-		for(var i = 0; i < this.$items.length; i++){
-			if(this.$items.eq(i).position().top > 1){
-				this.cols = i;
-				break;
-			}
-		}
-		//console.log('ul data : rows = ', this.rows, ', cols = ', this.cols);
-	};
-
-	DraggableMenu.prototype.setProps = function() {
-		// 1, 选择事件类型
-		// 2, 检测判断:
-		// cssTransitions
-		// 3, 设置前缀:
-		// animType/ transformType/ transitionType
-		// 4, 检测判断:
-		// transformsEnabled = 根据useTransform正反基础, 检测animType不为null与false
-
-		var bodyStyle = document.body.style;
-
-		// 选择事件类型, 添加命名空间, 不会与其他插件冲突
-		this.hasTouch = hasTouch ;
-		this.startEvent = this.hasTouch ? 'touchstart.DraggableMenu' : 'mousedown.DraggableMenu';
-		this.stopEvent = this.hasTouch ? 'touchend.DraggableMenu' : 'mouseup.DraggableMenu';
-		this.moveEvent = this.hasTouch ? 'touchmove.DraggableMenu' : 'mousemove.DraggableMenu';
-
-		if (bodyStyle.WebkitTransition !== undefined ||
-			bodyStyle.MozTransition !== undefined ||
-			bodyStyle.msTransition !== undefined) {
-			if (this.options.useCSS === true) { //options是提供用户的选择, 但要使用的话, 需检测环境能否
-				this.cssTransitions = true;
-			}
-		}
-		/*setProps的主要作用之一:检测可使用的前缀, 可以用来借鉴, Perspective更小众*/
-		if (bodyStyle.OTransform !== undefined) {
-			this.animType = 'OTransform';
-			this.transformType = '-o-transform';
-			this.transitionType = 'OTransition';
-			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) this.animType = false;
-		}
-		if (bodyStyle.MozTransform !== undefined) {
-			this.animType = 'MozTransform';
-			this.transformType = '-moz-transform';
-			this.transitionType = 'MozTransition';
-			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.MozPerspective === undefined) this.animType = false;
-		}
-		if (bodyStyle.webkitTransform !== undefined) {
-			this.animType = 'webkitTransform';
-			this.transformType = '-webkit-transform';
-			this.transitionType = 'webkitTransition';
-			if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) this.animType = false;
-		}
-		if (bodyStyle.msTransform !== undefined) {
-			this.animType = 'msTransform';
-			this.transformType = '-ms-transform';
-			this.transitionType = 'msTransition';
-			if (bodyStyle.msTransform === undefined) this.animType = false;
-		}
-		if (bodyStyle.transform !== undefined && this.animType !== false) {
-			this.animType = 'transform';
-			this.transformType = 'transform';
-			this.transitionType = 'transition';
-		}
-		this.transformsEnabled = this.options.useTransform && (this.animType !== null && this.animType !== false);
-		//this.transformsEnabled = false;// 测试用
-		//this.cssTransitions = false;// 测试用
-	};
-
-	DraggableMenu.prototype.setCSS = function(position) {
-		// 方法setCSS: 即时位置调整
-		var positionProps = {},
-			$obj = this.$dragItem,
-			x, y;
-
-		x =  Math.ceil(position.left) + 'px';
-		y =  Math.ceil(position.top) + 'px';
-
-		if (this.transformsEnabled === false) {
-			$obj.css({'left': x, "top": y});
-		} else {
-			positionProps = {};
-			if (this.cssTransitions === false) {
-				positionProps[this.animType] = 'translate(' + x + ', ' + y + ')';
-				$obj.css(positionProps);
-				//console.log(positionProps)
+			if (this.transformsEnabled === false) {
+				// 降级方案 使用animate方案
+				$obj.animate(position, this.options.resetDuration, this.options.easing, callback);
 			} else {
-				positionProps[this.animType] = 'translate3d(' + x + ', ' + y + ', 0px)';
-				$obj.css(positionProps);
-				//console.log(positionProps)
-			}
-		}
-	};
 
-	DraggableMenu.prototype.animateSlide = function(position, callback) {
-		// 方法animateSlide: 位置调整的动画滑动效果, 且接收callback
-		var animProps = {}, DrM = this,
-			$obj = this.$dragItem;
+				if (this.cssTransitions === false) {
+					// 使用translate的CSS方法, 需要获取到$dragItem的translate位置
+					// 获取本对象$dragItem的css属性translate的值:
+					var objOriginal = this.$dragItem[0].style.transform,
+						objOriginalX = Number(objOriginal.substring(10, objOriginal.indexOf("px"))),
+						objOriginalY = Number(objOriginal.substring(objOriginal.lastIndexOf(",") + 1, objOriginal.lastIndexOf("px")));
 
-		if (this.transformsEnabled === false) {
-			// 降级方案 使用animate方案
-			$obj.animate(position, this.options.resetDuration, this.options.easing, callback);
-		} else {
+					var startPosition = {"left":objOriginalX, "top":objOriginalY},
+						curPosition = {"left":objOriginalX, "top":objOriginalY},
+						pr = {};
 
-			if (this.cssTransitions === false) {
-				// 使用translate的CSS方法, 需要获取到$dragItem的translate位置
-				// 获取本对象$dragItem的css属性translate的值:
-				var objOriginal = this.$dragItem[0].style.transform,
-					objOriginalX = Number(objOriginal.substring(10, objOriginal.indexOf("px"))),
-					objOriginalY = Number(objOriginal.substring(objOriginal.lastIndexOf(",") + 1, objOriginal.lastIndexOf("px")));
-
-				var startPosition = {"left":objOriginalX, "top":objOriginalY},
-					curPosition = {"left":objOriginalX, "top":objOriginalY},
-					pr = {};
-
-				$(startPosition)// 这个位置是拖拽的最后的位置, 也就是moveEvent的位置
-					.animate(position, {
-						duration: this.options.resetDuration,
-						//easing: this.options.easing,
-						step: function(now, data) {
-							pr[data.prop] = now;
-							$.extend(curPosition, pr);
+					$(startPosition)// 这个位置是拖拽的最后的位置, 也就是moveEvent的位置
+						.animate(position, {
+							duration: this.options.resetDuration,
+							//easing: this.options.easing,
+							step: function(now, data) {
+								pr[data.prop] = now;
+								$.extend(curPosition, pr);
 								animProps[DrM.animType] = 'translate(' +
 									curPosition.left + 'px, ' + curPosition.top + 'px)';
 								$obj.css(animProps);
-						},
-						complete: function() {
-							if (callback) {
-								callback.call();
+							},
+							complete: function() {
+								if (callback) {
+									callback.call();
+								}
 							}
-						}
-					});
+						});
 
-			} else {
-				// 使用translate3D的CSS方法
-				this.applyTransition();
+				} else {
+					// 使用translate3D的CSS方法
+					this.applyTransition();
 
-				animProps[this.animType] = 'translate3d(' + position.left + 'px, ' + position.top + 'px, 0px)';
+					animProps[this.animType] = 'translate3d(' + position.left + 'px, ' + position.top + 'px, 0px)';
 
-				$obj.css(animProps);
+					$obj.css(animProps);
 
 
-				if (callback) {
-					setTimeout(function() {
+					if (callback) {
+						setTimeout(function() {
 
-						DrM.disableTransition();
+							DrM.disableTransition();
 
-						callback.call();
-					}, DrM.options.resetDuration);
+							callback.call();
+						}, DrM.options.resetDuration);
+					}
 				}
+
 			}
 
 		}
-
 	};
+
+	if(typeof define !== 'undefined'){
+		return DraggableMenu;
+	}else{
+		window.DraggableMenu = DraggableMenu;
+	}
 
 }));
 

@@ -51,9 +51,10 @@
 			{text:'生活缴费', icon:"e", id:"life", url:"example/index/lifePayment"},
 			{text:'关联转账', icon:"f", id:"", url:""},
 			{text:'周边', icon:"g", id:"bankNodes", url:"example/index/bankNodes"},
-			{text:'话费充值', icon:"h", id:"recharge", url:"example/index/recharge"},
+			{text:'话费充值', undraggable:true, icon:"h", id:"recharge", url:"example/index/recharge"},
 			{text:'无卡取款', icon:"i", id:"", url:""},
-			{text:'组件展示', icon:"d", id:"toComponentsList", url:"demo/demo/list"}
+//			{text:'组件展示', icon:"d", id:"toComponentsList", url:"demo/demo/list"},
+			{text:'更多', icon:"d", id:"toComponentsList", url:"demo/demo/list"}
 		],
 
 		renderer: function(data, i){
@@ -73,6 +74,10 @@
 
 		onClose:function(){
 			$('.DraggableMenutittle').text('onClose');
+		},
+		onEditing:function(){
+
+//			console.log('进入编辑模式')
 		}
 
 	});
