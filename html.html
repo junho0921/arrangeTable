@@ -9,8 +9,6 @@
 
 <div style="height:900px"></div>
 <h2 class="DraggableMenutittle" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">DraggableMenu</h2>
-<h2 class="DraggableMenutittle2" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">DraggableMenu</h2>
-<h2 class="DraggableMenutittle3" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">DraggableMenu</h2>
 <button>获取数据</button>
 <!--<div class="DraggableMenu"></div>-->
 <ul class="table-col-4 DraggableMenu">
@@ -20,26 +18,6 @@
 <script src="libs/jquery.js"></script>
 <script src="DraggableMenu.js"></script>
 <script>
-//	var dragControl = new DraggableMenu({
-//		container:".DraggableMenu",
-//		ItemNode:"li",
-////		ItemClassName: "cell",
-//		closebtnthml:"<span class='DraggableMenuCloseBtnd'>2</span>",
-//		dataList:[
-//			{text:'信用卡', icon:"c", id:"credit", link:"example/index/mycountDetail"},
-//			{text:'理财交易', icon:"d", id:"product", link:"example/index/iwant"},
-//			{text:'生活缴费', icon:"e", id:"life", link:"example/index/lifePayment"},
-//			{text:'关联转账', icon:"f", id:"", link:""},
-//			{text:'周边', icon:"g", id:"bankNodes", link:"example/index/bankNodes"},
-//			{text:'话费充值', icon:"h", id:"recharge", link:"example/index/recharge"},
-//			{text:'无卡取款', icon:"i", id:"", link:""},
-//			{text:'组件展示', icon:"d", id:"toComponentsList", link:"demo/demo/list"}
-//		]
-//	});
-//
-//	dragControl.on('touchStasssrt', function(){
-//		$('.DraggableMenutittle').text('sssss111111111111111111')
-//	});
 
 	var dragControl = new DraggableMenu({
 
@@ -76,124 +54,10 @@
 			$('.DraggableMenutittle').text('onClose');
 		},
 		onEditing:function(){
-
 //			console.log('进入编辑模式')
 		}
 
 	});
-
-
-
-
-//	dragControl.addEvent("click", function() {
-//		$('.DraggableMenutittle').text('点击了一下');
-//	});
-//
-//	dragControl.addEvent("press", function(type, $target) {
-//		$target.append($('<span>').text('X').addClass('closebtn'));
-//		$('.closebtn').on('mousedown', function(){
-//			$target.remove();
-//			return false;
-//		})
-//	});
-//
-//	dragControl.addEvent("beforeDrag", function(type, $dragItem){
-//		$dragItem.append($('<span>').text('X').addClass('closebtn'));
-//		$('.closebtn').on('mousedown', function(){
-//			$dragItem.remove();
-//			return false;
-//		})
-//	});
-//	dragControl.addEvent("afterDrag", function(type, $target){
-//		$('.DraggableMenutittle').text('sssss33333333333', $dragItem.text());
-//		$target.append($('<span>').text('X').addClass('closebtn'))
-//	});
-//	dragControl.addEvent("mouseDown", function(type, $targets){
-//		$targets.find('.closebtn').remove();
-//	});
-//
-//	$('button').click(function(){
-//		$('.DraggableMenutittle').text(dragControl.getData());
-//	});
-
-
-	// 根据项目需要改变render方法
-//	DraggableMenu.prototype.render = function(){
-//		var _ = this,
-//				data = _.options.dataList,
-//				len = data.length;
-//
-//		for(var i = 0; i < len; i ++){
-//			$('<' + _.options.ItemNode + '>')
-//					.addClass(_.options.ItemClassName)
-//					.attr({'id': data[i].id, "data-YClink": data[i].link})
-//					.append($("<i class='list-ico'>").addClass(data[i].icon))
-//					.append($('<span>').text(data[i].text))
-//					.appendTo(_.$container);
-//		}
-//	};
-
-//	var dragController = $('.DraggableMenu').DraggableMenu({
-////		ItemNode:"li",
-////		ItemClassName:"cell",
-//		closehtml:"<span></span>",
-//		dataList:[
-//			{text:'信用卡', icon:"c", id:"credit", link:"example/index/mycountDetail"},
-//			{text:'理财交易', icon:"d", id:"product", link:"example/index/iwant"},
-//			{text:'生活缴费', icon:"e", id:"life", link:"example/index/lifePayment"},
-//			{text:'关联转账', icon:"f", id:"", link:""},
-//			{text:'周边', icon:"g", id:"bankNodes", link:"example/index/bankNodes"},
-//			{text:'话费充值', icon:"h", id:"recharge", link:"example/index/recharge"},
-//			{text:'无卡取款', icon:"i", id:"", link:""},
-//			{text:'组件展示', icon:"d", id:"toComponentsList", link:"demo/demo/list"}
-//		]
-//	});
-
-//	var modifyMode = false;
-
-//dragController.DraggableMenu.addEvent("templatelist", function(data) {
-//				return $('<div>')
-//						.attr({'id': data.id, "data-YClink": data.link})
-//						.append($("<i class='list-ico'>").addClass(data.icon))
-//						.append($('<span>').text("j1jj"+data.text))[0].outerHTML
-//});
-
-//DraggableMenu.prototype.templatelist = function(){
-//	return $('<' + _.options.ItemNode + '>')
-//			.addClass(_.options.ItemClassName)
-//			.attr({'id': data[i].id, "data-YClink": data[i].link})
-//			.append($("<i class='list-ico'>").addClass(data[i].icon))
-//			.append($('<span>').text(data[i].text))
-//			[0].outerHTML
-//};
-
-//	dragController.DraggableMenu.addEvent("click", function(type, $target) {
-//		if(!modifyMode){
-//			var link = $target.attr("data-YClink");
-////			App.navigate(link, true);
-//			$('.DraggableMenutittle').text('link: ', link);
-//			return false;
-//		}else{ // 若是在修改模式的情况下的点击是返回非修改模式
-//			modifyMode = false;
-//		}
-//	});
-////
-//	dragController.DraggableMenu.addEvent(["press", "beforeDrag", "afterDrag"], function(type, $target) {
-//		modifyMode = true;
-//		$target.append(
-//				$('<span>')
-//						.text('X')
-//						.addClass('DraggableMenuCloneBtn')
-//						.on('touchstart', function(){
-//							$target.remove();
-//							return false;
-//						})
-//		);
-//	});
-
-//	dragController.DraggableMenu.addEvent("touchStart", function(type, $targets){
-//		$targets.find('.DraggableMenuCloneBtn').remove();
-//	});
 
 
 </script>

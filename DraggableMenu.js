@@ -109,7 +109,7 @@
 			draggingItemClass:"DrM-DraggingItem",
 
 			// 或添加关闭按钮:
-			closebtnthml:"<span class='DraggableMenuCloseBtn'>-</span>",
+			closebtnthml:"<span class='DrM-CloseBtn'>-</span>",
 
 			btncss:{
 				'position': 'absolute',
@@ -268,20 +268,6 @@
 					this.undraggableCount++;
 				}
 			}
-
-			//// 保留简洁的写法
-			//var i = len;
-			//while(i--){
-			//	$liHtml= this.options.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
-			//	.data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
-			//
-			//	if(data[i].undraggable){// 不可拖拉的排序最后
-			//		this.undraggableCount++;
-			//		this.template.push($liHtml);
-			//	}else{// 可拖拉的排序靠前
-			//		this.template.unshift($liHtml);
-			//	}
-			//}
 		},
 
 		initailizeEvent: function() {
