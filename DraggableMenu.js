@@ -104,9 +104,9 @@
 		var defalutOptions = {
 			// 子容器属性
 			container:".DraggableMenu",
-			activeClass:"activeDraggableMenu",
-			draggingClass:"DraggingItem",
-			dragClass:"DraggableMenuClone",
+			activeItemClass:"DrM-activeItem",
+			reorderItemClass:"DrM-reorderItem",
+			draggingItemClass:"DrM-DraggingItem",
 
 			// 或添加关闭按钮:
 			closebtnthml:"<span class='DraggableMenuCloseBtn'>-</span>",
@@ -302,7 +302,7 @@
 				//}
 				//DrM.fireEvent("touchStart", [DrM.$container]);
 
-				DrM.MEMOmoveTargetIndex = DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeClass).index();
+				DrM.MEMOmoveTargetIndex = DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeItemClass).index();
 
 				DrM.startTime = event.timeStamp || +new Date();
 
@@ -379,7 +379,7 @@
 				this.dragItemReset();
 
 			}else{
-				this.$container.children().removeClass(this.options.activeClass + " " +this.options.draggingClass);
+				this.$container.children().removeClass(this.options.activeItemClass + " " +this.options.reorderItemClass);
 
 				if(this.dragging === false){
 
@@ -426,17 +426,17 @@
 				// 基于css坐标的话不能像translate那样参考触控位移的距离, 只参考dragItem原本产生时的css坐标和最后的$dragTarget的坐标
 				// $dragItem最终的css坐标 = 最终$dragTarget相对父级的位置 - 原本$dragItem相对父级的位置
 				resetX =
-					this.$container.find("."+ this.options.activeClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
+					this.$container.find("."+ this.options.activeItemClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
 					- this.dragItemOriginalpos.left;
-				resetY = this.$container.find("."+ this.options.activeClass).position().top - this.dragItemOriginalpos.top;
+				resetY = this.$container.find("."+ this.options.activeItemClass).position().top - this.dragItemOriginalpos.top;
 			}
 
 			// 执行滑动效果
 			var DrM = this;
 			this.animateSlide({'left': resetX, 'top': resetY}, function(){
-				DrM.$container.find('.' + DrM.options.dragClass).remove();
+				DrM.$container.find('.' + DrM.options.draggingItemClass).remove();
 				DrM.options.onDragEnd();
-				DrM.$container.children().removeClass(DrM.options.activeClass + " " + DrM.options.draggingClass);
+				DrM.$container.children().removeClass(DrM.options.activeItemClass + " " + DrM.options.reorderItemClass);
 				//DrM.fireEvent("afterDrag", [DrM.$Target]);
 			});
 		},
@@ -511,7 +511,7 @@
 						// 复制目标作为拖拽目标
 						DrM.$dragItem =
 							DrM.$Target.clone()
-								.addClass(DrM.options.dragClass)
+								.addClass(DrM.options.draggingItemClass)
 								.appendTo(DrM.$container);// Bug: 改变了$container的高度! 但可通过css固定高度
 
 						DrM.dragItemOriginalpos = DrM.$dragItem.position();
@@ -526,7 +526,7 @@
 
 						DrM.InitializeMoveEvent = true;
 
-						DrM.$Target.addClass(DrM.options.draggingClass);
+						DrM.$Target.addClass(DrM.options.reorderItemClass);
 					}
 				}
 
@@ -786,11 +786,7 @@
 		}
 	};
 
-	if(typeof define !== 'undefined'){
-		return DraggableMenu;
-	}else{
-		window.DraggableMenu = DraggableMenu;
-	}
+	return (typeof define !== 'undefined') ? DraggableMenu : (window.DraggableMenu = DraggableMenu);
 
 }));
 

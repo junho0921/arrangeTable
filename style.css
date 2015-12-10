@@ -14,7 +14,7 @@
     background: lightcyan;
     text-align: center;
 }
-.DraggableMenu .dragItem.activeDraggableMenu{
+.DraggableMenu .dragItem.activeDrMItem{
     background: lightblue;
 }
 .DraggingItem {
@@ -24,7 +24,7 @@
     opacity: 0;
 }
 
-.DraggableMenu .dragItem.activeDraggableMenu.DraggableMenuClone {
+.DraggableMenu .dragItem.activeDrMItem.DrM-DraggingItem {
     opacity:1;
     position:relative;
     background: deepskyblue;
