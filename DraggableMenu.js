@@ -190,8 +190,8 @@
 			// 事件相关的基本属性
 			eventStartX: null,
 			eventStartY: null,
-			moveTargetIndex: null, // moveEvent的位置
-			MEMOmoveTargetIndex: null, // 记录moveEvent的位置
+			reorderIndex: null, // moveEvent的位置
+			MEMOreorderIndex: null, // 记录moveEvent的位置
 			startTargetIndex: null, // startEvent的位置
 
 			// 初始拖拽
@@ -288,7 +288,7 @@
 				//}
 				//DrM.fireEvent("touchStart", [DrM.$container]);
 
-				DrM.MEMOmoveTargetIndex = DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeItemClass).index();
+				DrM.MEMOreorderIndex = DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeItemClass).index();
 
 				DrM.startTime = event.timeStamp || +new Date();
 
@@ -550,29 +550,44 @@
 			// 2, 计算拖拽时target中心位置的坐标targetCenterPos
 			var targetCenterPosX = this.targetCenterStartX + cssX;
 			var targetCenterPosY = this.targetCenterStartY + cssY;
-			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置moveTargetIndex
+			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置calcIndex
 			var curCol = Math.floor(targetCenterPosX/this.liW) + 1;
 			var curRow = Math.floor(targetCenterPosY/this.liH);
-			var moveTargetIndex = curRow * this.cols + curCol - 1;
+			var calcIndex = curRow * this.cols + curCol - 1;
 
-			if(moveTargetIndex === this.MEMOmoveTargetIndex){
+			if(calcIndex === this.MEMOreorderIndex){
 				// 位移未超出一个li位置, 就取消执行
 				return false;
 			}else{
-				// 4, 修正在0到可拖动数量draggableCount范围内
-				moveTargetIndex = moveTargetIndex < this.draggableCount ? (moveTargetIndex > 0 ? moveTargetIndex : 0) : (this.draggableCount - 1);
-				// 5, 以moveTargetIndex作为插入的位置
-				if(moveTargetIndex < this.startTargetIndex){
-					this.$items.eq(moveTargetIndex).before(this.$Target);
-				} else if (moveTargetIndex > this.startTargetIndex){
-					this.$items.eq(moveTargetIndex).after(this.$Target);
-				} else if (moveTargetIndex == this.startTargetIndex && this.startTargetIndex == 0){
-					this.$items.eq(1).before(this.$Target);
-				} else {
-					this.$items.eq(moveTargetIndex - 1).after(this.$Target);
+				// 4, 修正计算位置值calcIndex限制在0到可拖动数量draggableCount范围内
+				calcIndex = calcIndex < this.draggableCount ? (calcIndex > 0 ? calcIndex : 0) : (this.draggableCount - 1);
+				// 5, 以reorderIndex作为插入的位置
+				var reorderIndex;
+				// 0 - startTargetIndex - this.draggableCount
+				if(calcIndex < this.startTargetIndex){
+					reorderIndex = calcIndex;
+				} else if (calcIndex == this.startTargetIndex){
+					reorderIndex = calcIndex + 1;
+				} else if (calcIndex > this.startTargetIndex){
+					reorderIndex = calcIndex + 1;
 				}
+				//else {
+				//	reorderIndex = 1;
+				//}
+				console.log('calcIndex', calcIndex,'reorderIndex', reorderIndex);
+				this.$items.eq(reorderIndex).before(this.$Target);
+
+				//if(reorderIndex < this.startTargetIndex){
+				//	this.$items.eq(reorderIndex).before(this.$Target);
+				//} else if (reorderIndex > this.startTargetIndex){
+				//	this.$items.eq(reorderIndex).after(this.$Target);
+				//} else if (reorderIndex == this.startTargetIndex && this.startTargetIndex == 0){
+				//	this.$items.eq(1).before(this.$Target);
+				//} else {
+				//	this.$items.eq(reorderIndex - 1).after(this.$Target);
+				//}
 				// 记录本次位置
-				this.MEMOmoveTargetIndex = moveTargetIndex;
+				this.MEMOreorderIndex = reorderIndex;
 			} // 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
 		},
 
