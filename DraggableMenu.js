@@ -38,6 +38,8 @@
 // 说明
 // displaynone
 
+// 测试不同css动画情况, 重点在于css定位的模式
+
 /**
  * @class Combox
  * @memberof Nuui
@@ -528,15 +530,11 @@
 					}
 				}
 
-				// 在初始化拖动后才可禁止默认事件行为
-				event.stopImmediatePropagation();
-				event.stopPropagation();
+				// 在初始化拖动后才禁止默认事件行为
 				event.preventDefault();
 
-				// 计算
-				var cssX, cssY;
-				// 触控点移动距离
-				cssX = Move_ex - DrM.eventStartX;
+				// 计算触控点移动距离
+				var cssX = Move_ex - DrM.eventStartX,
 				cssY = Move_ey - DrM.eventStartY;
 				// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
 				if (DrM.transformsEnabled === false) {

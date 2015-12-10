@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3d6f705b-ebdc-405d-99df-be8f38840f8f" name="Default" comment="">
+    <list default="true" id="3d6f705b-ebdc-405d-99df-be8f38840f8f" name="Default" comment="项目版本v1.6">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DraggableMenu.js" afterPath="$PROJECT_DIR$/DraggableMenu.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/html.html" afterPath="$PROJECT_DIR$/html.html" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="junDrag.iws" />
@@ -27,8 +28,8 @@
       <file leaf-file-name="html.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/html.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-6.196429">
-              <caret line="85" column="0" selection-start-line="85" selection-start-column="0" selection-end-line="85" selection-end-column="0" />
+            <state vertical-scroll-proportion="-8.482142">
+              <caret line="54" column="51" selection-start-line="54" selection-start-column="51" selection-end-line="54" selection-end-column="51" />
               <folding>
                 <element signature="n#style#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
                 <element signature="n#style#0;n#h2#0;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -41,8 +42,8 @@
       <file leaf-file-name="DraggableMenu.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-6.1046386">
-              <caret line="300" column="64" selection-start-line="300" selection-start-column="64" selection-end-line="300" selection-end-column="64" />
+            <state vertical-scroll-proportion="0.6903991">
+              <caret line="40" column="28" selection-start-line="40" selection-start-column="28" selection-end-line="40" selection-end-column="28" />
               <folding />
             </state>
           </provider>
@@ -469,7 +470,13 @@
       <option name="project" value="LOCAL" />
       <updated>1449743907894</updated>
     </task>
-    <option name="localTasksCounter" value="41" />
+    <task id="LOCAL-00041" summary="项目版本v1.6">
+      <created>1449745713754</created>
+      <option name="number" value="00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1449745713754</updated>
+    </task>
+    <option name="localTasksCounter" value="42" />
     <servers />
   </component>
   <component name="TodoView" selected-index="2">
@@ -538,7 +545,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="修改注释, 添加修改目标" />
     <MESSAGE value="添加原理注释" />
     <MESSAGE value="重要修改, 转为$.fn模式, 修改init方法为setTimeout后执行, 提供了修改原型方法的可能性" />
     <MESSAGE value="重要修改, 新增了template理念, 提供方法templatehtml方法" />
@@ -563,7 +569,8 @@
     <MESSAGE value="进行了较多的修改, &#10;1, 添加了不可排序的属性undraggable, 当有undraggable的子项时,&#10;生成的html是把不可拖动的项目放在最后位置,&#10;当拖动项目时,检测到拖动目标是最后不可拖动项目时, 不执行插入排序.&#10;&#10;2, 修改了绑定数据的$.data方法的执行时机, 不应该在render之后才绑定数据, 应该在循环datalist时候对生成好的$html的jQuery包装集绑定, 这样可以免去多次循环.&#10;" />
     <MESSAGE value="继续补充&#10;3, 添加了sensitive模式, 因app里的触控比较敏感, 再快的滑动, 也有可能计算出滑动的距离是1px, 所以需要敏感模式" />
     <MESSAGE value="4, 修正拖拽时插入排序里的 修正方法, 原本是修正拖拽对象的XY轴的距离不超出容器的范围, 然后得出的正确index后判断超于可拖动数量的话就返回错误, 现在版本是以上不修正, 计算出的index才修正在0到可拖动数量范围内" />
-    <option name="LAST_COMMIT_MESSAGE" value="4, 修正拖拽时插入排序里的 修正方法, 原本是修正拖拽对象的XY轴的距离不超出容器的范围, 然后得出的正确index后判断超于可拖动数量的话就返回错误, 现在版本是以上不修正, 计算出的index才修正在0到可拖动数量范围内" />
+    <MESSAGE value="项目版本v1.6" />
+    <option name="LAST_COMMIT_MESSAGE" value="项目版本v1.6" />
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.83806145" />
   </component>
   <component name="XDebuggerManager">
@@ -970,8 +977,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/html.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-6.196429">
-          <caret line="85" column="0" selection-start-line="85" selection-start-column="0" selection-end-line="85" selection-end-column="0" />
+        <state vertical-scroll-proportion="-8.482142">
+          <caret line="54" column="51" selection-start-line="54" selection-start-column="51" selection-end-line="54" selection-end-column="51" />
           <folding>
             <element signature="n#style#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
             <element signature="n#style#0;n#h2#0;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -982,8 +989,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-6.1046386">
-          <caret line="300" column="64" selection-start-line="300" selection-start-column="64" selection-end-line="300" selection-end-column="64" />
+        <state vertical-scroll-proportion="0.6903991">
+          <caret line="40" column="28" selection-start-line="40" selection-start-column="28" selection-end-line="40" selection-end-column="28" />
           <folding />
         </state>
       </provider>

@@ -61,7 +61,7 @@
 			// <li class="dragItem" id="recharge"><i class="list-ico h"></i><span>话费充值</span></li>
 			return $('<li>').addClass('dragItem').attr({'id': data.id})
 							.append($("<i class='list-ico'>").addClass(data.icon))
-							.append($('<span>').text(data.text))[0].outerHTML
+							.append($('<span>').text(data.text))
 		},
 
 		onItemTap: function(data){
