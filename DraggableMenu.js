@@ -24,7 +24,7 @@
 // 优化绑定事件, 直接绑定在$container就可以
 // 拖拽时候, target是没有btn的, 所以需要添加一个class以至于可以隐藏
 // 类私有变量使用下划线开头, 区分公开的变量方法
-//$.proxy(func, this);
+// $.proxy(func, this);
 
 
 // 项目组版本
@@ -135,8 +135,6 @@
 			ulH: null,
 			rows: null,
 			cols: null,
-			//li_1_top: null,
-			//li_1_left: null,
 
 			// 事件类型
 			hasTouch: null,
@@ -554,27 +552,6 @@
 		this.$dragItem.css(transition);
 	};
 
-	// 添加触发事件的方法
-	DraggableMenu.prototype.addEvent = function(event, func){
-		if(typeof event === "string"){
-			DraggableMenu.prototype[event] = func;
-		}else{
-			for(var i = 0 ; i < event.length; i++){
-				var ent = event[i];
-				DraggableMenu.prototype[ent] = func;
-			}
-		}
-		return this;
-	};
-
-	// 手动触发事件的方法
-	DraggableMenu.prototype.fireEvent = function(eventName, args){
-		if(this[eventName]){
-			args = [eventName].concat(args);
-			this[eventName].apply(this, args);
-		}
-	};
-
 	DraggableMenu.prototype.size = function(){
 		// 获取子项li尺寸
 		this.liH = this.$items.outerHeight(true);
@@ -598,10 +575,6 @@
 			}
 		}
 		//console.log('ul data : rows = ', this.rows, ', cols = ', this.cols);
-
-		//// 计算第一个li的页面坐标, 以此作为参考基准
-		//this.li_1_top = this.$items.eq(0).offset().top;
-		//this.li_1_left = this.$items.eq(0).offset().left;
 	};
 
 	DraggableMenu.prototype.setProps = function() {
@@ -749,31 +722,6 @@
 		}
 
 	};
-
-
-	DraggableMenu.prototype.getData = function(fnc){
-		// 此方法作为数据绑定获取数据, 但可通过DOM操作就完成, 仅作参考
-		var items = this.$container.children();
-		return fnc(items);
-	};
-
-	//$.fn.DraggableMenu = function() {
-	//	var opt = arguments[0],// 获取传入参数,不用管什么对象了
-	//		args = Array.prototype.slice.call(arguments, 1),
-	//		l = this.length,
-	//		i,
-	//		ret;
-	//
-	//	this.DraggableMenu = new DraggableMenu(this, opt);
-	//	for (i = 0; i < l; i++) {
-	//		if (typeof opt == 'object' || typeof opt == 'undefined')
-	//			this[i].DraggableMenu = new DraggableMenu(this[i], opt);
-	//		else
-	//			ret = this[i].DraggableMenu[opt].apply(this[i].DraggableMenu, args);
-	//		if (typeof ret != 'undefined') return ret;
-	//	}
-	//	return this;
-	//};
 
 }));
 
