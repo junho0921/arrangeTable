@@ -554,34 +554,37 @@
 			var targetCenterPosX = this.targetCenterStartX + cssX;
 			var targetCenterPosY = this.targetCenterStartY + cssY;
 			// 当坐标超出方位时的修正
-			targetCenterPosX = targetCenterPosX > 0 ? (targetCenterPosX < this.ulW ? targetCenterPosX: this.ulW): 0;
-			targetCenterPosY = targetCenterPosY > 0 ? (targetCenterPosY < this.ulH ? targetCenterPosY: this.ulH): 0;
+			//targetCenterPosX = targetCenterPosX > 0 ? (targetCenterPosX < this.ulW ? targetCenterPosX: this.ulW): 0;
+			//targetCenterPosY = targetCenterPosY > 0 ? (targetCenterPosY < this.ulH ? targetCenterPosY: this.ulH): 0;
 			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置moveTargetIndex
 			var curCol = Math.floor(targetCenterPosX/this.liW) + 1;
 			var curRow = Math.floor(targetCenterPosY/this.liH);
-			this.moveTargetIndex = curRow * this.cols + curCol - 1;
+			var moveTargetIndex = curRow * this.cols + curCol - 1;
+			// 修正
+			moveTargetIndex = moveTargetIndex < 0 ? 0 :moveTargetIndex;
+			moveTargetIndex = moveTargetIndex >= this.draggableCount ? (this.draggableCount - 1) : moveTargetIndex;
 
-			if(this.moveTargetIndex >=  this.draggableCount){
-				// 当超过拖拉数量的范围就退出排序
-				return false;
-			}
+			//if(moveTargetIndex >=  this.draggableCount){
+			//	// 当超过拖拉数量的范围就退出排序
+			//	return false;
+			//}
 
-			if(this.MEMOmoveTargetIndex == this.moveTargetIndex){
+			if(this.MEMOmoveTargetIndex == moveTargetIndex){
 				// 位移未超出一个li位置, 就取消执行
 				return false;
 			}else{
 				// 4, 以moveTargetIndex作为插入的位置
-				if(this.moveTargetIndex < this.startTargetIndex){
-					this.$items.eq(this.moveTargetIndex).before(this.$Target);
-				} else if (this.moveTargetIndex > this.startTargetIndex){
-					this.$items.eq(this.moveTargetIndex).after(this.$Target);
-				} else if (this.moveTargetIndex == this.startTargetIndex && this.startTargetIndex == 0){
+				if(moveTargetIndex < this.startTargetIndex){
+					this.$items.eq(moveTargetIndex).before(this.$Target);
+				} else if (moveTargetIndex > this.startTargetIndex){
+					this.$items.eq(moveTargetIndex).after(this.$Target);
+				} else if (moveTargetIndex == this.startTargetIndex && this.startTargetIndex == 0){
 					this.$items.eq(1).before(this.$Target);
 				} else {
-					this.$items.eq(this.moveTargetIndex - 1).after(this.$Target);
+					this.$items.eq(moveTargetIndex - 1).after(this.$Target);
 				}
 				// 记录本次位置
-				this.MEMOmoveTargetIndex = this.moveTargetIndex;
+				this.MEMOmoveTargetIndex = moveTargetIndex;
 			} // 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
 		},
 
