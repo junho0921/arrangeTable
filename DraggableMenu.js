@@ -190,7 +190,6 @@
 			// 事件相关的基本属性
 			eventStartX: null,
 			eventStartY: null,
-			reorderIndex: null, // moveEvent的位置
 			MEMOreorderIndex: null, // 记录moveEvent的位置
 			startTargetIndex: null, // startEvent的位置
 
@@ -548,8 +547,13 @@
 			/* 思路2: 监听拖动项的中心位置来插入空白格子 */
 			// 1, 计算target中心的初始位置targetCenterStart, 直接获取this.targetCenterStartX,this.targetCenterStartY
 			// 2, 计算拖拽时target中心位置的坐标targetCenterPos
+
 			var targetCenterPosX = this.targetCenterStartX + cssX;
 			var targetCenterPosY = this.targetCenterStartY + cssY;
+			// 不能超出容器范围
+			if(targetCenterPosX < 0 ||targetCenterPosX > this.ulW || targetCenterPosY < 0 ||targetCenterPosY > this.ulH){
+				return
+			}
 			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置calcIndex
 			var curCol = Math.floor(targetCenterPosX/this.liW) + 1;
 			var curRow = Math.floor(targetCenterPosY/this.liH);
