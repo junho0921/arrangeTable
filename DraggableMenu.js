@@ -118,6 +118,15 @@
 
 			this._setProps();
 
+			// 绝对定位
+			// 在size方法里已经获取的itemWH与containerWH可以作为每个item的绝对定位的位置了, 不用遍历items来记录
+			this._getItemsPos();
+
+			// 记录现在数组情况, 在每次变动时更新数组, 暂时可以先在DOM数组里排序,按这排序来决定绝对定位的位置
+			this._getOrder();
+
+			this._setItemsPos();
+
 			this._$items.on(this._startEvent, this._startEventFunc);
 		},
 
