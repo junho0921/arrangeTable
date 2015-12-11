@@ -40,8 +40,8 @@
       <file leaf-file-name="DraggableMenu.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.5865687">
-              <caret line="167" column="0" selection-start-line="167" selection-start-column="0" selection-end-line="167" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.609493">
+              <caret line="503" column="86" selection-start-line="503" selection-start-column="86" selection-end-line="503" selection-end-column="86" />
               <folding />
             </state>
           </provider>
@@ -492,7 +492,13 @@
       <option name="project" value="LOCAL" />
       <updated>1449800478398</updated>
     </task>
-    <option name="localTasksCounter" value="45" />
+    <task id="LOCAL-00045" summary="reorder的优化是尽量避免计算, 不能出现重复排序">
+      <created>1449801394242</created>
+      <option name="number" value="00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1449801394242</updated>
+    </task>
+    <option name="localTasksCounter" value="46" />
     <servers />
   </component>
   <component name="TodoView" selected-index="2">
@@ -561,7 +567,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="小调整" />
     <MESSAGE value="添加图片" />
     <MESSAGE value="修改注释与变量" />
     <MESSAGE value="修改前:&#10;&#10;// 重要修改:&#10;// 拖动的单位不再以li为单位, 会以li里的内容wrap&quot;div&quot;.addClass(li.class), 以这div为拖动的对象, 而且是基于position:relative的模式&#10;// 这样就可以避免了复制模式, 也可以避免bug:container的尺寸变化, 有利于setCSS的三种模式的统一位置(不再担心降级方法的css({&quot;left&quot;:??}))的特殊处理,&#10;// 这是因为, 原来clone的情况, 必须要cloneItem先改变css的坐标位置, 这样使得setCSS的三种模式里translate是基于改变后的css坐标, 而降级方案还是基于原来未改变的css坐标&#10;// 这样的话, animateslide的情况也可以" />
@@ -586,7 +591,8 @@
     <MESSAGE value="改变类名" />
     <MESSAGE value="// 保留写法: 对undraggable项排序靠后的间接写法, 只需一次遍历&#10;&#9;&#9;&#9;var i = len;&#10;&#9;&#9;&#9;while(i--){&#10;&#9;&#9;&#9;&#9;$liHtml= this.options.renderer(data[i], i, data)// 根据用户的自定义模板填进数据&#10;&#9;&#9;&#9;&#9;.data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据&#10;&#9;&#9;&#9;&#10;&#9;&#9;&#9;&#9;if(data[i].undraggable){// 不可拖拉的排序最后&#10;&#9;&#9;&#9;&#9;&#9;this.undraggableCount++;&#10;&#9;&#9;&#9;&#9;&#9;this.template.push($liHtml);&#10;&#9;&#9;&#9;&#9;}else{// 可拖拉的排序靠前&#10;&#9;&#9;&#9;&#9;&#9;this.template.unshift($liHtml);&#10;&#9;&#9;&#9;&#9;}&#10;&#9;&#9;&#9;}" />
     <MESSAGE value="优化修改, 修改了reorder的方法, 简化了多余的代码和方法" />
-    <option name="LAST_COMMIT_MESSAGE" value="优化修改, 修改了reorder的方法, 简化了多余的代码和方法" />
+    <MESSAGE value="reorder的优化是尽量避免计算, 不能出现重复排序" />
+    <option name="LAST_COMMIT_MESSAGE" value="reorder的优化是尽量避免计算, 不能出现重复排序" />
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.83806145" />
   </component>
   <component name="XDebuggerManager">
@@ -1039,8 +1045,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5865687">
-          <caret line="167" column="0" selection-start-line="167" selection-start-column="0" selection-end-line="167" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.609493">
+          <caret line="503" column="86" selection-start-line="503" selection-start-column="86" selection-end-line="503" selection-end-column="86" />
           <folding />
         </state>
       </provider>

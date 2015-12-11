@@ -287,7 +287,7 @@
 				//}
 				//DrM.fireEvent("touchStart", [DrM.$container]);
 
-				DrM.MEMOreorderIndex = DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeItemClass).index();
+				DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeItemClass).index();
 
 				DrM.startTime = event.timeStamp || +new Date();
 
@@ -511,6 +511,8 @@
 
 						DrM.InitializeMoveEvent = true;
 
+						DrM.MEMOreorderIndex = DrM.startTargetIndex + 1;
+
 						DrM.$Target.addClass(DrM.options.reorderItemClass);
 					}
 				}
@@ -578,6 +580,7 @@
 				// 位移未超出一个li位置, 就取消执行
 				return false;
 			} else {
+				console.log('排序', reorderIndex)
 				// 5, 以reorderIndex作为插入的位置
 				this.$items.eq(reorderIndex).before(this.$Target);
 				// 记录本次位置
