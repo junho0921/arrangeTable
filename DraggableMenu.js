@@ -39,8 +39,7 @@
 // 隐藏_hardConfig, 不能开放
 
 /**
- * @class Combox
- * @memberof Nuui
+ * @class DraggableMenu
  * @classdesc 利用input创建的下拉框组件<br/>
  * 		基本元素item:<br/>
  * 		item内至少有2个属性:key和text,text用于展示,key为真正的值</br>
@@ -103,7 +102,7 @@
 			this._dragEventFn = $.proxy(this._dragEventFn, this);
 			this._stopEventFunc = $.proxy(this._stopEventFunc, this);
 
-			this._hasTouch = 'ontouchstart' in window ;
+			this._hasTouch = 'ontouchstart' in window;
 
 			this._config = $.extend({}, this._defaultConfig, options);
 
@@ -119,9 +118,7 @@
 
 			this._setProps();
 
-			var _ = this;
-
-			this._$items.on(_._startEvent, _._startEventFunc);
+			this._$items.on(this._startEvent, this._startEventFunc);
 		},
 
 		/*
@@ -372,7 +369,7 @@
 			this._eventStartX = this._page('x', event);
 			this._eventStartY = this._page('y', event);
 
-			this.itemStartPagePos = this._$touchTarget.offset();
+			this._itemStartPagePos = this._$touchTarget.offset();
 			this.itemStartPos = this._$touchTarget.position();
 
 			// 计算target中心的初始位置targetCenterStart
@@ -479,8 +476,8 @@
 				// 计算最终dragItem滑向位置的坐标:this._$reorderItem.offset();
 				var targetPos = this._$reorderItem.offset();
 				// 差距 = 最终位置 - touchStart时dragItem的位置
-				resetX =  targetPos.left - this.itemStartPagePos.left;
-				resetY = targetPos.top - this.itemStartPagePos.top;
+				resetX =  targetPos.left - this._itemStartPagePos.left;
+				resetY = targetPos.top - this._itemStartPagePos.top;
 			}else{
 				// 1-2, 若不适用CSS3的属性transform, 只能使用css坐标通过animate来实现
 				// 基于css坐标的话不能像translate那样参考触控位移的距离, 只参考dragItem原本产生时的css坐标和最后的$dragTarget的坐标
@@ -507,8 +504,8 @@
 			// DraggableMenu里_moveEvent的理念是按住后拖动, 非立即拖动
 			this._dragging = true;// 进入拖动模式
 
-			var Move_ex = this.mvX = this._page('x', event),
-				Move_ey = this.mvY=  this._page('y', event);
+			var Move_ex = this._page('x', event),
+				Move_ey = this._page('y', event);
 
 			// 初始化MoveEvent
 			if(!this._InitializeMoveEvent){
@@ -548,6 +545,7 @@
 				if(this._hardConfig._sensitive){
 					RangeXY = RangeXY * 3;
 				}
+
 				var outRang = (Move_ex - this._eventStartX ) > RangeXY ||
 					(Move_ey - this._eventStartY) > RangeXY;
 
@@ -558,10 +556,9 @@
 				}else{
 					// 满足两个条件后, 初始化(仅进行一次)
 
-					// 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
-
 					this._enterEditingMode();
 
+					// 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
 					this._$items = this._$container.children();
 
 					// 重新获取可以拖拉的数量
@@ -575,8 +572,8 @@
 
 					this.dragItemOriginalpos = this._$draggingItem.position();
 					// $dragTarget的坐标
-					dragItemStartX = this.dragItemStartX = this.itemStartPos.left - this._$draggingItem.position().left;
-					dragItemStartY = this.dragItemStartY = this.itemStartPos.top - this._$draggingItem.position().top;
+					dragItemStartX = this.itemStartPos.left - this._$draggingItem.position().left;
+					dragItemStartY = this.itemStartPos.top - this._$draggingItem.position().top;
 
 					// _$draggingItem的坐标调整等于$dragTarget的坐标
 					this._$draggingItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
