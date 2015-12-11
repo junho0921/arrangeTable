@@ -728,7 +728,7 @@
 
 			if (this.transformsEnabled === false) {
 				// 降级方案 使用animate方案
-				$obj.animate(position, this.options.resetDuration, this.options.easing, callback);
+				$obj.animate(position, this.options.resetDuration, 'swing', callback);
 			} else {
 
 				if (this.cssTransitions === false) {
@@ -745,7 +745,6 @@
 					$(startPosition)// 这个位置是拖拽的最后的位置, 也就是moveEvent的位置
 						.animate(position, {
 							duration: this.options.resetDuration,
-							//easing: this.options.easing,
 							step: function(now, data) {
 								pr[data.prop] = now;
 								$.extend(curPosition, pr);
