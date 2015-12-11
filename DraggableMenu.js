@@ -156,8 +156,6 @@
 
 		this.options = $.extend({}, defalutOptions, options);
 
-		this.$container = $(this.options.container).css('position','relative');
-
 		this.initailize();
 
 		return this;
@@ -167,11 +165,11 @@
 
 		initailize: function() {
 
+			this._$container = $(this.options.container).css('position','relative');
+
 			if(this.options.templateRender && this.options.dataList.length){
 				this.render();
 			}
-
-			this.$items = this.$container.children();
 
 			this.size();
 
@@ -180,61 +178,106 @@
 			this.initailizeEvent();
 		},
 
-		// 关于动画效果的设置
-		// 对象
-		$container: null,
-		$items: null,
-		$Target:null,
-		$dragItem: null,
-		$el:null,
+		/**
+		 * 容器对象
+		 */
+		_$container: null,
+		/**
+		 * items集合
+		 */
+		_$items: null,
+		/**
+		 * 排序对象
+		 */
+		_$reorderItem:null,
+		/**
+		 * 拖拽对象
+		 */
+		_$dragItem: null,
+		/**
+		 * 点击对象
+		 */
 		$touchTarget:null,
 
-		// html
+		/**
+		 * 渲染模板集合
+		 */
 		template:[],
 
-		// 尺寸属性
+		/**
+		 * item尺寸
+		 */
 		_liW: null,
 		_liH: null,
+
+		/**
+		 * 容器尺寸
+		 */
 		_ulW: null,
 		_ulH: null,
-		cols: null,
 
-		// 事件类型
+		/**
+		 * 容器列数
+		 */
+		_cols: null,
+
+		/**
+		 * 事件类型
+		 */
 		hasTouch: null,
 		startEvent: null,
 		stopEvent: null,
 		moveEvent: null,
 
-		// 修改状态
+		/**
+		 * 状态
+		 */
 		dragging:false,
 		editing:false, // 编辑模式是针对长按状态里添加"添加或删除"按钮进行编辑, 逻辑是长按进入编辑状态
 
-		// 事件相关的基本属性
+		/*
+		* 事件相关的基本属性
+		* */
 		eventStartX: null,
 		eventStartY: null,
 		MEMOreorderIndex: null, // 记录moveEvent的位置
 		startTargetIndex: null, // startEvent的位置
 
-		// 初始拖拽
+		/*
+		* 拖拽的初始化状态
+		* */
 		InitializeMoveEvent: false,
 
-		// 定时器
+		/*
+		* 定时器
+		* */
 		setTimeFunc: null,
 
-		// CSS属性
+		/*
+		* CSS动画属性选择
+		* */
 		cssTransitions:null, // <1>
 		transformsEnabled:null,
 
-		// 时间
+		/*
+		* 点击初始时间
+		* */
 		startTime: null,
 
-		// css属性前缀
+		/*
+		* css属性前缀
+		* */
 		transitionType: null,
 		transformType: null,
 		animType: null,
-		// 灵敏模式
+
+		/*
+		* 灵敏模式
+		* */
 		sensitive: true,
-		// 不可拖动的数量
+		/*
+		* 不可拖动的数量
+		* */
 		undraggableCount: 0,
 		draggableCount: 0,
 
@@ -244,7 +287,7 @@
 			// 填充template内容并收集所有item的html的jQuery包装集
 			this.templatefn();
 			// 把所有item的html的jQuery包装集渲染到容器里
-			this.$container.html(this.template);
+			this._$container.html(this.template);
 		},
 
 		templatefn: function(){
@@ -266,7 +309,7 @@
 
 			var DrM = this;
 
-			this.$items.on(DrM.startEvent, function(event){
+			this._$items.on(DrM.startEvent, function(event){
 				// 禁止多点触控
 				var fingerCount = event.originalEvent && event.originalEvent.touches !== undefined ?
 					event.originalEvent.touches.length: 1;
@@ -278,7 +321,7 @@
 				//}else {
 				//	console.log('非点击拖动对象'); return
 				//}
-				//DrM.fireEvent("touchStart", [DrM.$container]);
+				//DrM.fireEvent("touchStart", [DrM._$container]);
 
 				DrM.startTargetIndex = DrM.$touchTarget.addClass(DrM.options.activeItemClass).index();
 
@@ -308,7 +351,7 @@
 					DrM.enterEditingMode();
 
 					// 以timeDuration为间隔触发press事件
-					//DrM.fireEvent("press",[DrM.$Target]);
+					//DrM.fireEvent("press",[DrM._$reorderItem]);
 				}, DrM.options.timeDuration);
 
 				// 绑定拖拽事件
@@ -322,19 +365,19 @@
 			if(!this.editing){
 				this.editing = true;
 			}else{
-				if(this.$Target === this.$touchTarget){
+				if(this._$reorderItem === this.$touchTarget){
 					return
 				}else{
-					this.$Target.find("." + $(this.options.closebtnthml)[0].className).remove();
+					this._$reorderItem.find("." + $(this.options.closebtnthml)[0].className).remove();
 				}
 			}
 
 			this.options.onEditing();
 
-			this.$Target = this.$touchTarget
+			this._$reorderItem = this.$touchTarget
 				.append(
 				$(this.options.closebtnthml).css(this.options.btncss).on(this.startEvent, function(){
-					DrM.$Target.remove();
+					DrM._$reorderItem.remove();
 					DrM.options.onClose();
 				})
 			);
@@ -357,7 +400,7 @@
 				this.dragItemReset();
 
 			}else{
-				this.$container.children().removeClass(this.options.activeItemClass + " " +this.options.reorderItemClass);
+				this._$container.children().removeClass(this.options.activeItemClass + " " +this.options.reorderItemClass);
 
 				if(this.dragging === false){
 
@@ -365,13 +408,13 @@
 
 					if(newTime - this.startTime < 250){ // 没有拖拽后且没有滑动且只在限制时间内才是click事件
 
-						//this.fireEvent("click", [this.$Target]);
+						//this.fireEvent("click", [this._$reorderItem]);
 
 						if(this.editing){
 							// 编辑模式的情况下的点击事件是结束编辑或取消编辑的点击:
-							this.$Target.find("." + $(this.options.closebtnthml)[0].className).remove();
+							this._$reorderItem.find("." + $(this.options.closebtnthml)[0].className).remove();
 
-							//this.$container.trigger("editEnd", [this.$Target]);
+							//this._$container.trigger("editEnd", [this._$reorderItem]);
 
 							this.editing = false;
 						} else{
@@ -394,28 +437,28 @@
 
 			if (this.transformsEnabled) {
 				// 1-1, 基于translate情况:  计算touchStart时dragTarget的坐标和最终滑向位置$dragTarget的坐标之间的差距, 作为translate的xy轴的值
-				// 计算最终dragItem滑向位置的坐标:this.$Target.offset();
-				var targetPos = this.$Target.offset();
+				// 计算最终dragItem滑向位置的坐标:this._$reorderItem.offset();
+				var targetPos = this._$reorderItem.offset();
 				// 差距 = 最终位置 - touchStart时dragItem的位置
 				resetX =  targetPos.left - this.itemStartPagePos.left;
 				resetY = targetPos.top - this.itemStartPagePos.top;
 			}else{
 				// 1-2, 若不适用CSS3的属性transform, 只能使用css坐标通过animate来实现
 				// 基于css坐标的话不能像translate那样参考触控位移的距离, 只参考dragItem原本产生时的css坐标和最后的$dragTarget的坐标
-				// $dragItem最终的css坐标 = 最终$dragTarget相对父级的位置 - 原本$dragItem相对父级的位置
+				// _$dragItem最终的css坐标 = 最终$dragTarget相对父级的位置 - 原本_$dragItem相对父级的位置
 				resetX =
-					this.$container.find("."+ this.options.activeItemClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
+					this._$container.find("."+ this.options.activeItemClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
 					- this.dragItemOriginalpos.left;
-				resetY = this.$container.find("."+ this.options.activeItemClass).position().top - this.dragItemOriginalpos.top;
+				resetY = this._$container.find("."+ this.options.activeItemClass).position().top - this.dragItemOriginalpos.top;
 			}
 
 			// 执行滑动效果
 			var DrM = this;
 			this.animateSlide({'left': resetX, 'top': resetY}, function(){
-				DrM.$container.find('.' + DrM.options.draggingItemClass).remove();
+				DrM._$container.find('.' + DrM.options.draggingItemClass).remove();
 				DrM.options.onDragEnd();
-				DrM.$container.children().removeClass(DrM.options.activeItemClass + " " + DrM.options.reorderItemClass);
-				//DrM.fireEvent("afterDrag", [DrM.$Target]);
+				DrM._$container.children().removeClass(DrM.options.activeItemClass + " " + DrM.options.reorderItemClass);
+				//DrM.fireEvent("afterDrag", [DrM._$reorderItem]);
 			});
 		},
 
@@ -477,36 +520,36 @@
 					}else{
 						// 满足两个条件后, 初始化(仅进行一次)
 
-						// 需要重新获取$items, 否则this.$items仅仅指向旧有的集合, 不是新排序或调整的集合
+						// 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
 
 						DrM.enterEditingMode();
 
-						DrM.$items = DrM.$container.children();
+						DrM._$items = DrM._$container.children();
 
 						// 重新获取可以拖拉的数量
-						DrM.draggableCount = DrM.$items.length - DrM.undraggableCount;
+						DrM.draggableCount = DrM._$items.length - DrM.undraggableCount;
 
 						// 复制目标作为拖拽目标
-						DrM.$dragItem =
-							DrM.$Target.clone()
+						DrM._$dragItem =
+							DrM._$reorderItem.clone()
 								.addClass(DrM.options.draggingItemClass)
-								.appendTo(DrM.$container);// Bug: 改变了$container的高度! 但可通过css固定高度
+								.appendTo(DrM._$container);// Bug: 改变了_$container的高度! 但可通过css固定高度
 
-						DrM.dragItemOriginalpos = DrM.$dragItem.position();
+						DrM.dragItemOriginalpos = DrM._$dragItem.position();
 						// $dragTarget的坐标
-						dragItemStartX = DrM.dragItemStartX = DrM.itemStartPos.left - DrM.$dragItem.position().left;
-						dragItemStartY = DrM.dragItemStartY = DrM.itemStartPos.top - DrM.$dragItem.position().top;
+						dragItemStartX = DrM.dragItemStartX = DrM.itemStartPos.left - DrM._$dragItem.position().left;
+						dragItemStartY = DrM.dragItemStartY = DrM.itemStartPos.top - DrM._$dragItem.position().top;
 
-						// $dragItem的坐标调整等于$dragTarget的坐标
-						DrM.$dragItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
+						// _$dragItem的坐标调整等于$dragTarget的坐标
+						DrM._$dragItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
 
-						//DrM.fireEvent("beforeDrag", [DrM.$dragItem]);
+						//DrM.fireEvent("beforeDrag", [DrM._$dragItem]);
 
 						DrM.InitializeMoveEvent = true;
 
 						DrM.MEMOreorderIndex = DrM.startTargetIndex + 1;
 
-						DrM.$Target.addClass(DrM.options.reorderItemClass);
+						DrM._$reorderItem.addClass(DrM.options.reorderItemClass);
 					}
 				}
 
@@ -518,14 +561,14 @@
 				cssY = Move_ey - DrM.eventStartY;
 				// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
 				if (DrM.transformsEnabled === false) {
-					//$dragItem拖拽时的位置 = 它的坐标 + 拖拽距离
+					//_$dragItem拖拽时的位置 = 它的坐标 + 拖拽距离
 					cssX = dragItemStartX + cssX;
 					cssY = dragItemStartY + cssY;
 				}
 
 				// 拖拽
 				DrM.setCSS({'left': cssX, 'top': cssY});
-				//DrM.$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
+				//DrM._$dragItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
 
 				// 重新排序
 				DrM.reorder(cssX, cssY);
@@ -552,7 +595,7 @@
 			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置calcIndex
 			var curCol = Math.floor(targetCenterPosX/this._liW) + 1;// 列数
 			var curRow = Math.floor(targetCenterPosY/this._liH);// 行数
-			var calcIndex = curRow * this.cols + curCol - 1;// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
+			var calcIndex = curRow * this._cols + curCol - 1;// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
 			// 4, 以计算值calcIndex来得出插入位置reorderIndex, 基于在获取其他item来使用before插入activeItem的的原理
 			var reorderIndex;
 			// 区间1[负数 - 0] -->为0
@@ -573,9 +616,8 @@
 				// 位移未超出一个li位置, 就取消执行
 				return false;
 			} else {
-				console.log('排序', reorderIndex)
 				// 5, 以reorderIndex作为插入的位置
-				this.$items.eq(reorderIndex).before(this.$Target);
+				this._$items.eq(reorderIndex).before(this._$reorderItem);
 				// 记录本次位置
 				this.MEMOreorderIndex = reorderIndex;
 			} // 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
@@ -593,7 +635,7 @@
 
 			transition[this.transitionType] = this.transformType + ' ' + this.options.resetDuration + 'ms ' + this.options.easing;
 
-			this.$dragItem.css(transition);
+			this._$dragItem.css(transition);
 		},
 
 		disableTransition: function() {
@@ -602,26 +644,28 @@
 
 			transition[this.transitionType] = '';
 
-			this.$dragItem.css(transition);
+			this._$dragItem.css(transition);
 		},
 
 		size: function(){
+			this._$items = this._$container.children();
+
 			// 获取子项li尺寸
-			this._liH = this.$items.outerHeight(true);
-			this._liW = this.$items.outerWidth(true);
+			this._liH = this._$items.outerHeight(true);
+			this._liW = this._$items.outerWidth(true);
 
 			// 获取容器ul尺寸
-			this._ulH = this.$container.height();
-			this._ulW = this.$container.width();
+			this._ulH = this._$container.height();
+			this._ulW = this._$container.width();
 
 			// 修复bug的权宜之计
-			this.$container.css({'height':this._ulH, 'width':this._ulW, 'overfolow':'hidden'});
+			this._$container.css({'height':this._ulH, 'width':this._ulW, 'overfolow':'hidden'});
 
 			// 遍历方法来计算容器列数
-			for(var i = 0; i < this.$items.length; i++){
+			for(var i = 0; i < this._$items.length; i++){
 				// 只需要遍历到第二行就知道列数量了
-				if(this.$items.eq(i).position().top > 1){
-					this.cols = i;
+				if(this._$items.eq(i).position().top > 1){
+					this._cols = i;
 					break;
 				}
 			}
@@ -689,7 +733,7 @@
 		setCSS: function(position) {
 			// 方法setCSS: 即时位置调整
 			var positionProps = {},
-				$obj = this.$dragItem,
+				$obj = this._$dragItem,
 				x, y;
 
 			x =  Math.ceil(position.left) + 'px';
@@ -714,7 +758,7 @@
 		animateSlide: function(position, callback) {
 			// 方法animateSlide: 位置调整的动画滑动效果, 且接收callback
 			var animProps = {}, DrM = this,
-				$obj = this.$dragItem;
+				$obj = this._$dragItem;
 
 			if (this.transformsEnabled === false) {
 				// 降级方案 使用animate方案
@@ -722,9 +766,9 @@
 			} else {
 
 				if (this.cssTransitions === false) {
-					// 使用translate的CSS方法, 需要获取到$dragItem的translate位置
-					// 获取本对象$dragItem的css属性translate的值:
-					var objOriginal = this.$dragItem[0].style.transform,
+					// 使用translate的CSS方法, 需要获取到_$dragItem的translate位置
+					// 获取本对象_$dragItem的css属性translate的值:
+					var objOriginal = this._$dragItem[0].style.transform,
 						objOriginalX = Number(objOriginal.substring(10, objOriginal.indexOf("px"))),
 						objOriginalY = Number(objOriginal.substring(objOriginal.lastIndexOf(",") + 1, objOriginal.lastIndexOf("px")));
 
