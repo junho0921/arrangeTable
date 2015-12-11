@@ -554,38 +554,28 @@
 			var curCol = Math.floor(targetCenterPosX/this.liW) + 1;
 			var curRow = Math.floor(targetCenterPosY/this.liH);
 			var calcIndex = curRow * this.cols + curCol - 1;
+			// 4, 以计算值calcIndex来得出插入位置reorderIndex, 基于在获取其他item来使用before插入activeItem的的原理
+			var reorderIndex;
+			// 区间1[负数 - 0] -->为0
+			// 区间2[0 - startTargetIndex] -->为calcIndex
+			// 区间3[startTargetIndex - this.draggableCount] -->为startTargetIndex
+			// 区间4[this.draggableCount - 无限大] -->为draggableCount
+			if(calcIndex < 0){
+				reorderIndex = 0;
+			}else if(calcIndex < this.startTargetIndex){
+				reorderIndex = calcIndex;
+			} else if (calcIndex >= this.draggableCount){
+				reorderIndex = this.draggableCount;
+			} else if (calcIndex >= this.startTargetIndex){
+				reorderIndex = calcIndex + 1;
+			}
 
-			if(calcIndex === this.MEMOreorderIndex){
+			if(reorderIndex === this.MEMOreorderIndex){
 				// 位移未超出一个li位置, 就取消执行
 				return false;
-			}else{
-				// 4, 修正计算位置值calcIndex限制在0到可拖动数量draggableCount范围内
-				calcIndex = calcIndex < this.draggableCount ? (calcIndex > 0 ? calcIndex : 0) : (this.draggableCount - 1);
+			} else {
 				// 5, 以reorderIndex作为插入的位置
-				var reorderIndex;
-				// 0 - startTargetIndex - this.draggableCount
-				if(calcIndex < this.startTargetIndex){
-					reorderIndex = calcIndex;
-				} else if (calcIndex == this.startTargetIndex){
-					reorderIndex = calcIndex + 1;
-				} else if (calcIndex > this.startTargetIndex){
-					reorderIndex = calcIndex + 1;
-				}
-				//else {
-				//	reorderIndex = 1;
-				//}
-				console.log('calcIndex', calcIndex,'reorderIndex', reorderIndex);
 				this.$items.eq(reorderIndex).before(this.$Target);
-
-				//if(reorderIndex < this.startTargetIndex){
-				//	this.$items.eq(reorderIndex).before(this.$Target);
-				//} else if (reorderIndex > this.startTargetIndex){
-				//	this.$items.eq(reorderIndex).after(this.$Target);
-				//} else if (reorderIndex == this.startTargetIndex && this.startTargetIndex == 0){
-				//	this.$items.eq(1).before(this.$Target);
-				//} else {
-				//	this.$items.eq(reorderIndex - 1).after(this.$Target);
-				//}
 				// 记录本次位置
 				this.MEMOreorderIndex = reorderIndex;
 			} // 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
