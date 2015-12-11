@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3d6f705b-ebdc-405d-99df-be8f38840f8f" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DraggableMenu.js" afterPath="$PROJECT_DIR$/DraggableMenu.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="junDrag.iws" />
@@ -42,7 +41,7 @@
           <file leaf-file-name="DraggableMenu.js" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="-14.807693">
+                <state vertical-scroll-proportion="0.0">
                   <caret line="205" column="11" selection-start-line="205" selection-start-column="11" selection-end-line="205" selection-end-column="11" />
                   <folding>
                     <marker date="1449834230067" expanded="true" signature="7031:7043" placeholder="{...}" />
@@ -56,7 +55,7 @@
           <file leaf-file-name="slick.js" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/slick.js">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.18985976">
+                <state vertical-scroll-proportion="0.0">
                   <caret line="1327" column="0" selection-start-line="1327" selection-start-column="0" selection-end-line="1327" selection-end-column="0" />
                   <folding>
                     <element signature="n#!!doc" expanded="true" />
@@ -82,9 +81,13 @@
           <file leaf-file-name="DraggableMenu.js" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="-0.10703043">
-                  <caret line="626" column="22" selection-start-line="626" selection-start-column="22" selection-end-line="626" selection-end-column="22" />
-                  <folding />
+                <state vertical-scroll-proportion="0.28444445">
+                  <caret line="115" column="0" selection-start-line="115" selection-start-column="0" selection-end-line="115" selection-end-column="0" />
+                  <folding>
+                    <marker date="1449834230067" expanded="true" signature="7031:7043" placeholder="{...}" />
+                    <marker date="1449834230067" expanded="true" signature="8235:8254" placeholder="{...}" />
+                    <marker date="1449834230067" expanded="true" signature="15172:15173" placeholder="{...}" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -127,8 +130,8 @@
   <component name="ProjectFrameBounds">
     <option name="x" value="-8" />
     <option name="y" value="22" />
-    <option name="width" value="1936" />
-    <option name="height" value="1066" />
+    <option name="width" value="1386" />
+    <option name="height" value="788" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <OptionsSetting value="true" id="Add" />
@@ -261,12 +264,6 @@
       <created>1448872141692</created>
       <option name="number" value="Default" />
       <updated>1448872141692</updated>
-    </task>
-    <task id="LOCAL-00003" summary="初步有效果, 但触控有问题">
-      <created>1448975095552</created>
-      <option name="number" value="00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1448975095552</updated>
     </task>
     <task id="LOCAL-00004" summary="添加好动画效果, 但现在需要切换绝对定位问题, 现在保留绝对定位的完整版本">
       <created>1449022119092</created>
@@ -556,7 +553,13 @@
       <option name="project" value="LOCAL" />
       <updated>1449830927676</updated>
     </task>
-    <option name="localTasksCounter" value="52" />
+    <task id="LOCAL-00052" summary="项目版本v1.80">
+      <created>1449834273418</created>
+      <option name="number" value="00052" />
+      <option name="project" value="LOCAL" />
+      <updated>1449834273418</updated>
+    </task>
+    <option name="localTasksCounter" value="53" />
     <servers />
   </component>
   <component name="TodoView" selected-index="2">
@@ -569,27 +572,27 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="22" width="1936" height="1066" extended-state="6" />
+    <frame x="-8" y="22" width="1386" height="788" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.30614406" sideWeight="0.4825493" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32892057" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.325462" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32985073" sideWeight="0.5" order="11" side_tool="true" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26386037" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.9175153" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.48861912" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.51138085" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.325462" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24963397" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -605,7 +608,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="准备整理, 修改为项目组版本" />
     <MESSAGE value="转为项目组版本v0.9" />
     <MESSAGE value="项目组版本v0.9" />
     <MESSAGE value="项目组版本v1.0" />
@@ -630,7 +632,8 @@
     <MESSAGE value="发现不需要计算容器的行数, 因为reorder的计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1; 不需要容器行数" />
     <MESSAGE value="中午休息" />
     <MESSAGE value="优化&#10;1, 类私有变量和方法都使用下划线开头, 区分公开的变量方法&#10;2, 使用$.proxy(func, this);来绑定方法的上下文" />
-    <option name="LAST_COMMIT_MESSAGE" value="优化&#10;1, 类私有变量和方法都使用下划线开头, 区分公开的变量方法&#10;2, 使用$.proxy(func, this);来绑定方法的上下文" />
+    <MESSAGE value="项目版本v1.80" />
+    <option name="LAST_COMMIT_MESSAGE" value="项目版本v1.80" />
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.83806145" />
   </component>
   <component name="XDebuggerManager">
@@ -642,7 +645,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <marker date="1449834230067" expanded="true" signature="7031:7043" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="8235:8254" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="15172:15173" placeholder="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -669,7 +676,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <marker date="1449834230067" expanded="true" signature="7031:7043" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="8235:8254" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="15172:15173" placeholder="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -696,7 +707,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <marker date="1449834230067" expanded="true" signature="7031:7043" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="8235:8254" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="15172:15173" placeholder="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -723,7 +738,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <marker date="1449834230067" expanded="true" signature="7031:7043" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="8235:8254" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="15172:15173" placeholder="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -750,7 +769,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="35" column="19" selection-start-line="35" selection-start-column="19" selection-end-line="35" selection-end-column="19" />
-          <folding />
+          <folding>
+            <marker date="1449834230067" expanded="true" signature="7031:7043" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="8235:8254" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="15172:15173" placeholder="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1057,7 +1080,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-10.5">
           <caret line="42" column="6" selection-start-line="42" selection-start-column="6" selection-end-line="42" selection-end-column="6" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1089,7 +1111,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/slick.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.18985976">
+        <state vertical-scroll-proportion="0.0">
           <caret line="1327" column="0" selection-start-line="1327" selection-start-column="0" selection-end-line="1327" selection-end-column="0" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
@@ -1099,9 +1121,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-0.10703043">
-          <caret line="626" column="22" selection-start-line="626" selection-start-column="22" selection-end-line="626" selection-end-column="22" />
-          <folding />
+        <state vertical-scroll-proportion="0.28444445">
+          <caret line="115" column="0" selection-start-line="115" selection-start-column="0" selection-end-line="115" selection-end-column="0" />
+          <folding>
+            <marker date="1449834230067" expanded="true" signature="7031:7043" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="8235:8254" placeholder="{...}" />
+            <marker date="1449834230067" expanded="true" signature="15172:15173" placeholder="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>
