@@ -193,11 +193,10 @@
 		template:[],
 
 		// 尺寸属性
-		liW: null,
-		liH: null,
-		ulW: null,
-		ulH: null,
-		rows: null,
+		_liW: null,
+		_liH: null,
+		_ulW: null,
+		_ulH: null,
 		cols: null,
 
 		// 事件类型
@@ -293,8 +292,8 @@
 				DrM.itemStartPos = $(this).position();
 
 				// 计算target中心的初始位置targetCenterStart
-				DrM.targetCenterStartX = DrM.itemStartPos.left + DrM.liW/2;
-				DrM.targetCenterStartY = DrM.itemStartPos.top + DrM.liH/2;
+				DrM.targetCenterStartX = DrM.itemStartPos.left + DrM._liW/2;
+				DrM.targetCenterStartY = DrM.itemStartPos.top + DrM._liH/2;
 
 				// 绑定事件stopEvent, 本方法必须在绑定拖拽事件之前
 				$('body').one(DrM.stopEvent, function(){
@@ -537,7 +536,7 @@
 			/* 思路1: 监听触控点位置来插入空白格子 */
 			// 1, 计算触控点位置
 			// 2, 计算target的文档位置
-			// 3, 以1与2的相对位置, 整除liW和liH得出触控点所在的li的序号index, 以此作为插入的位置
+			// 3, 以1与2的相对位置, 整除_liW和_liH得出触控点所在的li的序号index, 以此作为插入的位置
 			// 但Bug!!! 缩放屏幕会出现偏差. 根本原因是步骤1与2的获取位置的原理不同, 缩放时各自变化比例不同, 所以不能同时使用思路1
 
 			/* 思路2: 监听拖动项的中心位置来插入空白格子 */
@@ -547,13 +546,13 @@
 			var targetCenterPosX = this.targetCenterStartX + cssX;
 			var targetCenterPosY = this.targetCenterStartY + cssY;
 			// 不能超出容器范围
-			if(targetCenterPosX < 0 ||targetCenterPosX > this.ulW || targetCenterPosY < 0 ||targetCenterPosY > this.ulH){
+			if(targetCenterPosX < 0 ||targetCenterPosX > this._ulW || targetCenterPosY < 0 ||targetCenterPosY > this._ulH){
 				return
 			}
 			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置calcIndex
-			var curCol = Math.floor(targetCenterPosX/this.liW) + 1;
-			var curRow = Math.floor(targetCenterPosY/this.liH);
-			var calcIndex = curRow * this.cols + curCol - 1;
+			var curCol = Math.floor(targetCenterPosX/this._liW) + 1;// 列数
+			var curRow = Math.floor(targetCenterPosY/this._liH);// 行数
+			var calcIndex = curRow * this.cols + curCol - 1;// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
 			// 4, 以计算值calcIndex来得出插入位置reorderIndex, 基于在获取其他item来使用before插入activeItem的的原理
 			var reorderIndex;
 			// 区间1[负数 - 0] -->为0
@@ -608,27 +607,24 @@
 
 		size: function(){
 			// 获取子项li尺寸
-			this.liH = this.$items.outerHeight(true);
-			this.liW = this.$items.outerWidth(true);
+			this._liH = this.$items.outerHeight(true);
+			this._liW = this.$items.outerWidth(true);
 
 			// 获取容器ul尺寸
-			this.ulH = this.$container.height();
-			this.ulW = this.$container.width();
+			this._ulH = this.$container.height();
+			this._ulW = this.$container.width();
 
 			// 修复bug的权宜之计
-			this.$container.css({'height':this.ulH, 'width':this.ulW, 'overfolow':'hidden'});
+			this.$container.css({'height':this._ulH, 'width':this._ulW, 'overfolow':'hidden'});
 
-			// 计算ul排列了多少列,与项
-			this.rows = Math.floor(this.ulH/this.liH); // 最准确的数字
-			//this.cols;
-			// 遍历方法来计算列数
+			// 遍历方法来计算容器列数
 			for(var i = 0; i < this.$items.length; i++){
+				// 只需要遍历到第二行就知道列数量了
 				if(this.$items.eq(i).position().top > 1){
 					this.cols = i;
 					break;
 				}
 			}
-			//console.log('ul data: rows = ', this.rows, ', cols = ', this.cols);
 		},
 
 		setProps: function() {
