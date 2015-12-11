@@ -97,9 +97,7 @@
 		return (hasTouch? event.originalEvent.touches[0]: event)['page' + coord.toUpperCase()];
 	};
 
-	var DraggableMenu;
-
-	DraggableMenu = function (options) {
+	var DraggableMenu = function (options) {
 		// 默认选项
 		var defalutOptions = {
 			// 子容器属性
@@ -156,69 +154,6 @@
 			onEditing:null
 		};
 
-		// 关于动画效果的设置
-		var initialSettings = {
-			// 对象
-			$container: null,
-			$items: null,
-			$Target:null,
-			$dragItem: null,
-			$el:null,
-			$touchTarget:null,
-
-			// html
-			template:[],
-
-			// 尺寸属性
-			liW: null,
-			liH: null,
-			ulW: null,
-			ulH: null,
-			rows: null,
-			cols: null,
-
-			// 事件类型
-			hasTouch: null,
-			startEvent: null,
-			stopEvent: null,
-			moveEvent: null,
-
-			// 修改状态
-			dragging:false,
-			editing:false, // 编辑模式是针对长按状态里添加"添加或删除"按钮进行编辑, 逻辑是长按进入编辑状态
-
-			// 事件相关的基本属性
-			eventStartX: null,
-			eventStartY: null,
-			MEMOreorderIndex: null, // 记录moveEvent的位置
-			startTargetIndex: null, // startEvent的位置
-
-			// 初始拖拽
-			InitializeMoveEvent: false,
-
-			// 定时器
-			setTimeFunc: null,
-
-			// CSS属性
-			cssTransitions:null, // <1>
-			transformsEnabled:null,
-
-			// 时间
-			startTime: null,
-
-			// css属性前缀
-			transitionType: null,
-			transformType: null,
-			animType: null,
-			// 灵敏模式
-			sensitive: true,
-			// 不可拖动的数量
-			undraggableCount: 0,
-			draggableCount: 0
-		};
-
-		$.extend(this, initialSettings);
-
 		this.options = $.extend({}, defalutOptions, options);
 
 		this.$container = $(this.options.container).css('position','relative');
@@ -244,6 +179,65 @@
 
 			this.initailizeEvent();
 		},
+
+		// 关于动画效果的设置
+		// 对象
+		$container: null,
+		$items: null,
+		$Target:null,
+		$dragItem: null,
+		$el:null,
+		$touchTarget:null,
+
+		// html
+		template:[],
+
+		// 尺寸属性
+		liW: null,
+		liH: null,
+		ulW: null,
+		ulH: null,
+		rows: null,
+		cols: null,
+
+		// 事件类型
+		hasTouch: null,
+		startEvent: null,
+		stopEvent: null,
+		moveEvent: null,
+
+		// 修改状态
+		dragging:false,
+		editing:false, // 编辑模式是针对长按状态里添加"添加或删除"按钮进行编辑, 逻辑是长按进入编辑状态
+
+		// 事件相关的基本属性
+		eventStartX: null,
+		eventStartY: null,
+		MEMOreorderIndex: null, // 记录moveEvent的位置
+		startTargetIndex: null, // startEvent的位置
+
+		// 初始拖拽
+		InitializeMoveEvent: false,
+
+		// 定时器
+		setTimeFunc: null,
+
+		// CSS属性
+		cssTransitions:null, // <1>
+		transformsEnabled:null,
+
+		// 时间
+		startTime: null,
+
+		// css属性前缀
+		transitionType: null,
+		transformType: null,
+		animType: null,
+		// 灵敏模式
+		sensitive: true,
+		// 不可拖动的数量
+		undraggableCount: 0,
+		draggableCount: 0,
 
 		render: function(){
 			// 先清空html
