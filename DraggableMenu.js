@@ -40,37 +40,7 @@
 
 /**
  * @class DraggableMenu
- * @classdesc 利用input创建的下拉框组件<br/>
- * 		基本元素item:<br/>
- * 		item内至少有2个属性:key和text,text用于展示,key为真正的值</br>
- * 		可以设置更多的值,并可以在selectHandler和itemFilter中访问到</br>
- * 		如</br>
- * 		item={key:"USD", text:"美元"}</br>
- * 		item={key:"6225123412341234", text:"6225****1234", name:"我的账户"}</br>
- * 		Combox文档中提到的item均是这个形式
- * @param {$} input - input的$形式
- * @param {object} config - 配置
- * @param {boolean} config.readOnly - 渲染之后是否readOnly,默认为true<br/>
- * @param {int} config.maxHeight - 展开之后的最大高度,最好为一个元素高度的整数倍<br/>
- * @param {int} config.minHeight - 展开之后的最小高度,最好为一个元素的高度<br/>
- * @param {array} config.data - item数组<br/>
- * @param {func} config.selectHandler(item) - 选中一个元素后触发的事件<br/>
- * @param {func} config.itemFilter(item) - 过滤原数据使用的方法,只有返回值为true的item才会展示
- * @param {view} view - 当前的view,一定要填
- * @example var accountCombox = new Combox(view.$("#payAccount"), {
-	 * 	data:[
-	 * 		{key:"6225882121047658", text:"6225****7658(张三)", name:"张三", balance:"1000000"},
-	 * 		{key:"6225882121042536", text:"6225****2536(李四)", name:"李四", balance:"2000000"},
-	 * 		{key:"6225882121049826", text:"6225****9826(王五)", name:"王五", balance:"3000000"},
-	 * 		{key:"6225882121046437", text:"6225****6437(赵茄子)", name:"赵茄子", balance:"4000000"}
-	 * 	],
-	 * 	itemFilter:function(item){
-	 * 		return item.key.endsWith("6");
-	 * 	},
-	 * 	selectHandler:function(item){
-	 * 		view.$("#currentBalance").html(Nuui.utils.toCashWithComma(item.balance));
-	 * 	}
-	 * }, view);
+ *
  */
 
 
@@ -120,12 +90,25 @@
 
 			// 绝对定位
 			// 在size方法里已经获取的itemWH与containerWH可以作为每个item的绝对定位的位置了, 不用遍历items来记录
-			this._getItemsPos();
 
-			// 记录现在数组情况, 在每次变动时更新数组, 暂时可以先在DOM数组里排序,按这排序来决定绝对定位的位置
-			this._getOrder();
+			// 初步:
+			// 1, 建立一个数组ary用来记录[]
+			// 2, 我想有文本流的自动排队的效果, 所以插入的事件发生在ary里, _setItemsPos方法是可以选择性的进行排序,
+			// 3, 每个dom的dataID, 所以可以每次都获取ID值来排序?
+			// 现在, 绝对定位,
+			// 不变的是初始化的排序数组initializeAry, 数组保存的是每个DOM的jQuery对象, 每次使用这个来遍历
+			// 建立数组reorderAry, 每次排序后的DOM排序情况, 这样可以在
+			// 不变的是格子位置的数组posAry
 
-			this._setItemsPos();
+			if(this._hardConfig._reorderCSS){
+				// 获取初始排序的数组并每个都绝对定位在(0, 0)css坐标
+				this._getItemsInitPos();
+				// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
+				this._calcPosAry();
+				// 使用translate来填坑
+				this._setItemsPos();
+			}
+			// 注意的是获取DOM的排序需要本源代码里提供方法, 因为不可能直接在DOM处理
 
 			this._$items.on(this._startEvent, this._startEventFunc);
 		},
@@ -214,11 +197,6 @@
 		 * 点击对象
 		 */
 		_$touchTarget:null,
-
-		/**
-		 * 渲染模板集合
-		 */
-		_template:[],
 
 		/**
 		 * item尺寸
@@ -311,6 +289,7 @@
 		* 固定设置, jun的开发配置
 		* */
 		_hardConfig :{
+			_reorderCSS:true,
 			// 灵敏模式
 			_sensitive: true,
 			// 选择transform动画
@@ -326,32 +305,46 @@
 		},
 
 		_render: function(){
-			// 先清空html
-			this._template = [];
 			// 填充template内容并收集所有item的html的jQuery包装集
-			this._templateFn();
-			// 把所有item的html的jQuery包装集渲染到容器里
-			this._$container.html(this._template);
-		},
-
-		_templateFn: function(){
 			var data = this._config.dataList,
 				len = data.length,
-				$liHtml;
+				$itemHtml, $itemsHtml = [];
 
 			for(var i = 0; i < len; i++){
-				$liHtml = this._config.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
+				$itemHtml = this._config.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
 					.data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
-				this._template.push($liHtml);// ps: 假设undraggable项写在数组的最后
+				$itemsHtml.push($itemHtml);// ps: 假设undraggable项写在数组的最后
 				if(data[i].undraggable){// 记数
 					this._undraggableCount++;
 				}
 			}
+			// 把所有item的html的jQuery包装集渲染到容器里
+			this._$container.html($itemsHtml);
 		},
 
-		//_initializeEvent: function() {
-		//
-		//},
+		_size: function(){
+			this._$items = this._$container.children();
+
+			// 获取子项li尺寸
+			this._itemH = this._$items.outerHeight(true);
+			this._itemW = this._$items.outerWidth(true);
+
+			// 获取容器ul尺寸
+			this._containerH = this._$container.height();
+			this._containerW = this._$container.width();
+
+			// 修复bug的权宜之计
+			this._$container.css({'height':this._containerH, 'width':this._containerW, 'overfolow':'hidden'});
+
+			// 遍历方法来计算容器列数, 方法是计算第i个换行的,那i就是列数
+			for(var i = 0; i < this._$items.length; i++){
+				// 只需要遍历到第二行就知道列数量了, 但判断的1px值有待优化
+				if(this._$items.eq(i).position().top > 1){
+					this._containerCols = i;
+					break;
+				}
+			}
+		},
 
 		_startEventFunc :function(event){
 			// 禁止多点触控
@@ -427,6 +420,7 @@
 				})
 			);
 		},
+
 
 		_stopEventFunc: function(){
 			// 方法stopEventFunc功能:
@@ -690,30 +684,6 @@
 			this._$draggingItem.css(transition);
 		},
 
-		_size: function(){
-			this._$items = this._$container.children();
-
-			// 获取子项li尺寸
-			this._itemH = this._$items.outerHeight(true);
-			this._itemW = this._$items.outerWidth(true);
-
-			// 获取容器ul尺寸
-			this._containerH = this._$container.height();
-			this._containerW = this._$container.width();
-
-			// 修复bug的权宜之计
-			this._$container.css({'height':this._containerH, 'width':this._containerW, 'overfolow':'hidden'});
-
-			// 遍历方法来计算容器列数, 方法是计算第i个换行的,那i就是列数
-			for(var i = 0; i < this._$items.length; i++){
-				// 只需要遍历到第二行就知道列数量了
-				if(this._$items.eq(i).position().top > 1){
-					this._containerCols = i;
-					break;
-				}
-			}
-		},
-
 		_setProps: function() {
 			// 1, 选择事件类型
 			// 2, 检测判断:
@@ -857,6 +827,16 @@
 			}
 
 		},
+
+
+
+		// 获取初始排序的数组并每个都绝对定位在(0, 0)css坐标
+		_getItemsInitPos: function(){},
+		// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
+		_calcPosAry: function(){},
+		// 使用translate来填坑
+		_setItemsPos: function(){},
+
 
 		// 方法: 获取触控点坐标
 		_page :  function (coord, event) {
