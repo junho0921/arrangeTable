@@ -93,7 +93,7 @@
 
 			// 初步:
 			// 1, 建立一个数组ary用来记录[]
-			// 2, 我想有文本流的自动排队的效果, 所以插入的事件发生在ary里, _setItemsPos方法是可以选择性的进行排序,
+			// 2, 我想有文本流的自动排队的效果, 所以插入的事件发生在ary里, setItemsPos方法是可以选择性的进行排序,
 			// 3, 每个dom的dataID, 所以可以每次都获取ID值来排序?
 			// 现在, 绝对定位,
 			// 不变的是初始化的排序数组initializeAry, 数组保存的是每个DOM的jQuery对象, 每次使用这个来遍历
@@ -102,7 +102,7 @@
 
 			if(this._hardConfig._reorderCSS){
 				// 获取初始排序的数组并每个都绝对定位在(0, 0)css坐标
-				this._getItemsInitPos();
+				this._getItemsInitAry();
 				// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
 				this._calcPosAry();
 				// 使用translate来填坑
@@ -246,7 +246,7 @@
 		/*
 		 * reorderItem初始的位置序号
 		 * */
-		_initialIndex: null,
+		_touchItemIndex: null,
 
 		/*
 		 * touchStart时间
@@ -346,6 +346,79 @@
 			}
 		},
 
+		// 获取初始排序的数组并每个都绝对定位在(0, 0)css坐标
+		_getItemsInitAry: function(){
+			this._itemsAry = this._$items.css('position', 'absolute');
+			//console.log('初始化的_itemsAry', this._itemsAry);
+		},
+		// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
+		_calcPosAry: function(){
+			// 位置的静态写法
+			var len = this._itemsAry.length;
+			this._posAry = [];
+			 // 默认基于translate3D的修改模式, 所以升级必须优化
+			for(var i = 0; i < len; i++){
+				var position = {};
+				var inRow = Math.floor(i / this._containerCols);
+				var inCol = i % this._containerCols;
+				position.left = inCol * this._itemW;
+				position.top = inRow * this._itemH;
+				this._posAry.push(position);
+			}
+			console.log('this._posAry', this._posAry)
+		},
+
+		// 对比 有无posAry:posAry是为了避免重复计算而存在的格子位置的数组!, 为何要动态的计算呢?
+
+		// 有posAry: 初始时候,计算出格子数量和各格子坐标保存为数组
+		// posAry作为位置的内存, 以index值就可以获取位置, 在初始化计算出来后就不需重复计算, 是作为setPosition和animateSlide的位置,
+		//
+
+		// 位置的动态写法
+		// 无posAry: 使用calcPos的方法来动态计算
+		// 创建变量: 1,初始initItemsAry 2,复制initItemsAry后得出reorderItemsAry作为排序数组
+		// 模拟步骤:
+		// 复制initItemsAry得出reorderItemsAry
+		// 以reorderItemsAry作为排序数组, calcPos来计算位置, 进行_setItemsPos
+		// 拖动改变后, reorderItemsAry更新
+		// 以reorderItemsAry作为排序数组, calcPos来计算位置, 进行_setItemsPos
+		// 点击后是获取到initItemsAry的index值, 那么可以在reorderItemsAry对应itemInitIndex值来获取到对象的itemReorderIndex值
+		// 通过itemReorderIndex值就可以使用_calcPos来计算出坐标(其实是避免了获取translate的数值, 因为兼容很难!)
+		_calcPos: function(i){
+			// 位置的动态写法
+			var position = {};
+			var inRow = Math.floor(i / this._containerCols);
+			var inCol = i % this._containerCols;
+			position.left = inCol * this._itemW;
+			position.top = inRow * this._itemH;
+			return position;
+		},
+		// 使用translate来填坑
+		_setItemsPos: function(){
+			// 升级: 选择性执行_setPosition
+			this._applyTransition(this._$items);
+			for(var i = 0; i < this._$items.length; i++){
+				//console.log(this._posAry[i]);
+				this._setPosition($(this._itemsAry[i]), this._posAry[i])
+			}
+		},
+		_reorderFn: function(reorderItemIndex, newIndex){
+			//if(reorderItemIndex == reorderItemIndex){ return }
+
+			// 思路1 : 处理_itemsAry
+			var arry = this._itemsAry;
+			// 思路2 : 处理_posAry
+			//var arry = this._posAry;
+
+			// 抽出数组_itemsAry中reorderItem的index
+			var reorderItem = arry.splice(reorderItemIndex, 1)[0];
+			// 把reorderItem插入数组_itemsAry中newIndex位置
+			arry.splice(newIndex, 0, reorderItem);
+			console.log('new arry', arry);
+		},
+
+		/* 初始化完毕*/
+
 		_startEventFunc :function(event){
 			// 禁止多点触控
 			var fingerCount = event.originalEvent && event.originalEvent.touches !== undefined ?
@@ -363,13 +436,12 @@
 			//}
 			//this.fireEvent("touchStart", [this._$container]);
 
-			this._initialIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
-
 			this._startTime = event.timeStamp || +new Date();
 
 			// 记录初始位置
 			this._eventStartX = this._page('x', event);
 			this._eventStartY = this._page('y', event);
+			console.log('this._touchItemIndex', this._eventStartX, this._eventStartY);
 
 			this._itemStartPagePos = this._$touchTarget.offset();
 			this.itemStartPos = this._$touchTarget.position();
@@ -377,6 +449,14 @@
 			// 计算target中心的初始位置targetCenterStart
 			this.targetCenterStartX = this.itemStartPos.left + this._itemW/2;
 			this.targetCenterStartY = this.itemStartPos.top + this._itemH/2;
+
+			if(this._hardConfig._reorderCSS){
+				this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
+				//this._touchItemIndex = ;
+			} else {
+				this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
+			}
+			console.log('this._touchItemIndex', this._touchItemIndex);
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
 			$('body').one(this._stopEvent, this._stopEventFunc);
@@ -474,26 +554,31 @@
 
 			var resetX, resetY;
 
-			if (this._transformsEnabled) {
-				// 1-1, 基于translate情况:  计算touchStart时dragTarget的坐标和最终滑向位置$dragTarget的坐标之间的差距, 作为translate的xy轴的值
-				// 计算最终dragItem滑向位置的坐标:this._$reorderItem.offset();
-				var targetPos = this._$reorderItem.offset();
-				// 差距 = 最终位置 - touchStart时dragItem的位置
-				resetX =  targetPos.left - this._itemStartPagePos.left;
-				resetY = targetPos.top - this._itemStartPagePos.top;
-			}else{
-				// 1-2, 若不适用CSS3的属性transform, 只能使用css坐标通过animate来实现
-				// 基于css坐标的话不能像translate那样参考触控位移的距离, 只参考dragItem原本产生时的css坐标和最后的$dragTarget的坐标
-				// _$draggingItem最终的css坐标 = 最终$dragTarget相对父级的位置 - 原本_$draggingItem相对父级的位置
-				resetX =
-					this._$container.find("."+ this._config.activeItemClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
-					- this.dragItemOriginalpos.left;
-				resetY = this._$container.find("."+ this._config.activeItemClass).position().top - this.dragItemOriginalpos.top;
+			if(this._hardConfig._reorderCSS){
+				resetX = this._posAry[this._reorderItemIndex].left;
+				resetY = this._posAry[this._reorderItemIndex].top;
+			} else {
+				if (this._transformsEnabled) {
+					// 1-1, 基于translate情况:  计算touchStart时dragTarget的坐标和最终滑向位置$dragTarget的坐标之间的差距, 作为translate的xy轴的值
+					// 计算最终dragItem滑向位置的坐标:this._$reorderItem.offset();
+					var targetPos = this._$reorderItem.offset();
+					// 差距 = 最终位置 - touchStart时dragItem的位置
+					resetX =  targetPos.left - this._itemStartPagePos.left;
+					resetY = targetPos.top - this._itemStartPagePos.top;
+				}else{
+					// 1-2, 若不适用CSS3的属性transform, 只能使用css坐标通过animate来实现
+					// 基于css坐标的话不能像translate那样参考触控位移的距离, 只参考dragItem原本产生时的css坐标和最后的$dragTarget的坐标
+					// _$draggingItem最终的css坐标 = 最终$dragTarget相对父级的位置 - 原本_$draggingItem相对父级的位置
+					resetX =
+						this._$container.find("."+ this._config.activeItemClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
+						- this.dragItemOriginalpos.left;
+					resetY = this._$container.find("."+ this._config.activeItemClass).position().top - this.dragItemOriginalpos.top;
+				}
 			}
 
 			// 执行滑动效果
 			var DrM = this;
-			this._animateSlide({'left': resetX, 'top': resetY}, function(){
+			this._animateSlide(this._$draggingItem, {'left': resetX, 'top': resetY}, function(){
 				DrM._$container.find('.' + DrM._config.draggingItemClass).remove();
 				DrM._config.onDragEnd();
 				DrM._$container.children().removeClass(DrM._config.activeItemClass + " " + DrM._config.reorderItemClass);
@@ -571,45 +656,75 @@
 					this._$draggingItem =
 						this._$reorderItem.clone()
 							.addClass(this._config.draggingItemClass)
+							.css({'z-index':'99'})
 							.appendTo(this._$container);// Bug: 改变了_$container的高度! 但可通过css固定高度
 
 					this.dragItemOriginalpos = this._$draggingItem.position();
-					// $dragTarget的坐标
-					dragItemStartX = this.itemStartPos.left - this._$draggingItem.position().left;
-					dragItemStartY = this.itemStartPos.top - this._$draggingItem.position().top;
 
 					// _$draggingItem的坐标调整等于$dragTarget的坐标
-					this._$draggingItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
+					if(this._hardConfig._reorderCSS){
+						// $dragTarget的坐标 = reorderItem的坐标
+						this._draggingItemStartPos = this._posAry[this._touchItemIndex];
+						this._setPosition(
+							this._$draggingItem.css({'positions':'absolute'}),
+							this._draggingItemStartPos
+						);
+						this._reorderItemIndex = this._touchItemIndex;
+					}else{
+						// $dragTarget的坐标 = 相对于reorderItem坐标与自身文本流坐标的差距
+						dragItemStartX = this.itemStartPos.left - this._$draggingItem.position().left;
+						dragItemStartY = this.itemStartPos.top - this._$draggingItem.position().top;
+						this._$draggingItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
+						this._reorderItemIndex = this._touchItemIndex + 1;
+					}
 
 					//this.fireEvent("beforeDrag", [this._$draggingItem]);
 
 					this._InitializeMoveEvent = true;
 
-					this._reorderItemIndex = this._initialIndex + 1;
-
 					this._$reorderItem.addClass(this._config.reorderItemClass);
+
+					this._disableTransition(this._$draggingItem)
 				}
 			}
 
 			// 在初始化拖动后才禁止默认事件行为
 			event.preventDefault();
 
+			var cssX, cssY;
 			// 计算触控点移动距离
-			var cssX = Move_ex - this._eventStartX,
-				cssY = Move_ey - this._eventStartY;
-			// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
-			if (this._transformsEnabled === false) {
-				//_$draggingItem拖拽时的位置 = 它的坐标 + 拖拽距离
-				cssX = dragItemStartX + cssX;
-				cssY = dragItemStartY + cssY;
+			cssX = Move_ex - this._eventStartX;
+			cssY = Move_ey - this._eventStartY;
+
+			if(this._hardConfig._reorderCSS){
+				// 计算触控点移动距离
+				cssX = this._draggingItemStartPos.left + cssX;
+				cssY = this._draggingItemStartPos.top + cssY;
+			}else{
+				// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
+				if (this._transformsEnabled === false) {
+					//_$draggingItem拖拽时的位置 = 它的坐标 + 拖拽距离
+					cssX = dragItemStartX + cssX;
+					cssY = dragItemStartY + cssY;
+				}
 			}
 
 			// 拖拽
-			this._setCSS({'left': cssX, 'top': cssY});
+			this._setPosition(this._$draggingItem, {'left': cssX, 'top': cssY});
 			//this._$draggingItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
 
 			// 重新排序
 			this._reorder(cssX, cssY);
+		},
+
+		_getTouchIndex: function(touchX, touchY){
+			// 不能超出容器范围
+			if(touchX < 0 ||touchX > this._containerW || touchY < 0 ||touchY > this._containerH){
+				return
+			}
+			var curCol = Math.floor(touchX/this._itemW) + 1;// 列数
+			var curRow = Math.floor(touchY/this._itemH);// 行数
+			return (curRow * this._containerCols + curCol - 1);// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
 		},
 
 		_reorder: function(cssX, cssY) {
@@ -623,38 +738,57 @@
 			// 1, 计算target中心的初始位置targetCenterStart, 直接获取this.targetCenterStartX,this.targetCenterStartY
 			// 2, 计算拖拽时target中心位置的坐标targetCenterPos
 
-			var targetCenterPosX = this.targetCenterStartX + cssX;
-			var targetCenterPosY = this.targetCenterStartY + cssY;
-			// 不能超出容器范围
-			if(targetCenterPosX < 0 ||targetCenterPosX > this._containerW || targetCenterPosY < 0 ||targetCenterPosY > this._containerH){
-				return
-			}
-			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置calcIndex
-			var curCol = Math.floor(targetCenterPosX/this._itemW) + 1;// 列数
-			var curRow = Math.floor(targetCenterPosY/this._itemH);// 行数
-			var calcIndex = curRow * this._containerCols + curCol - 1;// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
-			// 4, 以计算值calcIndex来得出插入位置reorderIndex, 基于在获取其他item来使用before插入activeItem的的原理
-			var reorderIndex;
-			// 区间1[负数 - 0] -->为0
-			// 区间2[0 - initialIndex] -->为calcIndex
-			// 区间3[initialIndex - this.draggableCount] -->为initialIndex
-			// 区间4[this.draggableCount - 无限大] -->为draggableCount
-			if(calcIndex < 0){
-				reorderIndex = 0;
-			}else if(calcIndex < this._initialIndex){
-				reorderIndex = calcIndex;
-			} else if (calcIndex >= this._draggableCount){
-				reorderIndex = this._draggableCount;
-			} else if (calcIndex >= this._initialIndex){
-				reorderIndex = calcIndex + 1;
+			var targetCenterPosX, targetCenterPosY;
+
+			if(this._hardConfig._reorderCSS){
+				targetCenterPosX = cssX + this._itemW/2;
+				targetCenterPosY = cssY + this._itemW/2;
+			}else{
+				targetCenterPosX = this.targetCenterStartX + cssX;
+				targetCenterPosY = this.targetCenterStartY + cssY;
 			}
 
+			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置calcIndex
+			var calcIndex = this._getTouchIndex(targetCenterPosX, targetCenterPosY);
+
+			// 4,
+			var reorderIndex;
+
+			if(this._hardConfig._reorderCSS){
+				// 基于绝对定位, 不用考虑文本流的插入index值的调整
+				if(calcIndex >= 0 && calcIndex < this._draggableCount){
+					reorderIndex = calcIndex;
+				}
+			}else{
+				// 基于文本流的插入, 需要index值的调整
+				// 以计算值calcIndex来得出插入位置reorderIndex, 基于在获取其他item来使用before插入activeItem的的原理
+				// 区间1[负数 - 0] -->为0
+				// 区间2[0 - initialIndex] -->为calcIndex
+				// 区间3[initialIndex - this.draggableCount] -->为initialIndex
+				// 区间4[this.draggableCount - 无限大] -->为draggableCount
+				if(calcIndex < 0){
+					reorderIndex = 0;
+				}else if(calcIndex < this._touchItemIndex){
+					reorderIndex = calcIndex;
+				} else if (calcIndex >= this._draggableCount){
+					reorderIndex = this._draggableCount;
+				} else if (calcIndex >= this._touchItemIndex){
+					reorderIndex = calcIndex + 1;
+				}
+
+			}
 			if(reorderIndex === this._reorderItemIndex){
 				// 位移未超出一个li位置, 就取消执行
 				return false;
 			} else {
-				// 5, 以reorderIndex作为插入的位置
-				this._$items.eq(reorderIndex).before(this._$reorderItem);
+				if(this._hardConfig._reorderCSS){
+					//console.log('点击  ', this._reorderItemIndex,'计算', calcIndex);
+					this._reorderFn(this._reorderItemIndex, reorderIndex);
+					this._setItemsPos();
+				}else{
+					// 5, 以reorderIndex作为插入的位置
+					this._$items.eq(reorderIndex).before(this._$reorderItem);
+				}
 				// 记录本次位置
 				this._reorderItemIndex = reorderIndex;
 			} // 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
@@ -666,22 +800,22 @@
 		/*-----------------------------------------------------------------------------------------------*/
 		/*-----------------------------------------------------------------------------------------------*/
 
-		_applyTransition: function() {
+		_applyTransition: function($obj) {
 			// 添加css  Transition
 			var transition = {};
 
 			transition[this._transitionType] = this._transformType + ' ' + this._config.cssDuration + 'ms ' + this._hardConfig._transitionTiming;
 
-			this._$draggingItem.css(transition);
+			$obj.css(transition);
 		},
 
-		_disableTransition: function() {
+		_disableTransition: function($obj) {
 			// 去掉css  Transition
 			var transition = {};
 
 			transition[this._transitionType] = '';
 
-			this._$draggingItem.css(transition);
+			$obj.css(transition);
 		},
 
 		_setProps: function() {
@@ -742,10 +876,9 @@
 			//this._cssTransitions = false;// 测试用
 		},
 
-		_setCSS: function(position) {
+		_setPosition: function($obj, position) {
 			// 方法setCSS: 即时位置调整
 			var positionProps = {},
-				$obj = this._$draggingItem,
 				x, y;
 
 			x =  Math.ceil(position.left) + 'px';
@@ -767,10 +900,9 @@
 			}
 		},
 
-		_animateSlide: function(position, callback) {
+		_animateSlide: function($obj, position, callback) {
 			// 方法animateSlide: 位置调整的动画滑动效果, 且接收callback
-			var animProps = {}, DrM = this,
-				$obj = this._$draggingItem;
+			var animProps = {}, DrM = this;
 
 			if (this._transformsEnabled === false) {
 				// 降级方案 使用animate方案
@@ -807,7 +939,7 @@
 
 				} else {
 					// 使用translate3D的CSS方法
-					this._applyTransition();
+					this._applyTransition($obj);
 
 					animProps[this._animType] = 'translate3d(' + position.left + 'px, ' + position.top + 'px, 0px)';
 
@@ -817,7 +949,7 @@
 					if (callback) {
 						setTimeout(function() {
 
-							DrM._disableTransition();
+							//DrM._disableTransition($obj);
 
 							callback.call();
 						}, this._config.cssDuration);
@@ -830,12 +962,6 @@
 
 
 
-		// 获取初始排序的数组并每个都绝对定位在(0, 0)css坐标
-		_getItemsInitPos: function(){},
-		// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
-		_calcPosAry: function(){},
-		// 使用translate来填坑
-		_setItemsPos: function(){},
 
 
 		// 方法: 获取触控点坐标
