@@ -348,13 +348,20 @@
 
 		// 获取初始排序的数组并每个都绝对定位在(0, 0)css坐标
 		_getItemsInitAry: function(){
-			this._itemsAry = this._$items.css('position', 'absolute');
-			//console.log('初始化的_itemsAry', this._itemsAry);
+			this._reorderItemsAry = this._$items.css('position', 'absolute');
+
+			// 创建键值对:
+			this._indexAry = [];
+			for(var i = 0; i < this._reorderItemsAry.length; i++){
+				this._indexAry.push(i);
+			}
+			console.log('this._indexAry', this._indexAry);
 		},
 		// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
 		_calcPosAry: function(){
 			// 位置的静态写法
-			var len = this._itemsAry.length;
+			// 数组保存:格子数量和各格子坐标, 优点: 避免重复计算
+			var len = this._reorderItemsAry.length;
 			this._posAry = [];
 			 // 默认基于translate3D的修改模式, 所以升级必须优化
 			for(var i = 0; i < len; i++){
@@ -368,22 +375,15 @@
 			console.log('this._posAry', this._posAry)
 		},
 
-		// 对比 有无posAry:posAry是为了避免重复计算而存在的格子位置的数组!, 为何要动态的计算呢?
-
-		// 有posAry: 初始时候,计算出格子数量和各格子坐标保存为数组
-		// posAry作为位置的内存, 以index值就可以获取位置, 在初始化计算出来后就不需重复计算, 是作为setPosition和animateSlide的位置,
-		//
-
-		// 位置的动态写法
-		// 无posAry: 使用calcPos的方法来动态计算
-		// 创建变量: 1,初始initItemsAry 2,复制initItemsAry后得出reorderItemsAry作为排序数组
 		// 模拟步骤:
-		// 复制initItemsAry得出reorderItemsAry
-		// 以reorderItemsAry作为排序数组, calcPos来计算位置, 进行_setItemsPos
+		// 创建变量: 1,初始initItemsAry 2,复制initItemsAry后得出reorderItemsAry作为排序数组 3, 计算posAry作为位置对应值
+		// 以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos
 		// 拖动改变后, reorderItemsAry更新
-		// 以reorderItemsAry作为排序数组, calcPos来计算位置, 进行_setItemsPos
+		// 以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos
 		// 点击后是获取到initItemsAry的index值, 那么可以在reorderItemsAry对应itemInitIndex值来获取到对象的itemReorderIndex值
 		// 通过itemReorderIndex值就可以使用_calcPos来计算出坐标(其实是避免了获取translate的数值, 因为兼容很难!)
+
+		// 有无都需要建立一个reorderItemsAry, 它是复制initItemsAry, 用来处理排序
 		_calcPos: function(i){
 			// 位置的动态写法
 			var position = {};
@@ -399,22 +399,17 @@
 			this._applyTransition(this._$items);
 			for(var i = 0; i < this._$items.length; i++){
 				//console.log(this._posAry[i]);
-				this._setPosition($(this._itemsAry[i]), this._posAry[i])
+				this._setPosition($(this._reorderItemsAry[i]), this._posAry[i])
 			}
 		},
-		_reorderFn: function(reorderItemIndex, newIndex){
+		_reorderFn: function(targetAry, reorderItemIndex, newIndex){
 			//if(reorderItemIndex == reorderItemIndex){ return }
 
-			// 思路1 : 处理_itemsAry
-			var arry = this._itemsAry;
-			// 思路2 : 处理_posAry
-			//var arry = this._posAry;
+			// 抽出数组_reorderItemsAry中reorderItem的index
+			var reorderItem = targetAry.splice(reorderItemIndex, 1)[0];
 
-			// 抽出数组_itemsAry中reorderItem的index
-			var reorderItem = arry.splice(reorderItemIndex, 1)[0];
-			// 把reorderItem插入数组_itemsAry中newIndex位置
-			arry.splice(newIndex, 0, reorderItem);
-			console.log('new arry', arry);
+			// 把reorderItem插入数组_reorderItemsAry中newIndex位置
+			targetAry.splice(newIndex, 0, reorderItem);
 		},
 
 		/* 初始化完毕*/
@@ -441,7 +436,6 @@
 			// 记录初始位置
 			this._eventStartX = this._page('x', event);
 			this._eventStartY = this._page('y', event);
-			console.log('this._touchItemIndex', this._eventStartX, this._eventStartY);
 
 			this._itemStartPagePos = this._$touchTarget.offset();
 			this.itemStartPos = this._$touchTarget.position();
@@ -450,13 +444,10 @@
 			this.targetCenterStartX = this.itemStartPos.left + this._itemW/2;
 			this.targetCenterStartY = this.itemStartPos.top + this._itemH/2;
 
+			this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
 			if(this._hardConfig._reorderCSS){
-				this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
-				//this._touchItemIndex = ;
-			} else {
-				this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
+				this._touchItemIndex = $.inArray(this._touchItemIndex, this._indexAry);
 			}
-			console.log('this._touchItemIndex', this._touchItemIndex);
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
 			$('body').one(this._stopEvent, this._stopEventFunc);
@@ -497,6 +488,8 @@
 				$(this._config.closeBtnHtml).css(this._config.closeBtnCss).on(this._startEvent, function(){
 					DrM._$reorderItem.remove();
 					DrM._config.onClose();
+					// 需要删除的排序
+					// 更新数组
 				})
 			);
 		},
@@ -783,7 +776,9 @@
 			} else {
 				if(this._hardConfig._reorderCSS){
 					//console.log('点击  ', this._reorderItemIndex,'计算', calcIndex);
-					this._reorderFn(this._reorderItemIndex, reorderIndex);
+					this._reorderFn(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
+					this._reorderFn(this._indexAry, this._reorderItemIndex, reorderIndex);
+					console.log(this._indexAry);
 					this._setItemsPos();
 				}else{
 					// 5, 以reorderIndex作为插入的位置
