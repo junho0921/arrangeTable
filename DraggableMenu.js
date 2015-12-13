@@ -101,12 +101,14 @@
 			// 不变的是格子位置的数组posAry
 
 			if(this._hardConfig._reorderCSS){
-				// 获取初始排序的数组并每个都绝对定位在(0, 0)css坐标
-				this._getItemsInitAry();
+				// 每个都绝对定位在(0, 0)css坐标
+				this._$items.css('position', 'absolute');
+				// 获取初始排序的数组
+				this._freshItemsInitAry();
 				// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
 				this._calcPosAry();
 				// 使用translate来填坑
-				this._setItemsPos();
+				this._setItemsPos(this._reorderItemsAry);
 			}
 			// 注意的是获取DOM的排序需要本源代码里提供方法, 因为不可能直接在DOM处理
 
@@ -222,6 +224,11 @@
 		_startEvent: null,
 		_stopEvent: null,
 		_moveEvent: null,
+
+		/*
+		* 删除了的数组index值, 基于初始化的index
+		* */
+		_deleteIndex:[],
 
 		/**
 		 * 状态: _dragging是进入touchMove的状态
@@ -346,16 +353,22 @@
 			}
 		},
 
-		// 获取初始排序的数组并每个都绝对定位在(0, 0)css坐标
-		_getItemsInitAry: function(){
-			this._reorderItemsAry = this._$items.css('position', 'absolute');
 
-			// 创建键值对:
+		// 获取初始排序的数组并每个都绝对定位在(0, 0)css坐标
+		_freshItemsInitAry: function(){
+			// 每次初始化与删除/添加item后, 都执行_freshItemsInitAry方法
+
+			// 获取当前的所有items
+			this._reorderItemsAry = this._$container.children();
+
+			// 创建数组_indexAry,以item文本流序号为内容的数组
 			this._indexAry = [];
 			for(var i = 0; i < this._reorderItemsAry.length; i++){
-				this._indexAry.push(i);
+				this._indexAry.push(
+					i // i是文本流的序号
+				);
 			}
-			console.log('this._indexAry', this._indexAry);
+			//console.log('this._indexAry', this._indexAry);
 		},
 		// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
 		_calcPosAry: function(){
@@ -372,7 +385,7 @@
 				position.top = inRow * this._itemH;
 				this._posAry.push(position);
 			}
-			console.log('this._posAry', this._posAry)
+			//console.log('this._posAry', this._posAry)
 		},
 
 		// 模拟步骤:
@@ -384,22 +397,25 @@
 		// 通过itemReorderIndex值就可以使用_calcPos来计算出坐标(其实是避免了获取translate的数值, 因为兼容很难!)
 
 		// 有无都需要建立一个reorderItemsAry, 它是复制initItemsAry, 用来处理排序
-		_calcPos: function(i){
-			// 位置的动态写法
-			var position = {};
-			var inRow = Math.floor(i / this._containerCols);
-			var inCol = i % this._containerCols;
-			position.left = inCol * this._itemW;
-			position.top = inRow * this._itemH;
-			return position;
-		},
+
+		//_calcPos: function(i){
+		//	// 位置的动态写法
+		//	var position = {};
+		//	var inRow = Math.floor(i / this._containerCols);
+		//	var inCol = i % this._containerCols;
+		//	position.left = inCol * this._itemW;
+		//	position.top = inRow * this._itemH;
+		//	return position;
+		//},
+
 		// 使用translate来填坑
-		_setItemsPos: function(){
+		_setItemsPos: function(items){
 			// 升级: 选择性执行_setPosition
-			this._applyTransition(this._$items);
-			for(var i = 0; i < this._$items.length; i++){
+			console.log('items', items);
+			this._applyTransition(items);// 选择性执行
+			for(var i = 0; i < items.length; i++){
 				//console.log(this._posAry[i]);
-				this._setPosition($(this._reorderItemsAry[i]), this._posAry[i])
+				this._setPosition($(items[i]), this._posAry[i])
 			}
 		},
 		_reorderFn: function(targetAry, reorderItemIndex, newIndex){
@@ -444,10 +460,28 @@
 			this.targetCenterStartX = this.itemStartPos.left + this._itemW/2;
 			this.targetCenterStartY = this.itemStartPos.top + this._itemH/2;
 
-			this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
 			if(this._hardConfig._reorderCSS){
+				this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
+				//console.log('现在items里的index = ', this._touchItemIndex, '以删除的有', this._deleteIndex);
+
+				// 需要一直获取初始化的时候的index值, 不是现在items里的index值
+				// 把现在文本流的index值调整为初始化的index值
+				//var MEMO_touchItemIndex = this._touchItemIndex;
+				for(var u = 0; u < this._deleteIndex.length; u++){
+					var prop = this._deleteIndex[u];
+					//console.log(prop , this._touchItemIndex);
+					if(prop <= this._touchItemIndex){
+						this._touchItemIndex++;
+						//console.log(this._touchItemIndex -1 , this._touchItemIndex)
+					}
+				}
+				// 根据初始化的index值获取现在格子的index值
 				this._touchItemIndex = $.inArray(this._touchItemIndex, this._indexAry);
+				// 命名_touchItemIndex是不正确表达意思的, 应该是positionIndex
+			}else{
+				this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
 			}
+			//console.log('this._touchItemIndex', this._touchItemIndex);
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
 			$('body').one(this._stopEvent, this._stopEventFunc);
@@ -488,8 +522,33 @@
 				$(this._config.closeBtnHtml).css(this._config.closeBtnCss).on(this._startEvent, function(){
 					DrM._$reorderItem.remove();
 					DrM._config.onClose();
+					DrM._setItemsPos(DrM._$container.children());
+
+					// 删除item后, 刷新排序数组, 等于重新开始排序情况(我之前以视角角度来审视排序, 混乱了删除后的情况)
+					DrM._freshItemsInitAry();
+
 					// 需要删除的排序
 					// 更新数组
+					// 获取现在的items进行排序
+
+					//console.log(DrM._touchItemIndex);
+					//console.log('删除的序号',DrM._indexAry[DrM._touchItemIndex]);
+					// 删除现在的item
+
+					//DrM._deleteIndex.push(DrM._indexAry[DrM._touchItemIndex]);
+					//DrM._deleteIndex.sort();
+					//
+					//console.log('DrM._indexAry[DrM._touchItemIndex]', DrM._indexAry[DrM._touchItemIndex]);
+					//// 删除_reorderItemsAry里的对应的
+					//DrM._reorderItemsAry.splice(DrM._indexAry[DrM._touchItemIndex],1);
+					//console.log(DrM._indexAry[DrM._touchItemIndex],'jQuery包装集里的',DrM._reorderItemsAry);
+					//
+					//DrM._setItemsPos(DrM._reorderItemsAry);
+					//
+					//// 在排序的数组_indexAry里删除这个index值
+					//DrM._indexAry.splice(DrM._touchItemIndex,1);
+					//console.log('删除后的数组', DrM._indexAry, '累计删除 = ', DrM._deleteIndex);
+
 				})
 			);
 		},
@@ -512,7 +571,7 @@
 				this._dragItemReset();
 
 			}else{
-				this._$container.children().removeClass(this._config.activeItemClass + " " +this._config.reorderItemClass);
+				this._$container.children().removeClass(this._config.activeItemClass + " " + this._config.reorderItemClass);
 
 				if(this._dragging === false){
 
@@ -779,7 +838,7 @@
 					this._reorderFn(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
 					this._reorderFn(this._indexAry, this._reorderItemIndex, reorderIndex);
 					console.log(this._indexAry);
-					this._setItemsPos();
+					this._setItemsPos(this._reorderItemsAry);
 				}else{
 					// 5, 以reorderIndex作为插入的位置
 					this._$items.eq(reorderIndex).before(this._$reorderItem);
