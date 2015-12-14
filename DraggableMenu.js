@@ -98,9 +98,9 @@
 				// 获取当前的所有items
 				this._reorderItemsAry = this._$items;
 				// 获取初始排序的数组
-				this._freshItemsInitAry();
+				this._getIndexAry();
 				// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
-				this._calcPosAry();
+				this._getPosAry();
 				// 使用translate来填坑
 				this._setItemsPos(this._reorderItemsAry);
 				// 避免初始化的生成html所带有的动画
@@ -291,8 +291,24 @@
 		_draggableCount: 0,
 
 		/*
-		*
-		* */
+		 * 各item文本位置的数组, 有顺序
+		 * */
+		_indexAry:[],
+
+		/*
+		 * 格子的坐标
+		 * */
+		_posAry:[],
+
+		/*
+		 * 点击目标的原始数据
+		 * */
+		_$touchTargetData:null,
+
+		/*
+		 * 在基于relative的拖拽的保存上次视觉位置的index值
+		 * */
+		MEMOvisionIndex:null,
 
 		/*
 		* 固定设置, jun的开发配置
@@ -356,8 +372,8 @@
 		},
 
 
-		_freshItemsInitAry: function(){
-			// 每次初始化与删除/添加item后, 都执行_freshItemsInitAry方法
+		_getIndexAry: function(){
+			// 每次初始化与删除/添加item后, 都执行_getIndexAry方法
 			// 清空_indexAry,以item文本位置序号为内容的数组
 			this._indexAry = [];
 			for(var i = 0; i < this._reorderItemsAry.length; i++){
@@ -368,7 +384,7 @@
 			//console.log('this._indexAry', this._indexAry);
 		},
 		// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
-		_calcPosAry: function(){
+		_getPosAry: function(){
 			// 位置的静态写法
 			// 数组保存:格子数量和各格子坐标, 优点: 避免重复计算
 			var len = this._reorderItemsAry.length;
@@ -382,7 +398,6 @@
 				position.top = inRow * this._itemH;
 				this._posAry.push(position);
 			}
-			//console.log('this._posAry', this._posAry)
 		},
 
 		// 本模式的位置index区分: 视觉位置与文本位置
@@ -414,7 +429,6 @@
 
 		_setItemsPos: function(items, index1, index2){
 			// index1, index2作为选择性执行的范围
-			//console.log('items', items);
 			var len, st = 0;
 
 			// 修正
@@ -437,16 +451,12 @@
 		},
 
 		_reorderFn: function(targetAry, reorderItemIndex, newIndex){
-			//if(reorderItemIndex == reorderItemIndex){ return }
-
-			// 抽出该数组index位置的reorderItem
+			// 抽出
 			var reorderItem = targetAry.splice(reorderItemIndex, 1)[0];
-
-			// 把reorderItem插入数组中新的位置newIndex
+			console.log('抽出', reorderItem);
+			// 指定插入
 			targetAry.splice(newIndex, 0, reorderItem);
 		},
-
-		/* 初始化完毕*/
 
 		_startEventFunc :function(event){
 			// 禁止多点触控
@@ -490,19 +500,21 @@
 			if(this._config.dataList){
 				this._$touchTargetData = this._config.dataList[this._touchItemIndex];
 			}
+			console.log(this._touchItemIndex, this._$touchTargetData);
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
 			$('body').one(this._stopEvent, this._stopEventFunc);
 
+			var DrM = this;
 			if(!this._$touchTargetData.undraggable){
 				// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
-				this._setTimeFunc = setTimeout($.proxy(function(){
+				this._setTimeFunc = setTimeout(function(){
 
-					this._enterEditingMode();
+					DrM._enterEditingMode();
 
 					// 以pressDuration为间隔触发press事件
-					//this.fireEvent("press",[this._$reorderItem]);
-				}, this), this._config.pressDuration);
+					//DrM.fireEvent("press",[this._$reorderItem]);
+				}, this._config.pressDuration);
 
 				// 绑定拖拽事件
 				$('body').on(this._moveEvent, this._dragEventFn);
@@ -511,8 +523,6 @@
 		},
 
 		_enterEditingMode: function(){
-			var DrM = this;
-
 			if(!this._editing){
 				this._editing = true;
 			}else{
@@ -535,40 +545,40 @@
 		},
 
 		_clickCloseBtnFn: function(){
-			console.log('格子序号', this._reorderItemIndex);
+			//console.log('格子序号', this._reorderItemIndex);
 
-			// reorderItemIndex是当前进行编辑模式的item所在视觉位置
+			// 说明: 变量reorderItemIndex是当前进行编辑模式的item所在视觉位置
 
-			console.log('删除item对象内容 ',
-				// 删除reorderItemsAry里视觉位置的item
-				this._reorderItemsAry.splice(this._reorderItemIndex, 1)[0]
-			);
 			// 删除dataList里视觉位置的item原始数据
 			this._config.dataList.splice(this._reorderItemIndex, 1);
 
-			//console.log('删除后, 更新的对象集', this._reorderItemsAry);
+			if(this._hardConfig._reorderCSS){
 
-			// 删除本item, 这样比较安全
+				console.log('删除item对象内容 ',
+					// 删除reorderItemsAry里视觉位置的item
+					this._reorderItemsAry.splice(this._reorderItemIndex, 1)[0]
+				);
+				//console.log('删除后, 更新的对象集', this._reorderItemsAry);
+
+				// 动画"定位"剩下的items
+				this._setItemsPos(this._reorderItemsAry);
+
+				// 延迟执行, 给动画效果留有空间
+				var DrM = this;
+				setTimeout(function(){
+					// 以新reorderItemsAry覆盖原来的DOM, 这样可以使DOM的结构顺序严格按照reorderItemsAry
+					DrM._$container.empty().append(DrM._reorderItemsAry.on(DrM._startEvent, DrM._startEventFunc));
+					// 新DOM已经生成, 需要重写变量
+					DrM._getIndexAry();
+				}, 280);
+
+			}
+
+			// 删除本item
 			this._$reorderItem.remove();
-
-			// 动画"定位"剩下的items
-			this._setItemsPos(this._reorderItemsAry);
-
-			// 延迟执行, 给动画效果留有空间
-			var DrM = this;
-			setTimeout(function(){
-				// 以新reorderItemsAry覆盖原来的DOM, 这样可以是DOM的结构顺序以reorderItemsAry的进行
-				DrM._$container.empty().append(DrM._reorderItemsAry.on(DrM._startEvent, DrM._startEventFunc));
-				// 删除item后, 继续运用_reorderItemsAry对象集合来重新渲染模板, 目的是为了改变DOM结构, 改变后DOM的顺序满足现状的排版
-				// , 等于重新开始排序情况(我之前以视角角度来审视排序, 混乱了删除后的情况)
-				// 新DOM已经生成, 需要重写变量
-				DrM._freshItemsInitAry();
-			}, 280);
-
 			// 提供外部执行的方法, 传参修改后的items对象集合
 			this._config.onClose(this._reorderItemsAry);
 		},
-
 
 		_stopEventFunc: function(){
 			// 方法stopEventFunc功能:
@@ -715,7 +725,7 @@
 					this._enterEditingMode();
 
 					// 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
-					//this._$items = this._$container.children();
+					this._$items = this._$container.children();
 
 					// 重新获取可以拖拉的数量
 					this._draggableCount = this._$items.length - this._undraggableCount;
@@ -744,6 +754,7 @@
 						dragItemStartY = this.itemStartPos.top - this._$draggingItem.position().top;
 						this._$draggingItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
 						this._reorderItemIndex = this._touchItemIndex + 1;
+						this.MEMOvisionIndex = this._touchItemIndex;
 					}
 
 					//this.fireEvent("beforeDrag", [this._$draggingItem]);
@@ -816,32 +827,32 @@
 				targetCenterPosY = this.targetCenterStartY + cssY;
 			}
 
-			// 3, 以targetCenterPos坐标来计算触控点所在的li的序号位置calcIndex
-			var calcIndex = this._getTouchIndex(targetCenterPosX, targetCenterPosY);
+			// 3, 以targetCenterPos坐标来计算触控点所在视觉位置visionIndex
+			var visionIndex = this._getTouchIndex(targetCenterPosX, targetCenterPosY);
 
-			// 4,
+			// 4, 排序位置
 			var reorderIndex;
 
 			if(this._hardConfig._reorderCSS){
 				// 基于绝对定位, 不用考虑文本流的插入index值的调整
-				if(calcIndex >= 0 && calcIndex < this._draggableCount){
-					reorderIndex = calcIndex;
+				if(visionIndex >= 0 && visionIndex < this._draggableCount){
+					reorderIndex = visionIndex;
 				}
 			}else{
 				// 基于文本流的插入, 需要index值的调整
-				// 以计算值calcIndex来得出插入位置reorderIndex, 基于在获取其他item来使用before插入activeItem的的原理
+				// 以计算值visionIndex来得出插入位置reorderIndex, 基于在获取其他item来使用before插入activeItem的的原理
 				// 区间1[负数 - 0] -->为0
-				// 区间2[0 - initialIndex] -->为calcIndex
+				// 区间2[0 - initialIndex] -->为visionIndex
 				// 区间3[initialIndex - this.draggableCount] -->为initialIndex
 				// 区间4[this.draggableCount - 无限大] -->为draggableCount
-				if(calcIndex < 0){
+				if(visionIndex < 0){
 					reorderIndex = 0;
-				}else if(calcIndex < this._touchItemIndex){
-					reorderIndex = calcIndex;
-				} else if (calcIndex >= this._draggableCount){
+				}else if(visionIndex < this._touchItemIndex){
+					reorderIndex = visionIndex;
+				} else if (visionIndex >= this._draggableCount){
 					reorderIndex = this._draggableCount;
-				} else if (calcIndex >= this._touchItemIndex){
-					reorderIndex = calcIndex + 1;
+				} else if (visionIndex >= this._touchItemIndex){
+					reorderIndex = visionIndex + 1;
 				}
 
 			}
@@ -850,18 +861,34 @@
 				return false;
 			} else {
 				if(this._hardConfig._reorderCSS){
-					//console.log('点击  ', this._reorderItemIndex,'计算', calcIndex);
+					//console.log('点击  ', this._reorderItemIndex,'计算', visionIndex);
 					this._reorderFn(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
-					this._reorderFn(this._config.dataList, this._reorderItemIndex, reorderIndex);
 					this._reorderFn(this._indexAry, this._reorderItemIndex, reorderIndex);
 					console.log(this._indexAry);
 					this._setItemsPos(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
+					this._reorderFn(this._config.dataList, this._reorderItemIndex, reorderIndex);
 				}else{
 					// 5, 以reorderIndex作为插入的位置
 					this._$items.eq(reorderIndex).before(this._$reorderItem);
+
+					//var dd ;
+					//if(visionIndex < 0){
+					//	reorderIndex = 0;
+					//}else if(visionIndex < this._touchItemIndex){
+					//	reorderIndex = visionIndex;
+					//} else if (visionIndex >= this._draggableCount){
+					//	reorderIndex = this._draggableCount;
+					//} else if (visionIndex >= this._touchItemIndex){
+					//	reorderIndex = visionIndex + 1;
+					//}
+					this._reorderFn(this._config.dataList, this.MEMOvisionIndex, visionIndex);
+					//console.log('原本',this.MEMOvisionIndex,'新', visionIndex);
+
+					this.MEMOvisionIndex = visionIndex;
 				}
 				// 更新本次位置
 				this._reorderItemIndex = reorderIndex;
+
 			} // 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
 		},
 
@@ -1028,10 +1055,6 @@
 			}
 
 		},
-
-
-
-
 
 		// 方法: 获取触控点坐标
 		_page :  function (coord, event) {
