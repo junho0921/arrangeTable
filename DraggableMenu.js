@@ -34,6 +34,8 @@
 // 点击的放大效果
 // 注意的是获取DOM的排序需要本源代码里提供方法, 因为不可能直接在DOM处理
 
+// 思考:
+// 关闭按钮执行的方法可以执行_render重新渲染页面, 这样就可以直接负责对源头dataList处理就好了
 
 // 说明
 // displaynone
@@ -308,7 +310,7 @@
 
 			for(var i = 0; i < len; i++){
 				$itemHtml = this._config.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
-					.data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
+					//.data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
 				$itemsHtml.push($itemHtml);// ps: 假设undraggable项写在数组的最后
 				if(data[i].undraggable){// 记数
 					this._undraggableCount++;
@@ -347,7 +349,7 @@
 			// 每次初始化与删除/添加item后, 都执行_freshItemsInitAry方法
 
 			// 获取当前的所有items
-			this._reorderItemsAry = this._$container.children();
+			this._reorderItemsAry = this._$items;
 
 			// 创建数组_indexAry,以item文本流序号为内容的数组
 			this._indexAry = [];
@@ -389,7 +391,10 @@
 		//      情况2:
 		//          描述: 拖拽时, 重新排序reorder
 		//          由于posAry已有位置坐标, 需要对象有新的排序 --> 对reorderItemsAry排序与indexAry排序, 保留DOM结构不变排序不变 --> 重新排序的reorderItemsAry便可以填进posAry的格子坐标里
-		//
+		//      情况3:
+		//          描述: 点击关闭按钮
+		//          描述: 拖拽时, 重新排序reorder
+
 
 
 
@@ -440,7 +445,7 @@
 
 			this._$touchTarget = $(event.currentTarget);
 
-			this._$touchTargetData = this._$touchTarget.data('DraggableMenuData');
+			//this._$touchTargetData = this._$touchTarget.data('DraggableMenuData');
 
 			//if(event.currentTarget.className.indexOf(this.ItemClassName > -1)){
 			//	this._$touchTarget =  $(event.currentTarget);
@@ -469,20 +474,25 @@
 				// 需要一直获取初始化的时候的index值, 不是现在items里的index值
 				// 把现在文本流的index值调整为初始化的index值
 				//var MEMO_touchItemIndex = this._touchItemIndex;
-				for(var u = 0; u < this._deleteIndex.length; u++){
-					var prop = this._deleteIndex[u];
-					//console.log(prop , this._touchItemIndex);
-					if(prop <= this._touchItemIndex){
-						this._touchItemIndex++;
-						//console.log(this._touchItemIndex -1 , this._touchItemIndex)
-					}
-				}
+				//for(var u = 0; u < this._deleteIndex.length; u++){
+				//	var prop = this._deleteIndex[u];
+				//	//console.log(prop , this._touchItemIndex);
+				//	if(prop <= this._touchItemIndex){
+				//		this._touchItemIndex++;
+				//		//console.log(this._touchItemIndex -1 , this._touchItemIndex)
+				//	}
+				//}
 				// 根据初始化的index值获取现在格子的index值
 				this._touchItemIndex = $.inArray(this._touchItemIndex, this._indexAry);
 				// 命名_touchItemIndex是不正确表达意思的, 应该是positionIndex
 			}else{
 				this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
 			}
+
+			this._$touchTargetData = this._config.dataList[this._touchItemIndex];
+
+			console.log(this._$touchTargetData);
+
 			//console.log('this._touchItemIndex', this._touchItemIndex);
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
@@ -516,18 +526,37 @@
 					this._$reorderItem.find(this._closeBtnClass).remove();
 				}
 			}
+			this._reorderItemIndex = this._touchItemIndex;
 
 			this._config.onEditing();
 
 			this._$reorderItem = this._$touchTarget
 				.append(
 				$(this._config.closeBtnHtml).css(this._config.closeBtnCss).on(this._startEvent, function(){
-					DrM._$reorderItem.remove();
 					DrM._config.onClose();
-					DrM._setItemsPos(DrM._$container.children());
 
-					// 删除item后, 刷新排序数组, 等于重新开始排序情况(我之前以视角角度来审视排序, 混乱了删除后的情况)
-					DrM._freshItemsInitAry();
+					// 先获取当前位置格子位置 this._touchItemIndex
+
+					// 根据这个index来删除_reorderItemsAry里的对应的
+
+					console.log('格子序号', DrM._reorderItemIndex);
+					var xxx = DrM._reorderItemsAry.splice(DrM._reorderItemIndex, 1);
+					console.log('删除的item = ', xxx[0]);
+					DrM._config.dataList.splice(DrM._reorderItemIndex, 1);
+
+					console.log('删除后, 更新的对象集', DrM._reorderItemsAry);
+					DrM._$reorderItem.remove();
+					DrM._setItemsPos(DrM._reorderItemsAry);
+					setTimeout(function(){
+						DrM._$container.empty().append(DrM._reorderItemsAry.on(DrM._startEvent, DrM._startEventFunc));
+						// 删除item后, 继续运用_reorderItemsAry对象集合来重新渲染模板, 目的是为了改变DOM结构, 改变后DOM的顺序满足现状的排版
+						// , 等于重新开始排序情况(我之前以视角角度来审视排序, 混乱了删除后的情况)
+						DrM._freshItemsInitAry();
+					}, 280);
+
+
+					//// 删除item后, 刷新排序数组, 等于重新开始排序情况(我之前以视角角度来审视排序, 混乱了删除后的情况)
+					//DrM._freshItemsInitAry();
 
 					// 需要删除的排序
 					// 更新数组
@@ -701,7 +730,7 @@
 					this._enterEditingMode();
 
 					// 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
-					this._$items = this._$container.children();
+					//this._$items = this._$container.children();
 
 					// 重新获取可以拖拉的数量
 					this._draggableCount = this._$items.length - this._undraggableCount;
@@ -838,6 +867,7 @@
 				if(this._hardConfig._reorderCSS){
 					//console.log('点击  ', this._reorderItemIndex,'计算', calcIndex);
 					this._reorderFn(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
+					this._reorderFn(this._config.dataList, this._reorderItemIndex, reorderIndex);
 					this._reorderFn(this._indexAry, this._reorderItemIndex, reorderIndex);
 					console.log(this._indexAry);
 					this._setItemsPos(this._reorderItemsAry);
@@ -845,7 +875,7 @@
 					// 5, 以reorderIndex作为插入的位置
 					this._$items.eq(reorderIndex).before(this._$reorderItem);
 				}
-				// 记录本次位置
+				// 更新本次位置
 				this._reorderItemIndex = reorderIndex;
 			} // 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
 		},
