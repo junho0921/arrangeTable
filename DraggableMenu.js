@@ -32,6 +32,8 @@
 // 升级
 // 排序的动画效果
 // 点击的放大效果
+// 注意的是获取DOM的排序需要本源代码里提供方法, 因为不可能直接在DOM处理
+
 
 // 说明
 // displaynone
@@ -88,21 +90,9 @@
 
 			this._setProps();
 
-			// 绝对定位
-			// 在size方法里已经获取的itemWH与containerWH可以作为每个item的绝对定位的位置了, 不用遍历items来记录
-
-			// 初步:
-			// 1, 建立一个数组ary用来记录[]
-			// 2, 我想有文本流的自动排队的效果, 所以插入的事件发生在ary里, setItemsPos方法是可以选择性的进行排序,
-			// 3, 每个dom的dataID, 所以可以每次都获取ID值来排序?
-			// 现在, 绝对定位,
-			// 不变的是初始化的排序数组initializeAry, 数组保存的是每个DOM的jQuery对象, 每次使用这个来遍历
-			// 建立数组reorderAry, 每次排序后的DOM排序情况, 这样可以在
-			// 不变的是格子位置的数组posAry
-
 			if(this._hardConfig._reorderCSS){
 				// 每个都绝对定位在(0, 0)css坐标
-				this._$items.css('position', 'absolute');
+				this._$items.css({'position':'absolute', 'top':0, 'left': 0});
 				// 获取初始排序的数组
 				this._freshItemsInitAry();
 				// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
@@ -110,7 +100,6 @@
 				// 使用translate来填坑
 				this._setItemsPos(this._reorderItemsAry);
 			}
-			// 注意的是获取DOM的排序需要本源代码里提供方法, 因为不可能直接在DOM处理
 
 			this._$items.on(this._startEvent, this._startEventFunc);
 		},
@@ -354,7 +343,6 @@
 		},
 
 
-		// 获取初始排序的数组并每个都绝对定位在(0, 0)css坐标
 		_freshItemsInitAry: function(){
 			// 每次初始化与删除/添加item后, 都执行_freshItemsInitAry方法
 
@@ -389,12 +377,26 @@
 		},
 
 		// 模拟步骤:
-		// 创建变量: 1,初始initItemsAry 2,复制initItemsAry后得出reorderItemsAry作为排序数组 3, 计算posAry作为位置对应值
-		// 以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos
+		// 初始化:
+		//      创建变量: 1,变量reorderItemsAry是重新获取DOM里的items对象作为排序的数组 2, 变量posAry数组, 作为位置对应值 3, 变量indexAry类似于reorderItemsAry, 但内容是对象的DOM的index值
+		//      例子: reorderItemsAry = [$1, $2, $3, $4, $5, $6]; indexAry = [1, 2, 3, 4, 5, 6];
+		//      以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos方法"定位"
+		//      完成了定位布局
+		// 进行ui交互:
+		//      情况1:
+		//          描述: 排序后: reorderItemsAry = [$0, $1, $2, $4, $5, $3, $6]; indexAry = [0, 1, 2, 4, 5, 3, 6];
+		//          点击item3, 如何拖拽item?? --> 如何获取定位? --> 在posAry里获取位置 --> 但点击获取的index值是DOM的index值=3, 不是现在格子位置的序号5, --> 在indexAry里获得 index = 5 --> 现在就可以在posAry里获取位置了 --> 可以拖动
+		//      情况2:
+		//          描述: 拖拽时, 重新排序reorder
+		//          由于posAry已有位置坐标, 需要对象有新的排序 --> 对reorderItemsAry排序与indexAry排序, 保留DOM结构不变排序不变 --> 重新排序的reorderItemsAry便可以填进posAry的格子坐标里
+		//
+
+
+
 		// 拖动改变后, reorderItemsAry更新
-		// 以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos
-		// 点击后是获取到initItemsAry的index值, 那么可以在reorderItemsAry对应itemInitIndex值来获取到对象的itemReorderIndex值
+		// 以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos方法"定位"
 		// 通过itemReorderIndex值就可以使用_calcPos来计算出坐标(其实是避免了获取translate的数值, 因为兼容很难!)
+		//
 
 		// 有无都需要建立一个reorderItemsAry, 它是复制initItemsAry, 用来处理排序
 
