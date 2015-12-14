@@ -93,14 +93,21 @@
 			this._setProps();
 
 			if(this._hardConfig._reorderCSS){
-				// 每个都绝对定位在(0, 0)css坐标
+				// 各item都绝对定位在(0, 0)css坐标
 				this._$items.css({'position':'absolute', 'top':0, 'left': 0});
+				// 获取当前的所有items
+				this._reorderItemsAry = this._$items;
 				// 获取初始排序的数组
 				this._freshItemsInitAry();
 				// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
 				this._calcPosAry();
 				// 使用translate来填坑
 				this._setItemsPos(this._reorderItemsAry);
+				// 避免初始化的生成html所带有的动画
+				var DrM = this;
+				setTimeout(function(){
+					DrM._applyTransition(DrM._$items);
+				}, 1)
 			}
 
 			this._$items.on(this._startEvent, this._startEventFunc);
@@ -237,7 +244,7 @@
 		_eventStartY: null,
 
 		/*
-		 * reorderItem现在的位置序号
+		 * reorderItem现在的位置序号, 也是作为进入编辑模式的item所在视觉位置序号
 		 * */
 		_reorderItemIndex: null,
 
@@ -282,6 +289,10 @@
 		* */
 		_undraggableCount: 0,
 		_draggableCount: 0,
+
+		/*
+		*
+		* */
 
 		/*
 		* 固定设置, jun的开发配置
@@ -347,15 +358,11 @@
 
 		_freshItemsInitAry: function(){
 			// 每次初始化与删除/添加item后, 都执行_freshItemsInitAry方法
-
-			// 获取当前的所有items
-			this._reorderItemsAry = this._$items;
-
-			// 创建数组_indexAry,以item文本流序号为内容的数组
+			// 清空_indexAry,以item文本位置序号为内容的数组
 			this._indexAry = [];
 			for(var i = 0; i < this._reorderItemsAry.length; i++){
 				this._indexAry.push(
-					i // i是文本流的序号
+					i // i是文本位置的序号
 				);
 			}
 			//console.log('this._indexAry', this._indexAry);
@@ -378,8 +385,10 @@
 			//console.log('this._posAry', this._posAry)
 		},
 
+		// 本模式的位置index区分: 视觉位置与文本位置
 		// 模拟步骤:
 		// 初始化:
+		//      根据dataList数据渲染页面
 		//      创建变量: 1,变量reorderItemsAry是重新获取DOM里的items对象作为排序的数组 2, 变量posAry数组, 作为位置对应值 3, 变量indexAry类似于reorderItemsAry, 但内容是对象的DOM的index值
 		//      例子: reorderItemsAry = [$1, $2, $3, $4, $5, $6]; indexAry = [1, 2, 3, 4, 5, 6];
 		//      以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos方法"定位"
@@ -387,51 +396,53 @@
 		// 进行ui交互:
 		//      情况1:
 		//          描述: 排序后: reorderItemsAry = [$0, $1, $2, $4, $5, $3, $6]; indexAry = [0, 1, 2, 4, 5, 3, 6];
-		//          点击item3, 如何拖拽item?? --> 如何获取定位? --> 在posAry里获取位置 --> 但点击获取的index值是DOM的index值=3, 不是现在格子位置的序号5, --> 在indexAry里获得 index = 5 --> 现在就可以在posAry里获取位置了 --> 可以拖动
+		//          点击item3, 如何拖拽item?? --> 如何获取定位? --> 获取item的translate值? 不, 难在兼容各浏览器, 所以在posAry里获取位置 --> 但点击获取的index值是DOM的index值=3, 不是现在视觉位置的序号5, --> 在indexAry里获得 index = 5 --> 现在就可以在posAry里获取位置了 --> 可以拖动
+		//          同理, 没有拖拽, 但点击item3, 如何获取item3在dataList的数据呢?? --> 同理, 获取到所在格子序号5 --> 获取dataList里序号5的内容
 		//      情况2:
 		//          描述: 拖拽时, 重新排序reorder
-		//          由于posAry已有位置坐标, 需要对象有新的排序 --> 对reorderItemsAry排序与indexAry排序, 保留DOM结构不变排序不变 --> 重新排序的reorderItemsAry便可以填进posAry的格子坐标里
+		//          由于posAry已有位置坐标, 需要对象有新的排序 --> 对reorderItemsAry排序与indexAry排序和dataList排序, 保留DOM结构不变排序不变 --> 重新排序的reorderItemsAry便可以填进posAry的格子坐标里
 		//      情况3:
-		//          描述: 点击关闭按钮
-		//          描述: 拖拽时, 重新排序reorder
+		//          描述: 点击关闭按钮,
+		//              这属于编辑模式, 区别于情况1,2, 这里需要计算变量变化
+		//              1, 更新dataList
+		//              2, 更新reorderItemsAry
+		//              3, 重新计算indexAry, 不是更新
+		//              4, 使用reorderItemsAry替换container里的内容, 也就是说以reorderItemsAry作为新的DOM结构
+		//              5, setPosition"定位"items
+		//              6, 若要有动画效果的话, 第4,5步需要使用setTimeout来延迟执行, 注意延迟的时间要短
+		//              7, 建议在第三步后执行remove本item
 
+		_setItemsPos: function(items, index1, index2){
+			// index1, index2作为选择性执行的范围
+			//console.log('items', items);
+			var len, st = 0;
 
-
-
-		// 拖动改变后, reorderItemsAry更新
-		// 以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos方法"定位"
-		// 通过itemReorderIndex值就可以使用_calcPos来计算出坐标(其实是避免了获取translate的数值, 因为兼容很难!)
-		//
-
-		// 有无都需要建立一个reorderItemsAry, 它是复制initItemsAry, 用来处理排序
-
-		//_calcPos: function(i){
-		//	// 位置的动态写法
-		//	var position = {};
-		//	var inRow = Math.floor(i / this._containerCols);
-		//	var inCol = i % this._containerCols;
-		//	position.left = inCol * this._itemW;
-		//	position.top = inRow * this._itemH;
-		//	return position;
-		//},
-
-		// 使用translate来填坑
-		_setItemsPos: function(items){
-			// 升级: 选择性执行_setPosition
-			console.log('items', items);
-			this._applyTransition(items);// 选择性执行
-			for(var i = 0; i < items.length; i++){
+			// 修正
+			if(index1 && index2 && index1!== index2){
+				if(index1 > index2){
+					st = index2;
+					len = index1 + 1;
+				} else {
+					st = index1;
+					len = index2 + 1;
+				}
+			}else{
+				len = items.length;
+			}
+			//console.log('起步', st, '终点', len);
+			for(var i = st; i < len; i++){
 				//console.log(this._posAry[i]);
 				this._setPosition($(items[i]), this._posAry[i])
 			}
 		},
+
 		_reorderFn: function(targetAry, reorderItemIndex, newIndex){
 			//if(reorderItemIndex == reorderItemIndex){ return }
 
-			// 抽出数组_reorderItemsAry中reorderItem的index
+			// 抽出该数组index位置的reorderItem
 			var reorderItem = targetAry.splice(reorderItemIndex, 1)[0];
 
-			// 把reorderItem插入数组_reorderItemsAry中newIndex位置
+			// 把reorderItem插入数组中新的位置newIndex
 			targetAry.splice(newIndex, 0, reorderItem);
 		},
 
@@ -467,33 +478,18 @@
 			this.targetCenterStartX = this.itemStartPos.left + this._itemW/2;
 			this.targetCenterStartY = this.itemStartPos.top + this._itemH/2;
 
-			if(this._hardConfig._reorderCSS){
-				this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
-				//console.log('现在items里的index = ', this._touchItemIndex, '以删除的有', this._deleteIndex);
+			// 获取文本位置的序号
+			this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
 
-				// 需要一直获取初始化的时候的index值, 不是现在items里的index值
-				// 把现在文本流的index值调整为初始化的index值
-				//var MEMO_touchItemIndex = this._touchItemIndex;
-				//for(var u = 0; u < this._deleteIndex.length; u++){
-				//	var prop = this._deleteIndex[u];
-				//	//console.log(prop , this._touchItemIndex);
-				//	if(prop <= this._touchItemIndex){
-				//		this._touchItemIndex++;
-				//		//console.log(this._touchItemIndex -1 , this._touchItemIndex)
-				//	}
-				//}
-				// 根据初始化的index值获取现在格子的index值
+			if(this._hardConfig._reorderCSS){
+				// 由于DOM结构固定, 所以需要在变量indexAry数组里获取DOM-index所在的视觉位置序号
 				this._touchItemIndex = $.inArray(this._touchItemIndex, this._indexAry);
-				// 命名_touchItemIndex是不正确表达意思的, 应该是positionIndex
-			}else{
-				this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
 			}
 
-			this._$touchTargetData = this._config.dataList[this._touchItemIndex];
-
-			console.log(this._$touchTargetData);
-
-			//console.log('this._touchItemIndex', this._touchItemIndex);
+			// 获取本DOM的原始数据
+			if(this._config.dataList){
+				this._$touchTargetData = this._config.dataList[this._touchItemIndex];
+			}
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
 			$('body').one(this._stopEvent, this._stopEventFunc);
@@ -526,62 +522,51 @@
 					this._$reorderItem.find(this._closeBtnClass).remove();
 				}
 			}
+			// 进入编辑模式, 需要更新现在的排序位置reorderItemIndex为item对象的所在位置
 			this._reorderItemIndex = this._touchItemIndex;
 
+			// 提供外部执行的方法
 			this._config.onEditing();
 
 			this._$reorderItem = this._$touchTarget
 				.append(
-				$(this._config.closeBtnHtml).css(this._config.closeBtnCss).on(this._startEvent, function(){
-					DrM._config.onClose();
-
-					// 先获取当前位置格子位置 this._touchItemIndex
-
-					// 根据这个index来删除_reorderItemsAry里的对应的
-
-					console.log('格子序号', DrM._reorderItemIndex);
-					var xxx = DrM._reorderItemsAry.splice(DrM._reorderItemIndex, 1);
-					console.log('删除的item = ', xxx[0]);
-					DrM._config.dataList.splice(DrM._reorderItemIndex, 1);
-
-					console.log('删除后, 更新的对象集', DrM._reorderItemsAry);
-					DrM._$reorderItem.remove();
-					DrM._setItemsPos(DrM._reorderItemsAry);
-					setTimeout(function(){
-						DrM._$container.empty().append(DrM._reorderItemsAry.on(DrM._startEvent, DrM._startEventFunc));
-						// 删除item后, 继续运用_reorderItemsAry对象集合来重新渲染模板, 目的是为了改变DOM结构, 改变后DOM的顺序满足现状的排版
-						// , 等于重新开始排序情况(我之前以视角角度来审视排序, 混乱了删除后的情况)
-						DrM._freshItemsInitAry();
-					}, 280);
-
-
-					//// 删除item后, 刷新排序数组, 等于重新开始排序情况(我之前以视角角度来审视排序, 混乱了删除后的情况)
-					//DrM._freshItemsInitAry();
-
-					// 需要删除的排序
-					// 更新数组
-					// 获取现在的items进行排序
-
-					//console.log(DrM._touchItemIndex);
-					//console.log('删除的序号',DrM._indexAry[DrM._touchItemIndex]);
-					// 删除现在的item
-
-					//DrM._deleteIndex.push(DrM._indexAry[DrM._touchItemIndex]);
-					//DrM._deleteIndex.sort();
-					//
-					//console.log('DrM._indexAry[DrM._touchItemIndex]', DrM._indexAry[DrM._touchItemIndex]);
-					//// 删除_reorderItemsAry里的对应的
-					//DrM._reorderItemsAry.splice(DrM._indexAry[DrM._touchItemIndex],1);
-					//console.log(DrM._indexAry[DrM._touchItemIndex],'jQuery包装集里的',DrM._reorderItemsAry);
-					//
-					//DrM._setItemsPos(DrM._reorderItemsAry);
-					//
-					//// 在排序的数组_indexAry里删除这个index值
-					//DrM._indexAry.splice(DrM._touchItemIndex,1);
-					//console.log('删除后的数组', DrM._indexAry, '累计删除 = ', DrM._deleteIndex);
-
-				})
+				$(this._config.closeBtnHtml).css(this._config.closeBtnCss).on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
 			);
+		},
+
+		_clickCloseBtnFn: function(){
+			console.log('格子序号', this._reorderItemIndex);
+
+			// reorderItemIndex是当前进行编辑模式的item所在视觉位置
+
+			console.log('删除item对象内容 ',
+				// 删除reorderItemsAry里视觉位置的item
+				this._reorderItemsAry.splice(this._reorderItemIndex, 1)[0]
+			);
+			// 删除dataList里视觉位置的item原始数据
+			this._config.dataList.splice(this._reorderItemIndex, 1);
+
+			//console.log('删除后, 更新的对象集', this._reorderItemsAry);
+
+			// 删除本item, 这样比较安全
+			this._$reorderItem.remove();
+
+			// 动画"定位"剩下的items
+			this._setItemsPos(this._reorderItemsAry);
+
+			// 延迟执行, 给动画效果留有空间
+			var DrM = this;
+			setTimeout(function(){
+				// 以新reorderItemsAry覆盖原来的DOM, 这样可以是DOM的结构顺序以reorderItemsAry的进行
+				DrM._$container.empty().append(DrM._reorderItemsAry.on(DrM._startEvent, DrM._startEventFunc));
+				// 删除item后, 继续运用_reorderItemsAry对象集合来重新渲染模板, 目的是为了改变DOM结构, 改变后DOM的顺序满足现状的排版
+				// , 等于重新开始排序情况(我之前以视角角度来审视排序, 混乱了删除后的情况)
+				// 新DOM已经生成, 需要重写变量
+				DrM._freshItemsInitAry();
+			}, 280);
+
+			// 提供外部执行的方法, 传参修改后的items对象集合
+			this._config.onClose(this._reorderItemsAry);
 		},
 
 
@@ -870,7 +855,7 @@
 					this._reorderFn(this._config.dataList, this._reorderItemIndex, reorderIndex);
 					this._reorderFn(this._indexAry, this._reorderItemIndex, reorderIndex);
 					console.log(this._indexAry);
-					this._setItemsPos(this._reorderItemsAry);
+					this._setItemsPos(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
 				}else{
 					// 5, 以reorderIndex作为插入的位置
 					this._$items.eq(reorderIndex).before(this._$reorderItem);
@@ -882,7 +867,7 @@
 
 		/*-----------------------------------------------------------------------------------------------*/
 		/*-----------------------------------------------------------------------------------------------*/
-		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------  以下方法可另作组件公用  -----------------------------------------*/
 		/*-----------------------------------------------------------------------------------------------*/
 		/*-----------------------------------------------------------------------------------------------*/
 
@@ -1031,10 +1016,8 @@
 
 					$obj.css(animProps);
 
-
 					if (callback) {
 						setTimeout(function() {
-
 							//DrM._disableTransition($obj);
 
 							callback.call();
