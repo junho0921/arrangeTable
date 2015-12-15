@@ -287,7 +287,7 @@
 		/*
 		* 不可拖动与可拖动的数量
 		* */
-		_undraggableCount: 0,
+		_staticCount: 0,
 		_draggableCount: 0,
 
 		/*
@@ -338,9 +338,12 @@
 			for(var i = 0; i < len; i++){
 				$itemHtml = this._config.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
 					//.data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
-				$itemsHtml.push($itemHtml);// ps: 假设undraggable项写在数组的最后
-				if(data[i].undraggable){// 记数
-					this._undraggableCount++;
+				if(data[i].static){
+					$itemHtml.addClass('DrM-static');
+				}
+				$itemsHtml.push($itemHtml);// ps: 假设static项写在数组的最后
+				if(data[i].static){// 记数
+					this._staticCount++;
 				}
 			}
 			// 把所有item的html的jQuery包装集渲染到容器里
@@ -503,7 +506,7 @@
 			$('body').one(this._stopEvent, this._stopEventFunc);
 
 			var DrM = this;
-			if(!this._$touchTargetData.undraggable){
+			if(!this._$touchTargetData.static){
 				// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
 				this._setTimeFunc = setTimeout(function(){
 
@@ -655,7 +658,8 @@
 			var DrM = this;
 			this._animateSlide(this._$draggingItem, {'left': resetX, 'top': resetY}, function(){
 				DrM._$container.find('.' + DrM._config.draggingItemClass).remove();
-				DrM._config.onDragEnd();
+				// 提供外部的方法, 传参排序后的jQuery对象集合
+				DrM._config.onDragEnd(DrM._reorderItemsAry);
 				DrM._$container.children().removeClass(DrM._config.activeItemClass + " " + DrM._config.reorderItemClass);
 				//DrM.fireEvent("afterDrag", [DrM._$reorderItem]);
 			});
@@ -725,7 +729,7 @@
 					this._$items = this._$container.children();
 
 					// 重新获取可以拖拉的数量
-					this._draggableCount = this._$items.length - this._undraggableCount;
+					this._draggableCount = this._$items.length - this._staticCount;
 
 					// 复制目标作为拖拽目标
 					this._$draggingItem =
