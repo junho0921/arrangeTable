@@ -536,7 +536,7 @@
 			this._reorderItemIndex = this._touchItemIndex;
 
 			// 提供外部执行的方法
-			this._config.onEditing();
+			this._config.onEditing(this._reorderItemsAry);
 
 			this._$reorderItem = this._$touchTarget
 				.append(
@@ -590,7 +590,7 @@
 			//$('.DraggableMenutittle3').text(''+ this._dragging);
 			clearTimeout(this._setTimeFunc);
 
-			$('body').off(this._moveEvent);
+			$('body').off(this._moveEvent).off(this._stopEvent);
 
 			if(this._InitializeMoveEvent){
 				// 已经拖拽了的情况, 执行拖拽项的归位动画
