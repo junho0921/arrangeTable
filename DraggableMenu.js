@@ -837,9 +837,9 @@
 				if(visionIndex >= 0 && visionIndex < this._draggableCount){
 					reorderIndex = visionIndex;
 				} else if(visionIndex < 0){
-					visionIndex = 0;
-				} else if(visionIndex > this._draggableCount){
-					visionIndex = this._draggableCount;
+					reorderIndex = 0;
+				} else if(visionIndex >= this._draggableCount){
+					reorderIndex = this._draggableCount - 1;
 				}
 			}else{
 				// 基于文本流的插入, 需要index值的调整
@@ -867,7 +867,7 @@
 					//console.log('点击  ', this._reorderItemIndex,'计算', visionIndex);
 					this._reorderFn(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
 					this._reorderFn(this._indexAry, this._reorderItemIndex, reorderIndex);
-					console.log(this._indexAry);
+					//console.log(this._indexAry);
 					this._setItemsPos(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
 					this._reorderFn(this._config.dataList, this._reorderItemIndex, reorderIndex);
 				}else{
