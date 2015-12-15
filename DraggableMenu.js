@@ -306,7 +306,7 @@
 		_$touchTargetData:null,
 
 		/*
-		 * 在基于relative的拖拽的保存上次视觉位置的index值
+		 * 在基于relative的拖拽模式, 本变量保存上次视觉位置的index值, 不用每次使用.index()方法
 		 * */
 		MEMOvisionIndex:null,
 
@@ -431,7 +431,6 @@
 			// index1, index2作为选择性执行的范围
 			var len, st = 0;
 
-			// 修正
 			if(index1 && index2 && index1!== index2){
 				if(index1 > index2){
 					st = index2;
@@ -440,12 +439,11 @@
 					st = index1;
 					len = index2 + 1;
 				}
-			}else{
+			} else {
 				len = items.length;
 			}
-			//console.log('起步', st, '终点', len);
+
 			for(var i = st; i < len; i++){
-				//console.log(this._posAry[i]);
 				this._setPosition($(items[i]), this._posAry[i])
 			}
 		},
@@ -453,7 +451,6 @@
 		_reorderFn: function(targetAry, reorderItemIndex, newIndex){
 			// 抽出
 			var reorderItem = targetAry.splice(reorderItemIndex, 1)[0];
-			console.log('抽出', reorderItem);
 			// 指定插入
 			targetAry.splice(newIndex, 0, reorderItem);
 		},
@@ -500,7 +497,7 @@
 			if(this._config.dataList){
 				this._$touchTargetData = this._config.dataList[this._touchItemIndex];
 			}
-			console.log(this._touchItemIndex, this._$touchTargetData);
+			//console.log(this._touchItemIndex, this._$touchTargetData);
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
 			$('body').one(this._stopEvent, this._stopEventFunc);
@@ -724,7 +721,7 @@
 
 					this._enterEditingMode();
 
-					// 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
+					// 在基于relative拖拽的模式, 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
 					this._$items = this._$container.children();
 
 					// 重新获取可以拖拉的数量
@@ -744,7 +741,7 @@
 						// $dragTarget的坐标 = reorderItem的坐标
 						this._draggingItemStartPos = this._posAry[this._touchItemIndex];
 						this._setPosition(
-							this._$draggingItem.css({'positions':'absolute'}),
+							this._$draggingItem,
 							this._draggingItemStartPos
 						);
 						this._reorderItemIndex = this._touchItemIndex;
@@ -757,13 +754,15 @@
 						this.MEMOvisionIndex = this._touchItemIndex;
 					}
 
+					// 清空transition来实现无延迟拖拽
+					this._disableTransition(this._$draggingItem);
+
 					//this.fireEvent("beforeDrag", [this._$draggingItem]);
 
 					this._InitializeMoveEvent = true;
 
 					this._$reorderItem.addClass(this._config.reorderItemClass);
 
-					this._disableTransition(this._$draggingItem)
 				}
 			}
 
@@ -828,7 +827,7 @@
 			}
 
 			// 3, 以targetCenterPos坐标来计算触控点所在视觉位置visionIndex
-			var visionIndex = this._getTouchIndex(targetCenterPosX, targetCenterPosY);
+			var visionIndex = this._getTouchIndex(targetCenterPosX, targetCenterPosY) || 0;
 
 			// 4, 排序位置
 			var reorderIndex;
@@ -837,6 +836,10 @@
 				// 基于绝对定位, 不用考虑文本流的插入index值的调整
 				if(visionIndex >= 0 && visionIndex < this._draggableCount){
 					reorderIndex = visionIndex;
+				} else if(visionIndex < 0){
+					visionIndex = 0;
+				} else if(visionIndex > this._draggableCount){
+					visionIndex = this._draggableCount;
 				}
 			}else{
 				// 基于文本流的插入, 需要index值的调整
@@ -871,19 +874,9 @@
 					// 5, 以reorderIndex作为插入的位置
 					this._$items.eq(reorderIndex).before(this._$reorderItem);
 
-					//var dd ;
-					//if(visionIndex < 0){
-					//	reorderIndex = 0;
-					//}else if(visionIndex < this._touchItemIndex){
-					//	reorderIndex = visionIndex;
-					//} else if (visionIndex >= this._draggableCount){
-					//	reorderIndex = this._draggableCount;
-					//} else if (visionIndex >= this._touchItemIndex){
-					//	reorderIndex = visionIndex + 1;
-					//}
 					this._reorderFn(this._config.dataList, this.MEMOvisionIndex, visionIndex);
-					//console.log('原本',this.MEMOvisionIndex,'新', visionIndex);
 
+					// 记录本次调整后新的文本位置
 					this.MEMOvisionIndex = visionIndex;
 				}
 				// 更新本次位置
