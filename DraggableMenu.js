@@ -2,49 +2,95 @@
 
 /* 混合模式v2.0*/
 
-/*	 事件操作:<br/>
- * 		点击item --> 跳转页面<br/>
- * 		长按item --> 进入编辑模式 --> 松开item --> 点击任何item, 退出编辑模式<br/>
- * 		长按item --> 进入编辑模式 --> 松开item --> 点击关闭按钮, 删除编辑的item, 退出编辑模式<br/>
- * 		长按item --> 进入编辑模式 --> 拖拽item --> 在新位置松开item --> items重新排序<br/>
- * 		*/
-/* 模式1: 文本流拖拽*/
+/*
 
-// 分析事件:
-// 长按按钮达到一定程度 -> 实现拖动 -> 拖动效果...
-// 拖动状态时候, 触控点的位置差生新的空白格(先忽略动画效果), li重新排序(动画效果先忽略)
-// 放开触控, 判断触控点位置, 移除空白格, 重新排位(先忽略动画效果)
+事件操作:<br/>
+	点击item --> 跳转页面<br/>
+	长按item --> 进入编辑模式 --> 松开item --> 点击任何item, 退出编辑模式<br/>
+	长按item --> 进入编辑模式 --> 松开item --> 点击关闭按钮, 删除编辑的item, 退出编辑模式<br/>
+	长按item --> 进入编辑模式 --> 拖拽item --> 拖动到新位置, items排序, 让出位置给排序item --> 在新位置松开item --> 被拖动的item有滑动归位效果<br/>
 
-// 具体实现的原理:
-// 基于item都是文本流的position:relative布局
-// 绑定item对象touchstart事件(事件里绑定touchend事件, 然后绑定touchmove事件)
-// 在touchmove事件里, 首先判断: 对比touchstart的时间间断和触控点变化距离, 正则拖拽, 否则暂停事件
-// 拖拽效果: 赋值item并添加到队列最后, 使用position:relative,相对定位在本item位置, 优选选择translate方法来拖拽位置
+模式1: 文本流拖拽
 
-/* 模式2: 浮动拖拽*/
+	原理:
+		item以position:relative布局
+	事件:
+		 获取位置:
+		 	由于是文本流, 获取文本位置就是视觉位置
+		 拖拽:
+		 	克隆item并插入到最后文本位置, 设css定位到原位, 动画效果技术: translate3D和transition
+		 排序:
+		 	基于文本位置, 使用before方法插入就可以, 各item的文本位置自动更新
+		 删除item:
+		 	删除后, 各item的文本位置自动更新
+
+模式2: 浮动拖拽
+
+	原理:
+		全部item以position:absolute且靠左上角, 排列布局使用translate3D改变xy轴是各个item有自己位置
+
+	本模式区分: 视觉位置与文本位置
+
+	事件:
+		获取位置:
+			点击对象获取的只有文本位置, 不等于视觉位置
+			措施:
+				定义可排序的数组变量indexAry来模拟文本位置 模拟DOM结构变化, 反映视觉位置
+		拖拽:
+			克隆item(同时已经克隆了位置等属性), 动画效果技术: translate3D和transition
+		排序:
+			不排序DOM结构, 只做视觉排序. 对indexAry进行排序, items按照indexAry来排位
+		删除item:
+			删除后, 对indexAry进行处理, 更新indexAry及时反映文本位置情况
 
 
-// 注意的是获取DOM的排序需要本源代码里提供方法, 因为不可能直接在DOM处理
+
+	模拟步骤:
+	初始化:
+		 根据dataList数据渲染页面
+		 创建变量: 1,变量reorderItemsAry是重新获取DOM里的items对象作为排序的数组 2, 变量posAry数组, 作为位置对应值 3, 变量indexAry类似于reorderItemsAry, 但内容是对象的DOM的index值
+		 例子: reorderItemsAry = [$1, $2, $3, $4, $5, $6]; indexAry = [1, 2, 3, 4, 5, 6];
+		 以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos方法"定位"
+		 完成了定位布局
+	进行ui交互:
+		 情况1:
+			 描述: 排序后: reorderItemsAry = [$0, $1, $2, $4, $5, $3, $6]; indexAry = [0, 1, 2, 4, 5, 3, 6];
+			 点击item3, 如何拖拽item?? --> 如何获取定位? --> 获取item的translate值? 不, 难在兼容各浏览器, 所以在posAry里获取位置 --> 但点击获取的index值是DOM的index值=3, 不是现在视觉位置的序号5, --> 在indexAry里获得 index = 5 --> 现在就可以在posAry里获取位置了 --> 可以拖动
+			 同理, 没有拖拽, 但点击item3, 如何获取item3在dataList的数据呢?? --> 同理, 获取到所在格子序号5 --> 获取dataList里序号5的内容
+		 情况2:
+			 描述: 拖拽时, 重新排序reorder
+			 由于posAry已有位置坐标, 需要对象有新的排序 --> 对reorderItemsAry排序与indexAry排序和dataList排序, 保留DOM结构不变排序不变 --> 重新排序的reorderItemsAry便可以填进posAry的格子坐标里
+		 情况3:
+			 描述: 点击关闭按钮,
+				 这属于编辑模式, 区别于情况1,2, 这里需要计算变量变化
+				 1, 更新dataList
+				 2, 更新reorderItemsAry
+				 3, 重新计算indexAry, 不是更新
+				 4, 使用reorderItemsAry替换container里的内容, 也就是说以reorderItemsAry作为新的DOM结构
+				 5, setPosition"定位"items
+				 6, 若要有动画效果的话, 第4,5步需要使用setTimeout来延迟执行, 注意延迟的时间要短
+				 7, 建议在第三步后执行remove本item
+
+已优化部分
+1, 使用类方法
+2, 或添加关闭按钮
+3, 限定拖动范围
+4, 禁止多点触控(参考slick的swipeHandler里的方法)
+5, touch事件命名空间
+6, 拖拽时候, target是没有btn的, 所以需要添加一个class以至于可以隐藏
+7, 类私有变量和方法都使用下划线开头, 区分公开的变量方法
+8, $.proxy(func, this);
+
+改进空间:
+1, 考虑转屏问题orientationchange, resize??
+2, 剥离transition等的方法成为一个组件
+
+思考:
+1, 关闭按钮执行的方法可以执行_render重新渲染页面, 这样就可以直接负责对源头dataList处理就好了
+
+ */
 
 
-/* 已优化部分*/
-// 使用类方法
-// 或添加关闭按钮
-// 限定拖动范围
-// 禁止多点触控(参考slick的swipeHandler里的方法)
-// touch事件命名空间
-// 拖拽时候, target是没有btn的, 所以需要添加一个class以至于可以隐藏
-// 类私有变量和方法都使用下划线开头, 区分公开的变量方法
-// $.proxy(func, this);
-
-// 改进空间:
-// 考虑转屏问题orientationchange, resize??
-// 剥离transition等的方法成为一个组件
-
-// 思考:
-// 关闭按钮执行的方法可以执行_render重新渲染页面, 这样就可以直接负责对源头dataList处理就好了
-
-// 隐藏_staticConfig, 不能开放
 
 
 (function(factory) {
@@ -402,33 +448,6 @@
 				this._posAry.push(position);
 			}
 		},
-
-		// 本模式的位置index区分: 视觉位置与文本位置
-		// 模拟步骤:
-		// 初始化:
-		//      根据dataList数据渲染页面
-		//      创建变量: 1,变量reorderItemsAry是重新获取DOM里的items对象作为排序的数组 2, 变量posAry数组, 作为位置对应值 3, 变量indexAry类似于reorderItemsAry, 但内容是对象的DOM的index值
-		//      例子: reorderItemsAry = [$1, $2, $3, $4, $5, $6]; indexAry = [1, 2, 3, 4, 5, 6];
-		//      以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos方法"定位"
-		//      完成了定位布局
-		// 进行ui交互:
-		//      情况1:
-		//          描述: 排序后: reorderItemsAry = [$0, $1, $2, $4, $5, $3, $6]; indexAry = [0, 1, 2, 4, 5, 3, 6];
-		//          点击item3, 如何拖拽item?? --> 如何获取定位? --> 获取item的translate值? 不, 难在兼容各浏览器, 所以在posAry里获取位置 --> 但点击获取的index值是DOM的index值=3, 不是现在视觉位置的序号5, --> 在indexAry里获得 index = 5 --> 现在就可以在posAry里获取位置了 --> 可以拖动
-		//          同理, 没有拖拽, 但点击item3, 如何获取item3在dataList的数据呢?? --> 同理, 获取到所在格子序号5 --> 获取dataList里序号5的内容
-		//      情况2:
-		//          描述: 拖拽时, 重新排序reorder
-		//          由于posAry已有位置坐标, 需要对象有新的排序 --> 对reorderItemsAry排序与indexAry排序和dataList排序, 保留DOM结构不变排序不变 --> 重新排序的reorderItemsAry便可以填进posAry的格子坐标里
-		//      情况3:
-		//          描述: 点击关闭按钮,
-		//              这属于编辑模式, 区别于情况1,2, 这里需要计算变量变化
-		//              1, 更新dataList
-		//              2, 更新reorderItemsAry
-		//              3, 重新计算indexAry, 不是更新
-		//              4, 使用reorderItemsAry替换container里的内容, 也就是说以reorderItemsAry作为新的DOM结构
-		//              5, setPosition"定位"items
-		//              6, 若要有动画效果的话, 第4,5步需要使用setTimeout来延迟执行, 注意延迟的时间要短
-		//              7, 建议在第三步后执行remove本item
 
 		_setItemsPos: function(items, index1, index2){
 			// index1, index2作为选择性执行的范围
