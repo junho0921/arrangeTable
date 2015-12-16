@@ -125,6 +125,11 @@
 
 			this._config = $.extend({}, this._defaultConfig, options);
 
+			/*测试*/
+			for(var i = 0; i < this._config.dataList.length; i++){
+				this._config.dataList[i].url = this._config.dataList[i].text
+			}
+
 			this._closeBtnClass = "." + $(this._staticConfig.closeBtnHtml)[0].className;
 
 			this._$container = $(this._config.container).css('position','relative');
@@ -563,6 +568,10 @@
 			);
 		},
 
+		_getVisionIndex: function(){
+			//this.;
+		},
+
 		_clickCloseBtnFn: function(){
 			//console.log('格子序号', this._reorderItemIndex);
 
@@ -573,24 +582,27 @@
 
 			if(this._staticConfig._reorderCSS){
 
-				console.log('删除item对象内容 ',
+				//console.log('删除item对象内容 ',
 					// 删除reorderItemsAry里视觉位置的item
-					this._reorderItemsAry.splice(this._reorderItemIndex, 1)[0]
-				);
+					this._reorderItemsAry.splice(this._reorderItemIndex, 1)
+				//[0]);
 				//console.log('删除后, 更新的对象集', this._reorderItemsAry);
 
 				// 动画"定位"剩下的items
 				this._setItemsPos(this._reorderItemsAry);
 
-				// 延迟执行, 给动画效果留有空间
-				var DrM = this;
-				setTimeout(function(){
-					// 以新reorderItemsAry覆盖原来的DOM, 这样可以使DOM的结构顺序严格按照reorderItemsAry
-					DrM._$container.empty().append(DrM._reorderItemsAry.on(DrM._startEvent, DrM._startEventFunc));
-					// 新DOM已经生成, 需要重写变量
-					DrM._getIndexAry();
-				}, 280);
+				var textIndex = this._$reorderItem.index();
 
+				// 删除
+				this._indexAry.splice(this._reorderItemIndex, 1);
+
+				// 遍历更新
+				for (var y = 0; y < this._indexAry.length; y++){
+					var indexValue = this._indexAry[y];
+					if(indexValue > textIndex){
+						this._indexAry[y] = indexValue - 1;
+					}
+				}
 			}
 
 			// 删除本item
