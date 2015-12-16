@@ -1,4 +1,14 @@
-// 基于jQuery库开发
+/* 依赖: jQuery*/
+
+/* 混合模式v2.0*/
+
+/*	 事件操作:<br/>
+ * 		点击item --> 跳转页面<br/>
+ * 		长按item --> 进入编辑模式 --> 松开item --> 点击任何item, 退出编辑模式<br/>
+ * 		长按item --> 进入编辑模式 --> 松开item --> 点击关闭按钮, 删除编辑的item, 退出编辑模式<br/>
+ * 		长按item --> 进入编辑模式 --> 拖拽item --> 在新位置松开item --> items重新排序<br/>
+ * 		*/
+/* 模式1: 文本流拖拽*/
 
 // 分析事件:
 // 长按按钮达到一定程度 -> 实现拖动 -> 拖动效果...
@@ -11,7 +21,13 @@
 // 在touchmove事件里, 首先判断: 对比touchstart的时间间断和触控点变化距离, 正则拖拽, 否则暂停事件
 // 拖拽效果: 赋值item并添加到队列最后, 使用position:relative,相对定位在本item位置, 优选选择translate方法来拖拽位置
 
-// 已优化的:
+/* 模式2: 浮动拖拽*/
+
+
+// 注意的是获取DOM的排序需要本源代码里提供方法, 因为不可能直接在DOM处理
+
+
+/* 已优化部分*/
 // 使用类方法
 // 或添加关闭按钮
 // 限定拖动范围
@@ -25,27 +41,10 @@
 // 考虑转屏问题orientationchange, resize??
 // 剥离transition等的方法成为一个组件
 
-// 项目组版本
-// 阉割html的生成方法, 减少开发接口, 只开放结束编辑
-// 点击跳转怎么处理, 由项目组生产html且绑定绑定事件来跳转
-
-// 升级
-// 排序的动画效果
-// 点击的放大效果
-// 注意的是获取DOM的排序需要本源代码里提供方法, 因为不可能直接在DOM处理
-
 // 思考:
 // 关闭按钮执行的方法可以执行_render重新渲染页面, 这样就可以直接负责对源头dataList处理就好了
 
-// 说明
-// displaynone
-
-// 隐藏_hardConfig, 不能开放
-
-/**
- * @class DraggableMenu
- *
- */
+// 隐藏_staticConfig, 不能开放
 
 
 (function(factory) {
@@ -80,11 +79,11 @@
 
 			this._config = $.extend({}, this._defaultConfig, options);
 
-			this._closeBtnClass = "." + $(this._config.closeBtnHtml)[0].className;
+			this._closeBtnClass = "." + $(this._staticConfig.closeBtnHtml)[0].className;
 
 			this._$container = $(this._config.container).css('position','relative');
 
-			if(this._hardConfig._templateRender && this._config.dataList.length){
+			if(this._staticConfig._templateRender && this._config.dataList.length){
 				this._render();
 			}
 
@@ -92,7 +91,7 @@
 
 			this._setProps();
 
-			if(this._hardConfig._reorderCSS){
+			if(this._staticConfig._reorderCSS){
 				// 各item都绝对定位在(0, 0)css坐标
 				this._$items.css({'position':'absolute', 'top':0, 'left': 0});
 				// 获取当前的所有items
@@ -114,44 +113,18 @@
 		},
 
 		/*
-		* 默认设置
-		* */
+		 * 默认设置
+		 * */
 		_defaultConfig: {
 			// 容器对象
-			container:".DraggableMenu",
-			// class名称
-			// 激活的item, 包括拖动的item和排序的item
-			activeItemClass:"DrM-activeItem",
-			// 排序的item
-			reorderItemClass:"DrM-reorderItem",
-			// 拖动的item
-			draggingItemClass:"DrM-DraggingItem",
-
-			// 关闭按钮html:
-			closeBtnHtml:"<span class='DrM-CloseBtn'>-</span>",
-			// 关闭按钮css
-			closeBtnCss:{
-				'position': 'absolute',
-				'right': '3px',
-				'top': '3px',
-				'color': '#ffffff',
-				'width': '0.64em',
-				'height': '0.64em',
-				'line-height': '0.5em',
-				'background': 'lightcoral',
-				'font-size': '60px',
-				'border-radius': ' 100%',
-				'cursor': ' pointer',
-				'z-index': ' 99',
-				'font-weight':'600'
-			},
+			container:".draggableMenu",
 
 			// 长按的时间间隔
 			pressDuration: 300,
 			// 动画的时间长度
 			cssDuration: 400,
 			// 允许触控的边缘值, 单位px
-			RangeXY: 12,
+			rangeXY: 12,
 
 			// 渲染html的数据内容
 			dataList:[],
@@ -224,8 +197,8 @@
 		_moveEvent: null,
 
 		/*
-		* 删除了的数组index值, 基于初始化的index
-		* */
+		 * 删除了的数组index值, 基于初始化的index
+		 * */
 		_deleteIndex:[],
 
 		/**
@@ -238,8 +211,8 @@
 		_editing:false,
 
 		/*
-		* touchStart的坐标
-		* */
+		 * touchStart的坐标
+		 * */
 		_eventStartX: null,
 		_eventStartY: null,
 
@@ -259,18 +232,18 @@
 		_startTime: null,
 
 		/*
-		* 拖拽的初始化状态
-		* */
+		 * 拖拽的初始化状态
+		 * */
 		_InitializeMoveEvent: false,
 
 		/*
-		* 定时器
-		* */
+		 * 定时器
+		 * */
 		_setTimeFunc: null,
 
 		/*
-		* 环境是否支持Transitions
-		* */
+		 * 环境是否支持Transitions
+		 * */
 		_cssTransitions:null,
 		/*
 		 * 环境是否支持transforms
@@ -278,15 +251,15 @@
 		_transformsEnabled:null,
 
 		/*
-		* css属性transition/transform/translate前缀
-		* */
+		 * css属性transition/transform/translate前缀
+		 * */
 		_transitionType: null,
 		_transformType: null,
 		_animType: null,
 
 		/*
-		* 不可拖动与可拖动的数量
-		* */
+		 * 不可拖动与可拖动的数量
+		 * */
 		_staticCount: 0,
 		_draggableCount: 0,
 
@@ -311,9 +284,36 @@
 		MEMOvisionIndex:null,
 
 		/*
-		* 固定设置, jun的开发配置
-		* */
-		_hardConfig :{
+		 * 固定设置, jun的开发配置
+		 * */
+		_staticConfig :{
+			// class名称
+			// 激活的item, 包括拖动的item和排序的item
+			activeItemClass:"DrM-activeItem",
+			// 排序的item
+			reorderItemClass:"DrM-reorderItem",
+			// 拖动的item
+			draggingItemClass:"DrM-draggingItem",
+			
+			// 关闭按钮html:
+			closeBtnHtml:"<span class='DrM-closeBtn'>-</span>",
+			// 关闭按钮css
+			closeBtnCss:{
+				'position': 'absolute',
+				'right': '3px',
+				'top': '3px',
+				'color': '#ffffff',
+				'width': '0.64em',
+				'height': '0.64em',
+				'line-height': '0.5em',
+				'background': 'lightcoral',
+				'font-size': '60px',
+				'border-radius': ' 100%',
+				'cursor': ' pointer',
+				'z-index': ' 99',
+				'font-weight':'600'
+			},
+			
 			_reorderCSS:true,
 			// 灵敏模式
 			_sensitive: true,
@@ -337,7 +337,7 @@
 
 			for(var i = 0; i < len; i++){
 				$itemHtml = this._config.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
-					//.data('DraggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
+				//.data('draggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
 				if(data[i].static){
 					$itemHtml.addClass('DrM-static');
 				}
@@ -392,7 +392,7 @@
 			// 数组保存:格子数量和各格子坐标, 优点: 避免重复计算
 			var len = this._reorderItemsAry.length;
 			this._posAry = [];
-			 // 默认基于translate3D的修改模式, 所以升级必须优化
+			// 默认基于translate3D的修改模式, 所以升级必须优化
 			for(var i = 0; i < len; i++){
 				var position = {};
 				var inRow = Math.floor(i / this._containerCols);
@@ -466,7 +466,7 @@
 
 			this._$touchTarget = $(event.currentTarget);
 
-			//this._$touchTargetData = this._$touchTarget.data('DraggableMenuData');
+			//this._$touchTargetData = this._$touchTarget.data('draggableMenuData');
 
 			//if(event.currentTarget.className.indexOf(this.ItemClassName > -1)){
 			//	this._$touchTarget =  $(event.currentTarget);
@@ -489,9 +489,9 @@
 			this.targetCenterStartY = this.itemStartPos.top + this._itemH/2;
 
 			// 获取文本位置的序号
-			this._touchItemIndex = this._$touchTarget.addClass(this._config.activeItemClass).index();
+			this._touchItemIndex = this._$touchTarget.addClass(this._staticConfig.activeItemClass).index();
 
-			if(this._hardConfig._reorderCSS){
+			if(this._staticConfig._reorderCSS){
 				// 由于DOM结构固定, 所以需要在变量indexAry数组里获取DOM-index所在的视觉位置序号
 				this._touchItemIndex = $.inArray(this._touchItemIndex, this._indexAry);
 			}
@@ -540,7 +540,7 @@
 
 			this._$reorderItem = this._$touchTarget
 				.append(
-				$(this._config.closeBtnHtml).css(this._config.closeBtnCss).on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
+				$(this._staticConfig.closeBtnHtml).css(this._staticConfig.closeBtnCss).on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
 			);
 		},
 
@@ -552,7 +552,7 @@
 			// 删除dataList里视觉位置的item原始数据
 			this._config.dataList.splice(this._reorderItemIndex, 1);
 
-			if(this._hardConfig._reorderCSS){
+			if(this._staticConfig._reorderCSS){
 
 				console.log('删除item对象内容 ',
 					// 删除reorderItemsAry里视觉位置的item
@@ -586,8 +586,8 @@
 			// 2,清理定时器;
 			// 3,判断停止事件后触发的事件: A,有拖动item的话就动画执行item的回归
 			// B,没有拖动的话, 思考是什么情况:
-			// DraggableMenu有三个应用情况: a, _stopEvent情况应用; b,moveEvent里的取消拖动的两种情况:太快, 触控变位(闪拉情况)
-			//$('.DraggableMenutittle3').text(''+ this._dragging);
+			// draggableMenu有三个应用情况: a, _stopEvent情况应用; b,moveEvent里的取消拖动的两种情况:太快, 触控变位(闪拉情况)
+			//$('.draggableMenutittle3').text(''+ this._dragging);
 			clearTimeout(this._setTimeFunc);
 
 			$('body').off(this._moveEvent).off(this._stopEvent);
@@ -597,13 +597,13 @@
 				this._dragItemReset();
 
 			}else{
-				this._$container.children().removeClass(this._config.activeItemClass + " " + this._config.reorderItemClass);
+				this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
 
 				if(this._dragging === false){
 
 					var newTime = new Date();
 
-					if(newTime - this._startTime < this._hardConfig._clickDuration){ // 没有拖拽后且没有滑动且只在限制时间内才是click事件
+					if(newTime - this._startTime < this._staticConfig._clickDuration){ // 没有拖拽后且没有滑动且只在限制时间内才是click事件
 
 						//this.fireEvent("click", [this._$reorderItem]);
 
@@ -632,7 +632,7 @@
 
 			var resetX, resetY;
 
-			if(this._hardConfig._reorderCSS){
+			if(this._staticConfig._reorderCSS){
 				resetX = this._posAry[this._reorderItemIndex].left;
 				resetY = this._posAry[this._reorderItemIndex].top;
 			} else {
@@ -648,19 +648,19 @@
 					// 基于css坐标的话不能像translate那样参考触控位移的距离, 只参考dragItem原本产生时的css坐标和最后的$dragTarget的坐标
 					// _$draggingItem最终的css坐标 = 最终$dragTarget相对父级的位置 - 原本_$draggingItem相对父级的位置
 					resetX =
-						this._$container.find("."+ this._config.activeItemClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
+						this._$container.find("."+ this._staticConfig.activeItemClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
 						- this.dragItemOriginalpos.left;
-					resetY = this._$container.find("."+ this._config.activeItemClass).position().top - this.dragItemOriginalpos.top;
+					resetY = this._$container.find("."+ this._staticConfig.activeItemClass).position().top - this.dragItemOriginalpos.top;
 				}
 			}
 
 			// 执行滑动效果
 			var DrM = this;
 			this._animateSlide(this._$draggingItem, {'left': resetX, 'top': resetY}, function(){
-				DrM._$container.find('.' + DrM._config.draggingItemClass).remove();
+				DrM._$container.find('.' + DrM._staticConfig.draggingItemClass).remove();
 				// 提供外部的方法, 传参排序后的jQuery对象集合
 				DrM._config.onDragEnd(DrM._reorderItemsAry);
-				DrM._$container.children().removeClass(DrM._config.activeItemClass + " " + DrM._config.reorderItemClass);
+				DrM._$container.children().removeClass(DrM._staticConfig.activeItemClass + " " + DrM._staticConfig.reorderItemClass);
 				//DrM.fireEvent("afterDrag", [DrM._$reorderItem]);
 			});
 		},
@@ -668,7 +668,7 @@
 		_dragEventFn: function(event){
 			var dragItemStartX, dragItemStartY;
 
-			// DraggableMenu里_moveEvent的理念是按住后拖动, 非立即拖动
+			// draggableMenu里_moveEvent的理念是按住后拖动, 非立即拖动
 			this._dragging = true;// 进入拖动模式
 
 			var Move_ex = this._page('x', event),
@@ -687,7 +687,7 @@
 				var inShort = (event.timeStamp - this._startTime) < this._config.pressDuration;
 
 				if (inShort){
-					if(this._hardConfig._sensitive){
+					if(this._staticConfig._sensitive){
 						// 灵敏模式, 不可能区分触控点变化范围
 						this._stopEventFunc();
 						return;
@@ -706,15 +706,15 @@
 					}
 				}
 
-				// 条件2: 范围外  ps:建议范围RangeXY不要太大, 否则变成了定时拖动.
-				var RangeXY = this._config.RangeXY;
+				// 条件2: 范围外  ps:建议范围rangeXY不要太大, 否则变成了定时拖动.
+				var rangeXY = this._config.rangeXY;
 
-				if(this._hardConfig._sensitive){
-					RangeXY = RangeXY * 3;
+				if(this._staticConfig._sensitive){
+					rangeXY = rangeXY * 3;
 				}
 
-				var outRang = (Move_ex - this._eventStartX ) > RangeXY ||
-					(Move_ey - this._eventStartY) > RangeXY;
+				var outRang = (Move_ex - this._eventStartX ) > rangeXY ||
+					(Move_ey - this._eventStartY) > rangeXY;
 
 				if(outRang){
 					console.warn('按住达到一定时间后瞬间move超距离, 认为是操作失误');
@@ -734,14 +734,14 @@
 					// 复制目标作为拖拽目标
 					this._$draggingItem =
 						this._$reorderItem.clone()
-							.addClass(this._config.draggingItemClass)
+							.addClass(this._staticConfig.draggingItemClass)
 							.css({'z-index':'99'})
 							.appendTo(this._$container);// Bug: 改变了_$container的高度! 但可通过css固定高度
 
 					this.dragItemOriginalpos = this._$draggingItem.position();
 
 					// _$draggingItem的坐标调整等于$dragTarget的坐标
-					if(this._hardConfig._reorderCSS){
+					if(this._staticConfig._reorderCSS){
 						// $dragTarget的坐标 = reorderItem的坐标
 						this._draggingItemStartPos = this._posAry[this._touchItemIndex];
 						this._setPosition(
@@ -765,7 +765,7 @@
 
 					this._InitializeMoveEvent = true;
 
-					this._$reorderItem.addClass(this._config.reorderItemClass);
+					this._$reorderItem.addClass(this._staticConfig.reorderItemClass);
 
 				}
 			}
@@ -778,7 +778,7 @@
 			cssX = Move_ex - this._eventStartX;
 			cssY = Move_ey - this._eventStartY;
 
-			if(this._hardConfig._reorderCSS){
+			if(this._staticConfig._reorderCSS){
 				// 计算触控点移动距离
 				cssX = this._draggingItemStartPos.left + cssX;
 				cssY = this._draggingItemStartPos.top + cssY;
@@ -822,7 +822,7 @@
 
 			var targetCenterPosX, targetCenterPosY;
 
-			if(this._hardConfig._reorderCSS){
+			if(this._staticConfig._reorderCSS){
 				targetCenterPosX = cssX + this._itemW/2;
 				targetCenterPosY = cssY + this._itemW/2;
 			}else{
@@ -836,7 +836,7 @@
 			// 4, 排序位置
 			var reorderIndex;
 
-			if(this._hardConfig._reorderCSS){
+			if(this._staticConfig._reorderCSS){
 				// 基于绝对定位, 不用考虑文本流的插入index值的调整
 				if(visionIndex >= 0 && visionIndex < this._draggableCount){
 					reorderIndex = visionIndex;
@@ -867,7 +867,7 @@
 				// 位移未超出一个li位置, 就取消执行
 				return false;
 			} else {
-				if(this._hardConfig._reorderCSS){
+				if(this._staticConfig._reorderCSS){
 					//console.log('点击  ', this._reorderItemIndex,'计算', visionIndex);
 					this._reorderFn(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
 					this._reorderFn(this._indexAry, this._reorderItemIndex, reorderIndex);
@@ -899,7 +899,7 @@
 			// 添加css  Transition
 			var transition = {};
 
-			transition[this._transitionType] = this._transformType + ' ' + this._config.cssDuration + 'ms ' + this._hardConfig._transitionTiming;
+			transition[this._transitionType] = this._transformType + ' ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
 
 			$obj.css(transition);
 		},
@@ -925,14 +925,14 @@
 			var bodyStyle = document.body.style;
 
 			// 选择事件类型, 添加命名空间, 不会与其他插件冲突
-			this._startEvent = this._hasTouch ? 'touchstart.DraggableMenu': 'mousedown.DraggableMenu';
-			this._stopEvent = this._hasTouch ? 'touchend.DraggableMenu': 'mouseup.DraggableMenu';
-			this._moveEvent = this._hasTouch ? 'touchmove.DraggableMenu': 'mousemove.DraggableMenu';
+			this._startEvent = this._hasTouch ? 'touchstart.draggableMenu': 'mousedown.draggableMenu';
+			this._stopEvent = this._hasTouch ? 'touchend.draggableMenu': 'mouseup.draggableMenu';
+			this._moveEvent = this._hasTouch ? 'touchmove.draggableMenu': 'mousemove.draggableMenu';
 
 			if (bodyStyle.WebkitTransition !== undefined ||
 				bodyStyle.MozTransition !== undefined ||
 				bodyStyle.msTransition !== undefined) {
-				if (this._hardConfig._useCSS === true) { //_config是提供用户的选择, 但要使用的话, 需检测环境能否
+				if (this._staticConfig._useCSS === true) { //_config是提供用户的选择, 但要使用的话, 需检测环境能否
 					this._cssTransitions = true;
 				}
 			}
@@ -966,7 +966,7 @@
 				this._transformType = 'transform';
 				this._transitionType = 'transition';
 			}
-			this._transformsEnabled = this._hardConfig._useTransform && (this._animType !== null && this._animType !== false);
+			this._transformsEnabled = this._staticConfig._useTransform && (this._animType !== null && this._animType !== false);
 			//this._transformsEnabled = false;// 测试用
 			//this._cssTransitions = false;// 测试用
 		},
