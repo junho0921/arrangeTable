@@ -72,21 +72,21 @@
 				 7, 建议在第三步后执行remove本item
 
 已优化部分
-1, 使用类方法
-2, 或添加关闭按钮
-3, 限定拖动范围
-4, 禁止多点触控(参考slick的swipeHandler里的方法)
-5, touch事件命名空间
-6, 拖拽时候, target是没有btn的, 所以需要添加一个class以至于可以隐藏
-7, 类私有变量和方法都使用下划线开头, 区分公开的变量方法
-8, $.proxy(func, this);
+	1, 使用类方法
+	2, 或添加关闭按钮
+	3, 限定拖动范围
+	4, 禁止多点触控(参考slick的swipeHandler里的方法)
+	5, touch事件命名空间
+	6, 拖拽时候, target是没有btn的, 所以需要添加一个class以至于可以隐藏
+	7, 类私有变量和方法都使用下划线开头, 区分公开的变量方法
+	8, $.proxy(func, this);
 
 改进空间:
-1, 考虑转屏问题orientationchange, resize??
-2, 剥离transition等的方法成为一个组件
+	1, 考虑转屏问题orientationchange, resize??
+	2, 剥离transition等的方法成为一个组件
 
 思考:
-1, 关闭按钮执行的方法可以执行_render重新渲染页面, 这样就可以直接负责对源头dataList处理就好了
+	1, 关闭按钮执行的方法可以执行_render重新渲染页面, 这样就可以直接负责对源头dataList处理就好了
 
  */
 
@@ -449,7 +449,7 @@
 			}
 		},
 
-		_setItemsPos: function(items, index1, index2){
+		_setItemsPos: function($items, index1, index2){
 			// index1, index2作为选择性执行的范围
 			var len, st = 0;
 
@@ -462,11 +462,11 @@
 					len = index2 + 1;
 				}
 			} else {
-				len = items.length;
+				len = $items.length;
 			}
 
 			for(var i = st; i < len; i++){
-				this._setPosition($(items[i]), this._posAry[i])
+				this._setPosition($($items[i]), this._posAry[i])
 			}
 		},
 
