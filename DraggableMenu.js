@@ -568,8 +568,8 @@
 			);
 		},
 
-		_getVisionIndex: function(){
-			//this.;
+		_getVisionIndex: function(textIndex){
+			return $.inArray(textIndex, this._indexAry);
 		},
 
 		_clickCloseBtnFn: function(){
@@ -609,6 +609,8 @@
 			this._$reorderItem.remove();
 			// 提供外部执行的方法, 传参修改后的items对象集合
 			this._config.onClose(this._reorderItemsAry);
+
+			this._editing = false;
 		},
 
 		_stopEventFunc: function(){
