@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3d6f705b-ebdc-405d-99df-be8f38840f8f" name="Default" comment="计划下一步, 使用_getVisionIndex方法, 去掉reorderItemsAry变量">
+    <list default="true" id="3d6f705b-ebdc-405d-99df-be8f38840f8f" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DraggableMenu.js" afterPath="$PROJECT_DIR$/DraggableMenu.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/style.css" afterPath="$PROJECT_DIR$/style.css" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="junDrag.iws" />
@@ -29,7 +30,7 @@
           <file leaf-file-name="html.html" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/html.html">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.0">
+                <state vertical-scroll-proportion="-17.6">
                   <caret line="33" column="80" selection-start-line="33" selection-start-column="80" selection-end-line="33" selection-end-column="80" />
                   <folding>
                     <element signature="n#style#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -42,8 +43,8 @@
           <file leaf-file-name="DraggableMenu.js" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.185567">
-                  <caret line="630" column="0" selection-start-line="630" selection-start-column="0" selection-end-line="630" selection-end-column="0" />
+                <state vertical-scroll-proportion="0.4742268">
+                  <caret line="647" column="35" selection-start-line="647" selection-start-column="35" selection-end-line="647" selection-end-column="35" />
                   <folding>
                     <element signature="n#!!doc" expanded="true" />
                   </folding>
@@ -55,7 +56,7 @@
             <entry file="file://$PROJECT_DIR$/style.css">
               <provider selected="true" editor-type-id="text-editor">
                 <state vertical-scroll-proportion="0.0">
-                  <caret line="25" column="0" selection-start-line="25" selection-start-column="0" selection-end-line="25" selection-end-column="0" />
+                  <caret line="59" column="40" selection-start-line="59" selection-start-column="40" selection-end-line="59" selection-end-column="40" />
                   <folding />
                 </state>
               </provider>
@@ -99,9 +100,9 @@
         <option value="$PROJECT_DIR$/testanimate.html" />
         <option value="$PROJECT_DIR$/junDrag.js" />
         <option value="D:/用户目录/Desktop/test.html" />
-        <option value="$PROJECT_DIR$/style.css" />
         <option value="$PROJECT_DIR$/html.html" />
         <option value="$PROJECT_DIR$/DraggableMenu.js" />
+        <option value="$PROJECT_DIR$/style.css" />
       </list>
     </option>
   </component>
@@ -248,12 +249,6 @@
       <created>1448872141692</created>
       <option name="number" value="Default" />
       <updated>1448872141692</updated>
-    </task>
-    <task id="LOCAL-00022" summary="修改前:&#10;&#10;// 重要修改:&#10;// 拖动的单位不再以li为单位, 会以li里的内容wrap&quot;div&quot;.addClass(li.class), 以这div为拖动的对象, 而且是基于position:relative的模式&#10;// 这样就可以避免了复制模式, 也可以避免bug:container的尺寸变化, 有利于setCSS的三种模式的统一位置(不再担心降级方法的css({&quot;left&quot;:??}))的特殊处理,&#10;// 这是因为, 原来clone的情况, 必须要cloneItem先改变css的坐标位置, 这样使得setCSS的三种模式里translate是基于改变后的css坐标, 而降级方案还是基于原来未改变的css坐标&#10;// 这样的话, animateslide的情况也可以">
-      <created>1449394995828</created>
-      <option name="number" value="00022" />
-      <option name="project" value="LOCAL" />
-      <updated>1449394995828</updated>
     </task>
     <task id="LOCAL-00023" summary="ps: 不能以li子级div为拖动对象, 因为拖动的item不能有基础坐标参考点的变化, 不然就更加复杂了&#10;&#10;这次进行了重要的修改, 对拖拽使用了setCSS方法, 而释放item后的滑动归位的动画效果使用animateSlide方法">
       <created>1449476957663</created>
@@ -543,7 +538,13 @@
       <option name="project" value="LOCAL" />
       <updated>1450277495001</updated>
     </task>
-    <option name="localTasksCounter" value="71" />
+    <task id="LOCAL-00071" summary="拖动后取消编辑模式">
+      <created>1450316606575</created>
+      <option name="number" value="00071" />
+      <option name="project" value="LOCAL" />
+      <updated>1450316606575</updated>
+    </task>
+    <option name="localTasksCounter" value="72" />
     <servers />
   </component>
   <component name="TodoView" selected-index="2">
@@ -561,6 +562,7 @@
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.12033631" sideWeight="0.4825493" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32892057" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32478634" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32985073" sideWeight="0.5" order="11" side_tool="true" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.9171843" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
@@ -568,7 +570,6 @@
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.51138085" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32478634" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
@@ -592,7 +593,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="reorder的优化是尽量避免计算, 不能出现重复排序" />
     <MESSAGE value="项目版本v1.7&#10;" />
     <MESSAGE value="降级方案出现bug, 根源是获取translate的属性没有顾及兼容性的前缀" />
     <MESSAGE value="准备修改变量名称, 添加下滑线开头" />
@@ -617,7 +617,8 @@
     <MESSAGE value="总结混合模式" />
     <MESSAGE value="准备修改浮动定位依赖的变量数组:&#10;1, reorderItemAry 作为排序的对象数组&#10;2, indexAry 按照视觉位置排位的文本位置index值的数组&#10;3, dataList 按照视觉位置排位的原始数据数组&#10;&#10;目标改为:只有&#10;1, indexAry 按照视觉位置排位的文本位置index值的数组&#10;2, dataList 按照视觉位置排位的原始数据数组&#10;解决问题:&#10;1, 点击对象以indexAry来获取视觉位置, 可定位拖拽&#10;2, 排位: oldIndex, newIndex&#10;    1, 先排位indexAry后,&#10;    2, 遍历indexAry变化了位置的数字, 以这些数字来给items筛选需要排位的items&#10;    3, 对items获取在indexAry里数组位置来进行定位" />
     <MESSAGE value="修改第一步: 在btn事件里修改indexAry, 不生成页面" />
-    <option name="LAST_COMMIT_MESSAGE" value="修改第一步: 在btn事件里修改indexAry, 不生成页面" />
+    <MESSAGE value="拖动后取消编辑模式" />
+    <option name="LAST_COMMIT_MESSAGE" value="拖动后取消编辑模式" />
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.83806145" />
   </component>
   <component name="XDebuggerManager">
@@ -1067,17 +1068,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/style.css">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="25" column="0" selection-start-line="25" selection-start-column="0" selection-end-line="25" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/html.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state vertical-scroll-proportion="-17.6">
           <caret line="33" column="80" selection-start-line="33" selection-start-column="80" selection-end-line="33" selection-end-column="80" />
           <folding>
             <element signature="n#style#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -1086,10 +1079,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/style.css">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="59" column="40" selection-start-line="59" selection-start-column="40" selection-end-line="59" selection-end-column="40" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.185567">
-          <caret line="630" column="0" selection-start-line="630" selection-start-column="0" selection-end-line="630" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.4742268">
+          <caret line="647" column="35" selection-start-line="647" selection-start-column="35" selection-end-line="647" selection-end-column="35" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
           </folding>

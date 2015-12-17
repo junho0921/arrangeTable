@@ -63,6 +63,12 @@
     -webkit-animation:mymove 0.3s 0.2s ; /* Safari and Chrome */
     -o-animation:mymove 0.3s 0.2s ; /* Opera */
 }
+.DrM-activeItem.DrM-DraggingItem {
+    animation:none 0s 0s;
+    -moz-animation:none 0s 0s ; /* Firefox */
+    -webkit-animation:none 0s 0s ; /* Safari and Chrome */
+    -o-animation:none 0s 0s ; /* Opera */
+}
 
 @keyframes mymove {
     0%, 100% {z-index:1; left:0; top:0; width:200px;height:200px;opacity: 1}

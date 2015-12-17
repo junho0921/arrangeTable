@@ -627,11 +627,20 @@
 
 			if(this._InitializeMoveEvent){
 				// 已经拖拽了的情况, 执行拖拽项的归位动画
-				this._dragItemReset();
+				var DrM = this;
 
-				this._$reorderItem.find(this._closeBtnClass).remove();
+				this._dragItemReset(function(){
+					DrM._$container.find('.' + DrM._staticConfig.draggingItemClass).remove();
+					// 提供外部的方法, 传参排序后的jQuery对象集合
+					DrM._$reorderItem.find(DrM._closeBtnClass).remove();
 
-				this._editing = false;
+					DrM._editing = false;
+
+					DrM._config.onDragEnd(DrM._reorderItemsAry);
+
+					DrM._$container.children().removeClass(DrM._staticConfig.activeItemClass + " " + DrM._staticConfig.reorderItemClass);
+					//DrM.fireEvent("afterDrag", [DrM._$reorderItem]);
+				});
 
 			}else{
 				this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
@@ -664,7 +673,7 @@
 			this._dragging = false;
 		},
 
-		_dragItemReset: function(){
+		_dragItemReset: function(callback){
 			// 本方法是计算dragItem基于touchStart位置面向的最终滑向位置, 最后执行动画
 
 			var resetX, resetY;
@@ -692,14 +701,7 @@
 			}
 
 			// 执行滑动效果
-			var DrM = this;
-			this._animateSlide(this._$draggingItem, {'left': resetX, 'top': resetY}, function(){
-				DrM._$container.find('.' + DrM._staticConfig.draggingItemClass).remove();
-				// 提供外部的方法, 传参排序后的jQuery对象集合
-				DrM._config.onDragEnd(DrM._reorderItemsAry);
-				DrM._$container.children().removeClass(DrM._staticConfig.activeItemClass + " " + DrM._staticConfig.reorderItemClass);
-				//DrM.fireEvent("afterDrag", [DrM._$reorderItem]);
-			});
+			this._animateSlide(this._$draggingItem, {'left': resetX, 'top': resetY}, callback);
 		},
 
 		_dragEventFn: function(event){
