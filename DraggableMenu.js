@@ -629,6 +629,10 @@
 				// 已经拖拽了的情况, 执行拖拽项的归位动画
 				this._dragItemReset();
 
+				this._$reorderItem.find(this._closeBtnClass).remove();
+
+				this._editing = false;
+
 			}else{
 				this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
 
