@@ -84,6 +84,9 @@
 改进空间:
 	1, 考虑转屏问题orientationchange, resize??
 	2, 剥离transition等的方法成为一个组件
+	3, 关闭按钮的容器高度, 没有灵活
+	4, 去掉变量数组模拟文本流的
+	5,
 
 思考:
 	1, 关闭按钮执行的方法可以执行_render重新渲染页面, 这样就可以直接负责对源头dataList处理就好了
@@ -423,6 +426,7 @@
 					break;
 				}
 			}
+			this._containerCols = (this._containerCols === null)?this._$items.length:this._containerCols;
 		},
 
 
@@ -603,6 +607,10 @@
 						this._indexAry[y] = indexValue - 1;
 					}
 				}
+			}
+
+			if((this._reorderItemsAry.length % this._containerCols) == 0){
+				this._$container.css({'height':this._containerH = this._containerH - this._itemH});
 			}
 
 			// 删除本item
