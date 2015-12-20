@@ -135,7 +135,7 @@
 
 			this._closeBtnClass = "." + $(this._staticConfig.closeBtnHtml)[0].className;
 
-			this._$container = $(this._config.container).css('position','relative');
+			this._$container = $(this._config.container).css({'position': 'relative', "padding":0});//@
 
 			if(this._staticConfig._templateRender && this._config.dataList.length){
 				this._render();
@@ -145,17 +145,22 @@
 
 			this._setProps();
 
-			if(this._staticConfig._reorderCSS){
+			if(this._staticConfig._reorderCSS){//@ // 以下方法应该独立为一个方法:
 				// 各item都绝对定位在(0, 0)css坐标
 				this._$items.css({'position':'absolute', 'top':0, 'left': 0});
 				// 获取当前的所有items
-				this._reorderItemsAry = this._$items;
+				//this._reorderItemsAry = this._$items;
 				// 获取初始排序的数组
-				this._getIndexAry();
+				// 清空_indexAry,以item文本位置序号为内容的数组
+				for(var i = 0; i < this._$items.length; i++){
+					this._indexAry.push(
+						i // i是文本位置的序号
+					);
+				}
 				// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
 				this._getPosAry();
 				// 使用translate来填坑
-				this._setItemsPos(this._reorderItemsAry);
+				this._setItemsPos(this._$items);//@
 				// 避免初始化的生成html所带有的动画
 				var DrM = this;
 				setTimeout(function(){
@@ -276,9 +281,9 @@
 		_reorderItemIndex: null,
 
 		/*
-		 * reorderItem初始的位置序号
+		 * reorderItem视觉位置//@
 		 * */
-		_touchItemIndex: null,
+		_visualIndex: null,
 
 		/*
 		 * touchStart时间
@@ -389,16 +394,15 @@
 				len = data.length,
 				$itemHtml, $itemsHtml = [];
 
-			for(var i = 0; i < len; i++){
+			for(var i = 0; i < len; i++){//@
 				$itemHtml = this._config.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
+					.data('dataDetail', data[i]);//@
 				//.data('draggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
-				if(data[i].static){
+				if(data[i].static){//@
 					$itemHtml.addClass('DrM-static');
+					this._staticCount++;// 记数
 				}
 				$itemsHtml.push($itemHtml);// ps: 假设static项写在数组的最后
-				if(data[i].static){// 记数
-					this._staticCount++;
-				}
 			}
 			// 把所有item的html的jQuery包装集渲染到容器里
 			this._$container.html($itemsHtml);
@@ -415,8 +419,6 @@
 			this._containerH = this._$container.height();
 			this._containerW = this._$container.width();
 
-			// 修复bug的权宜之计
-			this._$container.css({'height':this._containerH, 'width':this._containerW, 'overfolow':'hidden'});
 
 			// 遍历方法来计算容器列数, 方法是计算第i个换行的,那i就是列数
 			for(var i = 0; i < this._$items.length; i++){
@@ -427,25 +429,28 @@
 				}
 			}
 			this._containerCols = (this._containerCols === null)?this._$items.length:this._containerCols;
+
+			// 锁定容器高度等于行数 * item的高度
+			this._$container.css({'height':this._containerH = Math.ceil(this._$items.length/this._containerCols) * this._itemH, 'width':this._containerW, 'overfolow':'hidden'});//@
 		},
 
 
-		_getIndexAry: function(){
-			// 每次初始化与删除/添加item后, 都执行_getIndexAry方法
-			// 清空_indexAry,以item文本位置序号为内容的数组
-			this._indexAry = [];
-			for(var i = 0; i < this._reorderItemsAry.length; i++){
-				this._indexAry.push(
-					i // i是文本位置的序号
-				);
-			}
-			//console.log('this._indexAry', this._indexAry);
-		},
+		//_getIndexAry: function(){//@
+		//	// 每次初始化与删除/添加item后, 都执行_getIndexAry方法
+		//	// 清空_indexAry,以item文本位置序号为内容的数组
+		//	this._indexAry = [];
+		//	for(var i = 0; i < this._reorderItemsAry.length; i++){
+		//		this._indexAry.push(
+		//			i // i是文本位置的序号
+		//		);
+		//	}
+		//	//console.log('this._indexAry', this._indexAry);
+		//},
 		// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
 		_getPosAry: function(){
 			// 位置的静态写法
 			// 数组保存:格子数量和各格子坐标, 优点: 避免重复计算
-			var len = this._reorderItemsAry.length;
+			var len = this._$items.length;//@
 			this._posAry = [];
 			// 默认基于translate3D的修改模式, 所以升级必须优化
 			for(var i = 0; i < len; i++){
@@ -494,6 +499,8 @@
 
 			this._$touchTarget = $(event.currentTarget);
 
+			//console.log($.inArray(this._$touchTarget, this._$items));
+
 			//this._$touchTargetData = this._$touchTarget.data('draggableMenuData');
 
 			//if(event.currentTarget.className.indexOf(this.ItemClassName > -1)){
@@ -517,18 +524,21 @@
 			this.targetCenterStartY = this.itemStartPos.top + this._itemH/2;
 
 			// 获取文本位置的序号
-			this._touchItemIndex = this._$touchTarget.addClass(this._staticConfig.activeItemClass).index();
+			this._textIndex = this._$touchTarget.addClass(this._staticConfig.activeItemClass).index();//@
+			console.log(this._indexAry);
 
 			if(this._staticConfig._reorderCSS){
 				// 由于DOM结构固定, 所以需要在变量indexAry数组里获取DOM-index所在的视觉位置序号
-				this._touchItemIndex = $.inArray(this._touchItemIndex, this._indexAry);
+				this._visualIndex = $.inArray(this._textIndex, this._indexAry);
+			} else {//@
+				this._visualIndex = this._textIndex;
 			}
+			console.log('_visualIndex', this._visualIndex)
 
 			// 获取本DOM的原始数据
 			if(this._config.dataList){
-				this._$touchTargetData = this._config.dataList[this._touchItemIndex];
+				this._$touchTargetData = this._$touchTarget.data('dataDetail')//this._config.dataList[this._visualIndex];
 			}
-			//console.log(this._touchItemIndex, this._$touchTargetData);
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
 			$('body').one(this._stopEvent, this._stopEventFunc);
@@ -561,10 +571,10 @@
 				}
 			}
 			// 进入编辑模式, 需要更新现在的排序位置reorderItemIndex为item对象的所在位置
-			this._reorderItemIndex = this._touchItemIndex;
+			this._reorderItemIndex = this._visualIndex;
 
 			// 提供外部执行的方法
-			this._config.onEditing(this._reorderItemsAry);
+			this._config.onEditing(this._$items);
 
 			this._$reorderItem = this._$touchTarget
 				.append(
@@ -582,18 +592,18 @@
 			// 说明: 变量reorderItemIndex是当前进行编辑模式的item所在视觉位置
 
 			// 删除dataList里视觉位置的item原始数据
-			this._config.dataList.splice(this._reorderItemIndex, 1);
+			//this._config.dataList.splice(this._reorderItemIndex, 1);
 
 			if(this._staticConfig._reorderCSS){
 
 				//console.log('删除item对象内容 ',
 					// 删除reorderItemsAry里视觉位置的item
-					this._reorderItemsAry.splice(this._reorderItemIndex, 1)
+					this._$items.splice(this._reorderItemIndex, 1);
 				//[0]);
-				//console.log('删除后, 更新的对象集', this._reorderItemsAry);
+				//console.log('删除后, 更新的对象集', this._$items);
 
 				// 动画"定位"剩下的items
-				this._setItemsPos(this._reorderItemsAry);
+				this._setItemsPos(this._$items);
 
 				var textIndex = this._$reorderItem.index();
 
@@ -608,15 +618,12 @@
 					}
 				}
 			}
-
-			if((this._reorderItemsAry.length % this._containerCols) == 0){
-				this._$container.css({'height':this._containerH = this._containerH - this._itemH});
-			}
+			// 调整高度???
 
 			// 删除本item
 			this._$reorderItem.remove();
 			// 提供外部执行的方法, 传参修改后的items对象集合
-			this._config.onClose(this._reorderItemsAry);
+			this._config.onClose(this._$items);
 
 			this._editing = false;
 		},
@@ -644,7 +651,7 @@
 
 					DrM._editing = false;
 
-					DrM._config.onDragEnd(DrM._reorderItemsAry);
+					DrM._config.onDragEnd(DrM._$items);
 
 					DrM._$container.children().removeClass(DrM._staticConfig.activeItemClass + " " + DrM._staticConfig.reorderItemClass);
 					//DrM.fireEvent("afterDrag", [DrM._$reorderItem]);
@@ -773,7 +780,7 @@
 					this._enterEditingMode();
 
 					// 在基于relative拖拽的模式, 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
-					this._$items = this._$container.children();
+					if(!this._staticConfig._reorderCSS){this._$items = this._$container.children();}//@
 
 					// 重新获取可以拖拉的数量
 					this._draggableCount = this._$items.length - this._staticCount;
@@ -790,19 +797,20 @@
 					// _$draggingItem的坐标调整等于$dragTarget的坐标
 					if(this._staticConfig._reorderCSS){
 						// $dragTarget的坐标 = reorderItem的坐标
-						this._draggingItemStartPos = this._posAry[this._touchItemIndex];
+						this._draggingItemStartPos = this._posAry[this._visualIndex];
+						console.log(this._posAry,this._visualIndex,  this._draggingItemStartPos);
 						this._setPosition(
 							this._$draggingItem,
 							this._draggingItemStartPos
 						);
-						this._reorderItemIndex = this._touchItemIndex;
+						this._reorderItemIndex = this._visualIndex;
 					}else{
 						// $dragTarget的坐标 = 相对于reorderItem坐标与自身文本流坐标的差距
 						dragItemStartX = this.itemStartPos.left - this._$draggingItem.position().left;
 						dragItemStartY = this.itemStartPos.top - this._$draggingItem.position().top;
 						this._$draggingItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
-						this._reorderItemIndex = this._touchItemIndex + 1;
-						this.MEMOvisionIndex = this._touchItemIndex;
+						this._reorderItemIndex = this._visualIndex + 1;
+						this.MEMOvisionIndex = this._visualIndex;
 					}
 
 					// 清空transition来实现无延迟拖拽
@@ -901,11 +909,11 @@
 				// 区间4[this.draggableCount - 无限大] -->为draggableCount
 				if(visionIndex < 0){
 					reorderIndex = 0;
-				}else if(visionIndex < this._touchItemIndex){
+				}else if(visionIndex < this._visualIndex){
 					reorderIndex = visionIndex;
 				} else if (visionIndex >= this._draggableCount){
 					reorderIndex = this._draggableCount;
-				} else if (visionIndex >= this._touchItemIndex){
+				} else if (visionIndex >= this._visualIndex){
 					reorderIndex = visionIndex + 1;
 				}
 
@@ -916,16 +924,16 @@
 			} else {
 				if(this._staticConfig._reorderCSS){
 					//console.log('点击  ', this._reorderItemIndex,'计算', visionIndex);
-					this._reorderFn(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
+					this._reorderFn(this._$items, this._reorderItemIndex, reorderIndex);
 					this._reorderFn(this._indexAry, this._reorderItemIndex, reorderIndex);
-					//console.log(this._indexAry);
-					this._setItemsPos(this._reorderItemsAry, this._reorderItemIndex, reorderIndex);
-					this._reorderFn(this._config.dataList, this._reorderItemIndex, reorderIndex);
+					console.log(this._indexAry);
+					this._setItemsPos(this._$items, this._reorderItemIndex, reorderIndex);
+					//this._reorderFn(this._config.dataList, this._reorderItemIndex, reorderIndex);
 				}else{
 					// 5, 以reorderIndex作为插入的位置
 					this._$items.eq(reorderIndex).before(this._$reorderItem);
 
-					this._reorderFn(this._config.dataList, this.MEMOvisionIndex, visionIndex);
+					//this._reorderFn(this._config.dataList, this.MEMOvisionIndex, visionIndex);
 
 					// 记录本次调整后新的文本位置
 					this.MEMOvisionIndex = visionIndex;
