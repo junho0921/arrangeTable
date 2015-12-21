@@ -3,7 +3,6 @@
 /* 混合模式v2.0*/
 
 /*
-
 事件操作:<br/>
 	点击item --> 跳转页面<br/>
 	长按item --> 进入编辑模式 --> 松开item --> 点击任何item, 退出编辑模式<br/>
@@ -13,10 +12,11 @@
 模式1: 文本流拖拽
 
 	原理:
-		item以position:relative布局
+		item以position:relative布局,
+		特点: 视觉与文本位置一致
 	事件:
 		 获取位置:
-		 	由于是文本流, 获取文本位置就是视觉位置
+		 	点击对象所获取的位置是文本文本位置, 也就是视觉位置
 		 拖拽:
 		 	克隆item并插入到最后文本位置, 设css定位到原位, 动画效果技术: translate3D和transition
 		 排序:
@@ -28,48 +28,44 @@
 
 	原理:
 		全部item以position:absolute且靠左上角, 排列布局使用translate3D改变xy轴是各个item有自己位置
-
-	本模式区分: 视觉位置与文本位置
-
+		特点: 视觉位置与文本位置脱离关系
 	事件:
 		获取位置:
-			点击对象获取的只有文本位置, 不等于视觉位置
+            点击对象所获取的位置是文本文本位置, 不能直接获取视觉位置
 			措施:
-				定义可排序的数组变量indexAry来模拟文本位置 模拟DOM结构变化, 反映视觉位置
+				定义可排序的数组变量indexAry来模拟文本位置与模拟DOM结构变化, 反映视觉位置
 		拖拽:
 			克隆item(同时已经克隆了位置等属性), 动画效果技术: translate3D和transition
 		排序:
-			不排序DOM结构, 只做视觉排序. 对indexAry进行排序, items按照indexAry来排位
+			不排序DOM结构即文本位置, 只做视觉排序. 对indexAry进行排序, items按照indexAry来浮动定位在对应的视觉位置来做出"排位"效果
 		删除item:
-			删除后, 对indexAry进行处理, 更新indexAry及时反映文本位置情况
-
-
+			删除后, 对indexAry进行处理(模拟文本流的删除item效果: 在indexAry里删除item序号, 然后对大于该序号的序号都减一), 这样就及时反映文本位置在视觉位置情况
 
 	模拟步骤:
 	初始化:
 		 根据dataList数据渲染页面
-		 创建变量: 1,变量reorderItemsAry是重新获取DOM里的items对象作为排序的数组 2, 变量posAry数组, 作为位置对应值 3, 变量indexAry类似于reorderItemsAry, 但内容是对象的DOM的index值
-		 例子: reorderItemsAry = [$1, $2, $3, $4, $5, $6]; indexAry = [1, 2, 3, 4, 5, 6];
-		 以reorderItemsAry作为排序数组, 取值posAry, 进行_setItemsPos方法"定位"
+		 创建变量:
+		    1, 使用this._$items作为排序数组(因为是jQuery对象数组, 可排序)
+		    2, 变量posAry数组, 作为位置对应值
+		    3, 变量indexAry是items的文本位置数组, 有顺序, 反应items的文本位置对应视觉位置
+		 例子: $items = [$1, $2, $3, $4, $5, $6]; indexAry = [1, 2, 3, 4, 5, 6];
+		 以$items作为排序数组, 取值posAry, 进行_setItemsPos方法"定位"
 		 完成了定位布局
 	进行ui交互:
 		 情况1:
-			 描述: 排序后: reorderItemsAry = [$0, $1, $2, $4, $5, $3, $6]; indexAry = [0, 1, 2, 4, 5, 3, 6];
+			 描述: 排序后: $items = [$0, $1, $2, $4, $5, $3, $6]; indexAry = [0, 1, 2, 4, 5, 3, 6];
 			 点击item3, 如何拖拽item?? --> 如何获取定位? --> 获取item的translate值? 不, 难在兼容各浏览器, 所以在posAry里获取位置 --> 但点击获取的index值是DOM的index值=3, 不是现在视觉位置的序号5, --> 在indexAry里获得 index = 5 --> 现在就可以在posAry里获取位置了 --> 可以拖动
-			 同理, 没有拖拽, 但点击item3, 如何获取item3在dataList的数据呢?? --> 同理, 获取到所在格子序号5 --> 获取dataList里序号5的内容
+			 同理, 没有拖拽, 但点击item3, 如何获取item3在dataList的数据呢?? --> 同理, 获取到所在格子序号5 --> 获取dataList里序号5的内容(因为dataList按照文本位置顺序排列数组, 只需要获取文本位置就可以得到dataList相应数据), 但现在使用jQuery方法data来绑定dataList数据在jQuery对象里, 直接获取就可以了
 		 情况2:
 			 描述: 拖拽时, 重新排序reorder
-			 由于posAry已有位置坐标, 需要对象有新的排序 --> 对reorderItemsAry排序与indexAry排序和dataList排序, 保留DOM结构不变排序不变 --> 重新排序的reorderItemsAry便可以填进posAry的格子坐标里
-		 情况3:
+			 由于posAry已有位置坐标, 需要对象有新的排序 --> 对$items排序与indexAry排序, 保留DOM结构不变即文本位置不变 --> 重新排序的$items便可以填进posAry的格子坐标里
+		 情况3:2
 			 描述: 点击关闭按钮,
-				 这属于编辑模式, 区别于情况1,2, 这里需要计算变量变化
-				 1, 更新dataList
-				 2, 更新reorderItemsAry
-				 3, 重新计算indexAry, 不是更新
-				 4, 使用reorderItemsAry替换container里的内容, 也就是说以reorderItemsAry作为新的DOM结构
-				 5, setPosition"定位"items
-				 6, 若要有动画效果的话, 第4,5步需要使用setTimeout来延迟执行, 注意延迟的时间要短
-				 7, 建议在第三步后执行remove本item
+				 这属于编辑模式, 区别于情况1,2, 这里需要整理数组$items与indexAry以反映实际情况
+				 1, 更新$items: 除掉$items数组里的该item, 使$items数组反映当前显示的items
+				 2, 更新indexAry: 除掉indexAry数组里的该item序号并对大于该序号的序号都减一, 反映文本位置的实际视觉位置顺序
+				 3, 以$items为对象, 使用方法setPosition"定位"items, 因有transition, 所以有排序效果
+				 4, 执行remove删除的item
 
 已优化部分
 	1, 使用类方法
@@ -80,21 +76,15 @@
 	6, 拖拽时候, target是没有btn的, 所以需要添加一个class以至于可以隐藏
 	7, 类私有变量和方法都使用下划线开头, 区分公开的变量方法
 	8, $.proxy(func, this);
+	9, 关闭按钮的容器高度调整为适应高度
 
 改进空间:
 	1, 考虑转屏问题orientationchange, resize??
 	2, 剥离transition等的方法成为一个组件
-	3, 关闭按钮的容器高度, 没有灵活
 	4, 去掉变量数组模拟文本流的
 	5,
 
-思考:
-	1, 关闭按钮执行的方法可以执行_render重新渲染页面, 这样就可以直接负责对源头dataList处理就好了
-
  */
-
-
-
 
 (function(factory) {
 	'use strict';
@@ -135,7 +125,7 @@
 
 			this._closeBtnClass = "." + $(this._staticConfig.closeBtnHtml)[0].className;
 
-			this._$container = $(this._config.container).css({'position': 'relative', "padding":0});//@
+			this._$container = $(this._config.container).css({'position': 'relative', "padding":0});
 
 			if(this._staticConfig._templateRender && this._config.dataList.length){
 				this._render();
@@ -145,13 +135,10 @@
 
 			this._setProps();
 
-			if(this._staticConfig._reorderCSS){//@ // 以下方法应该独立为一个方法:
+			if(this._staticConfig._reorderCSS){ // 以下方法应该独立为一个方法:
 				// 各item都绝对定位在(0, 0)css坐标
 				this._$items.css({'position':'absolute', 'top':0, 'left': 0});
-				// 获取当前的所有items
-				//this._reorderItemsAry = this._$items;
-				// 获取初始排序的数组
-				// 清空_indexAry,以item文本位置序号为内容的数组
+				// 获取初始排序的数组, 以item文本位置序号为内容的数组
 				for(var i = 0; i < this._$items.length; i++){
 					this._indexAry.push(
 						i // i是文本位置的序号
@@ -160,12 +147,11 @@
 				// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
 				this._getPosAry();
 				// 使用translate来填坑
-				this._setItemsPos(this._$items);//@
-				// 避免初始化的生成html所带有的动画
-				var DrM = this;
-				setTimeout(function(){
-					DrM._applyTransition(DrM._$items);
-				}, 1)
+				this._setItemsPos(this._$items);
+				// 延迟使用transition, 避免初始化的生成html所带有的动画
+				setTimeout($.proxy(function(){
+					this._applyTransition(this._$items);
+				}, this), 1)
 			}
 
 			this._$items.on(this._startEvent, this._startEventFunc);
@@ -281,7 +267,7 @@
 		_reorderItemIndex: null,
 
 		/*
-		 * reorderItem视觉位置//@
+		 * reorderItem视觉位置
 		 * */
 		_visualIndex: null,
 
@@ -394,11 +380,11 @@
 				len = data.length,
 				$itemHtml, $itemsHtml = [];
 
-			for(var i = 0; i < len; i++){//@
+			for(var i = 0; i < len; i++){
 				$itemHtml = this._config.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
-					.data('dataDetail', data[i]);//@
+					.data('dataDetail', data[i]);
 				//.data('draggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
-				if(data[i].static){//@
+				if(data[i].static){
 					$itemHtml.addClass('DrM-static');
 					this._staticCount++;// 记数
 				}
@@ -431,11 +417,11 @@
 			this._containerCols = (this._containerCols === null)?this._$items.length:this._containerCols;
 
 			// 锁定容器高度等于行数 * item的高度
-			this._$container.css({'height':this._containerH = Math.ceil(this._$items.length/this._containerCols) * this._itemH, 'width':this._containerW, 'overfolow':'hidden'});//@
+			this._$container.css({'height':this._containerH = Math.ceil(this._$items.length/this._containerCols) * this._itemH, 'width':this._containerW, 'overfolow':'hidden'});
 		},
 
 
-		//_getIndexAry: function(){//@
+		//_getIndexAry: function(){
 		//	// 每次初始化与删除/添加item后, 都执行_getIndexAry方法
 		//	// 清空_indexAry,以item文本位置序号为内容的数组
 		//	this._indexAry = [];
@@ -450,7 +436,7 @@
 		_getPosAry: function(){
 			// 位置的静态写法
 			// 数组保存:格子数量和各格子坐标, 优点: 避免重复计算
-			var len = this._$items.length;//@
+			var len = this._$items.length;
 			this._posAry = [];
 			// 默认基于translate3D的修改模式, 所以升级必须优化
 			for(var i = 0; i < len; i++){
@@ -524,20 +510,20 @@
 			this.targetCenterStartY = this.itemStartPos.top + this._itemH/2;
 
 			// 获取文本位置的序号
-			this._textIndex = this._$touchTarget.addClass(this._staticConfig.activeItemClass).index();//@
+			this._textIndex = this._$touchTarget.addClass(this._staticConfig.activeItemClass).index();
 			console.log(this._indexAry);
 
 			if(this._staticConfig._reorderCSS){
 				// 由于DOM结构固定, 所以需要在变量indexAry数组里获取DOM-index所在的视觉位置序号
 				this._visualIndex = $.inArray(this._textIndex, this._indexAry);
-			} else {//@
+			} else {
 				this._visualIndex = this._textIndex;
 			}
-			console.log('_visualIndex', this._visualIndex)
+			//console.log('_visualIndex', this._visualIndex);
 
 			// 获取本DOM的原始数据
 			if(this._config.dataList){
-				this._$touchTargetData = this._$touchTarget.data('dataDetail')//this._config.dataList[this._visualIndex];
+				this._$touchTargetData = this._$touchTarget.data('dataDetail');//this._config.dataList[this._visualIndex];
 			}
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
@@ -618,7 +604,10 @@
 					}
 				}
 			}
-			// 调整高度???
+
+			// 调整容器的高度为适当高度
+			var newH = Math.ceil(this._$items.length / this._containerCols) * this._itemH;
+			this._$container.height(newH);
 
 			// 删除本item
 			this._$reorderItem.remove();
@@ -780,7 +769,7 @@
 					this._enterEditingMode();
 
 					// 在基于relative拖拽的模式, 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
-					if(!this._staticConfig._reorderCSS){this._$items = this._$container.children();}//@
+					if(!this._staticConfig._reorderCSS){this._$items = this._$container.children();}
 
 					// 重新获取可以拖拉的数量
 					this._draggableCount = this._$items.length - this._staticCount;
@@ -798,11 +787,13 @@
 					if(this._staticConfig._reorderCSS){
 						// $dragTarget的坐标 = reorderItem的坐标
 						this._draggingItemStartPos = this._posAry[this._visualIndex];
-						console.log(this._posAry,this._visualIndex,  this._draggingItemStartPos);
-						this._setPosition(
-							this._$draggingItem,
-							this._draggingItemStartPos
-						);
+						//console.log(this._posAry,this._visualIndex,  this._draggingItemStartPos);
+						// 由于clone方法同时复制了位置属性, 所以不需要_setPosition来调整位置
+						//this._setPosition(
+						//	this._$draggingItem,
+						//	this._draggingItemStartPos
+						//);
+
 						this._reorderItemIndex = this._visualIndex;
 					}else{
 						// $dragTarget的坐标 = 相对于reorderItem坐标与自身文本流坐标的差距
