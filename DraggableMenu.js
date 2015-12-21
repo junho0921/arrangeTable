@@ -1,6 +1,6 @@
 /* 依赖: jQuery*/
 
-/* 混合模式v2.0*/
+/* 混合模式v2.2*/
 
 /*
 事件操作:<br/>
@@ -81,8 +81,7 @@
 改进空间:
 	1, 考虑转屏问题orientationchange, resize??
 	2, 剥离transition等的方法成为一个组件
-	4, 去掉变量数组模拟文本流的
-	5,
+	5, 长按震动的动画效果不好, 有重复
 
  */
 
@@ -139,10 +138,10 @@
 				// 各item都绝对定位在(0, 0)css坐标
 				this._$items.css({'position':'absolute', 'top':0, 'left': 0});
 				// 获取初始排序的数组, 以item文本位置序号为内容的数组
+				this._indexAry = [];
 				for(var i = 0; i < this._$items.length; i++){
-					this._indexAry.push(
-						i // i是文本位置的序号
-					);
+					this._indexAry[i] // 视觉位置
+						= i; // i是文本位置的序号
 				}
 				// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
 				this._getPosAry();
@@ -172,7 +171,7 @@
 			rangeXY: 12,
 
 			// 渲染html的数据内容
-			dataList:[],
+			dataList: [],
 
 			// 渲染html的方法
 			renderer: function(data, i, datas){
@@ -186,13 +185,13 @@
 			},
 
 			// 公开事件: 正常点击事件
-			onItemTap:null,
+			onItemTap: null,
 			// 公开事件: 拖放后的事件
-			onDragEnd:null,
+			onDragEnd: null,
 			// 公开事件: 删除item的事件
-			onClose:null,
+			onClose: null,
 			// 公开事件: 进入编辑模式的事件
-			onEditing:null
+			onEditing: null
 		},
 
 		/**
@@ -206,7 +205,7 @@
 		/**
 		 * 排序对象
 		 */
-		_$reorderItem:null,
+		_$reorderItem: null,
 		/**
 		 * 拖拽对象
 		 */
@@ -244,16 +243,16 @@
 		/*
 		 * 删除了的数组index值, 基于初始化的index
 		 * */
-		_deleteIndex:[],
+		_deleteIndex: [],
 
 		/**
 		 * 状态: _dragging是进入touchMove的状态
 		 */
-		_dragging:false,
+		_dragging: false,
 		/**
 		 * 状态: editing编辑模式是针对长按状态里添加"添加或删除"按钮进行编辑, 逻辑是长按进入编辑状态
 		 */
-		_editing:false,
+		_editing: false,
 
 		/*
 		 * touchStart的坐标
@@ -289,11 +288,11 @@
 		/*
 		 * 环境是否支持Transitions
 		 * */
-		_cssTransitions:null,
+		_cssTransitions: null,
 		/*
 		 * 环境是否支持transforms
 		 * */
-		_transformsEnabled:null,
+		_transformsEnabled: null,
 
 		/*
 		 * css属性transition/transform/translate前缀
@@ -311,22 +310,22 @@
 		/*
 		 * 各item文本位置的数组, 有顺序
 		 * */
-		_indexAry:[],
+		_indexAry: null,
 
 		/*
 		 * 格子的坐标
 		 * */
-		_posAry:[],
+		_posAry: null,
 
 		/*
 		 * 点击目标的原始数据
 		 * */
-		_$touchTargetData:null,
+		_$touchTargetData: null,
 
 		/*
 		 * 在基于relative的拖拽模式, 本变量保存上次视觉位置的index值, 不用每次使用.index()方法
 		 * */
-		MEMOvisionIndex:null,
+		MEMOvisionIndex: null,
 
 		/*
 		 * 固定设置, jun的开发配置
@@ -334,16 +333,16 @@
 		_staticConfig :{
 			// class名称
 			// 激活的item, 包括拖动的item和排序的item
-			activeItemClass:"DrM-activeItem",
+			activeItemClass: "DrM-activeItem",
 			// 排序的item
-			reorderItemClass:"DrM-reorderItem",
+			reorderItemClass: "DrM-reorderItem",
 			// 拖动的item
-			draggingItemClass:"DrM-draggingItem",
+			draggingItemClass: "DrM-draggingItem",
 			
 			// 关闭按钮html:
-			closeBtnHtml:"<span class='DrM-closeBtn'>-</span>",
+			closeBtnHtml: "<span class='DrM-closeBtn'>-</span>",
 			// 关闭按钮css
-			closeBtnCss:{
+			closeBtnCss: {
 				'position': 'absolute',
 				'right': '3px',
 				'top': '3px',
@@ -359,19 +358,19 @@
 				'font-weight':'600'
 			},
 			
-			_reorderCSS:true,
+			_reorderCSS: false,
 			// 灵敏模式
 			_sensitive: true,
 			// 选择transform动画
 			_useTransform: true,
 			// 选择模板
-			_templateRender:true,
+			_templateRender: true,
 			// 选择transition动画, 也就是选择translate3D
 			_useCSS: true,
 			// 选择transition的动画效果属性
 			_transitionTiming: "ease",
 			// 点击时间间隔
-			_clickDuration:250
+			_clickDuration: 250
 		},
 
 		_render: function(){
@@ -383,7 +382,6 @@
 			for(var i = 0; i < len; i++){
 				$itemHtml = this._config.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
 					.data('dataDetail', data[i]);
-				//.data('draggableMenuData', data[i]);// 对模板包装jQuery对象并添加数据
 				if(data[i].static){
 					$itemHtml.addClass('DrM-static');
 					this._staticCount++;// 记数
@@ -405,7 +403,6 @@
 			this._containerH = this._$container.height();
 			this._containerW = this._$container.width();
 
-
 			// 遍历方法来计算容器列数, 方法是计算第i个换行的,那i就是列数
 			for(var i = 0; i < this._$items.length; i++){
 				// 只需要遍历到第二行就知道列数量了, 但判断的1px值有待优化
@@ -414,24 +411,12 @@
 					break;
 				}
 			}
-			this._containerCols = (this._containerCols === null)?this._$items.length:this._containerCols;
+			this._containerCols = (this._containerCols === null) ? this._$items.length : this._containerCols;
 
 			// 锁定容器高度等于行数 * item的高度
-			this._$container.css({'height':this._containerH = Math.ceil(this._$items.length/this._containerCols) * this._itemH, 'width':this._containerW, 'overfolow':'hidden'});
+			this._$container.css({'height':this._containerH = Math.ceil(this._$items.length/this._containerCols) * this._itemH, 'width' : this._containerW, 'overflow' : 'hidden'});
 		},
 
-
-		//_getIndexAry: function(){
-		//	// 每次初始化与删除/添加item后, 都执行_getIndexAry方法
-		//	// 清空_indexAry,以item文本位置序号为内容的数组
-		//	this._indexAry = [];
-		//	for(var i = 0; i < this._reorderItemsAry.length; i++){
-		//		this._indexAry.push(
-		//			i // i是文本位置的序号
-		//		);
-		//	}
-		//	//console.log('this._indexAry', this._indexAry);
-		//},
 		// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
 		_getPosAry: function(){
 			// 位置的静态写法
@@ -485,15 +470,19 @@
 
 			this._$touchTarget = $(event.currentTarget);
 
-			//console.log($.inArray(this._$touchTarget, this._$items));
-
-			//this._$touchTargetData = this._$touchTarget.data('draggableMenuData');
+			//if(
+			//	!this._$draggingItem.hasClass()
+			//	&& this._$touchTarget.parent('.' + )
+			//){
+			//	return true;
+			//}
 
 			//if(event.currentTarget.className.indexOf(this.ItemClassName > -1)){
 			//	this._$touchTarget =  $(event.currentTarget);
 			//}else {
 			//	console.log('非点击拖动对象'); return
 			//}
+
 			//this.fireEvent("touchStart", [this._$container]);
 
 			this._startTime = event.timeStamp || +new Date();
@@ -529,9 +518,9 @@
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
 			$('body').one(this._stopEvent, this._stopEventFunc);
 
-			var DrM = this;
 			if(!this._$touchTargetData.static){
 				// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
+				var DrM = this;
 				this._setTimeFunc = setTimeout(function(){
 
 					DrM._enterEditingMode();
@@ -566,10 +555,6 @@
 				.append(
 				$(this._staticConfig.closeBtnHtml).css(this._staticConfig.closeBtnCss).on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
 			);
-		},
-
-		_getVisionIndex: function(textIndex){
-			return $.inArray(textIndex, this._indexAry);
 		},
 
 		_clickCloseBtnFn: function(){
@@ -631,22 +616,27 @@
 
 			if(this._InitializeMoveEvent){
 				// 已经拖拽了的情况, 执行拖拽项的归位动画
-				var DrM = this;
+				var _this = this;
 
 				this._dragItemReset(function(){
-					DrM._$container.find('.' + DrM._staticConfig.draggingItemClass).remove();
 					// 提供外部的方法, 传参排序后的jQuery对象集合
-					DrM._$reorderItem.find(DrM._closeBtnClass).remove();
+					_this._$draggingItem.remove();
 
-					DrM._editing = false;
+					_this._$reorderItem
+						.removeClass(_this._staticConfig.activeItemClass + " " + _this._staticConfig.reorderItemClass)
+						.find(_this._closeBtnClass).remove();
 
-					DrM._config.onDragEnd(DrM._$items);
+					_this._editing = false;
 
-					DrM._$container.children().removeClass(DrM._staticConfig.activeItemClass + " " + DrM._staticConfig.reorderItemClass);
-					//DrM.fireEvent("afterDrag", [DrM._$reorderItem]);
+					_this._config.onDragEnd(_this._$items);
+
+					//_this.fireEvent("afterDrag", [_this._$reorderItem]);
 				});
 
 			}else{
+
+				//this._$reorderItem.removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
+
 				this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
 
 				if(this._dragging === false){
@@ -658,6 +648,7 @@
 						//this.fireEvent("click", [this._$reorderItem]);
 
 						if(this._editing){
+							console.log('取消比那几');
 							// 编辑模式的情况下的点击事件是结束编辑或取消编辑的点击:
 							this._$reorderItem.find(this._closeBtnClass).remove();
 
@@ -665,6 +656,7 @@
 
 							this._editing = false;
 						} else{
+							console.log('click');
 							// 非编辑模式的情况下的点击事件是正常点击:
 							this._config.onItemTap(this._$touchTargetData);
 						}
