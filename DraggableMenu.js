@@ -358,7 +358,7 @@
 				'font-weight':'600'
 			},
 			
-			_reorderCSS: false,
+			_reorderCSS: true,
 			// 灵敏模式
 			_sensitive: true,
 			// 选择transform动画
@@ -576,15 +576,13 @@
 				// 动画"定位"剩下的items
 				this._setItemsPos(this._$items);
 
-				var textIndex = this._$reorderItem.index();
-
 				// 删除
 				this._indexAry.splice(this._reorderItemIndex, 1);
 
 				// 遍历更新
 				for (var y = 0; y < this._indexAry.length; y++){
 					var indexValue = this._indexAry[y];
-					if(indexValue > textIndex){
+					if(indexValue > this._textIndex){
 						this._indexAry[y] = indexValue - 1;
 					}
 				}
@@ -612,7 +610,7 @@
 			//$('.draggableMenutittle3').text(''+ this._dragging);
 			clearTimeout(this._setTimeFunc);
 
-			$('body').off(this._moveEvent).off(this._stopEvent);
+			$('body').off(this._moveEvent + " " + this._stopEvent);
 
 			if(this._InitializeMoveEvent){
 				// 已经拖拽了的情况, 执行拖拽项的归位动画
@@ -648,7 +646,6 @@
 						//this.fireEvent("click", [this._$reorderItem]);
 
 						if(this._editing){
-							console.log('取消比那几');
 							// 编辑模式的情况下的点击事件是结束编辑或取消编辑的点击:
 							this._$reorderItem.find(this._closeBtnClass).remove();
 
@@ -656,7 +653,6 @@
 
 							this._editing = false;
 						} else{
-							console.log('click');
 							// 非编辑模式的情况下的点击事件是正常点击:
 							this._config.onItemTap(this._$touchTargetData);
 						}
