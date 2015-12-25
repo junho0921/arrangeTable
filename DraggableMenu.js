@@ -153,6 +153,8 @@
 				}, this), 1)
 			}
 
+			var _this = this;
+
 			this._$items.on(this._startEvent, this._startEventFunc);
 		},
 
@@ -172,6 +174,9 @@
 
 			// 渲染html的数据内容
 			dataList: [],
+
+			// 使用放大效果, 基于perspective
+			usePerspective: null,
 
 			// 渲染html的方法
 			renderer: function(data, i, datas){
@@ -431,6 +436,7 @@
 				position.left = inCol * this._itemW;
 				position.top = inRow * this._itemH;
 				this._posAry.push(position);
+				console.log(position)
 			}
 		},
 
@@ -548,13 +554,21 @@
 			// 进入编辑模式, 需要更新现在的排序位置reorderItemIndex为item对象的所在位置
 			this._reorderItemIndex = this._visualIndex;
 
+			console.log('position', this._posAry[this._visualIndex]);
+
+			//this._applyAnimation(this._$touchTarget, this._visualIndex);
+
 			// 提供外部执行的方法
-			this._config.onEditing(this._$items);
+			this._config.onEditing(this._$items, this._$touchTarget);
 
 			this._$reorderItem = this._$touchTarget
 				.append(
 				$(this._staticConfig.closeBtnHtml).css(this._staticConfig.closeBtnCss).on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
 			);
+
+			console.log('add ', this._config.reorderItemClass);
+
+			this._$reorderItem.addClass(this._staticConfig.reorderItemClass)
 		},
 
 		_clickCloseBtnFn: function(){
@@ -763,6 +777,7 @@
 					this._draggableCount = this._$items.length - this._staticCount;
 
 					// 复制目标作为拖拽目标
+					//this._disableAnimation(this._$reorderItem);
 					this._$draggingItem =
 						this._$reorderItem.clone()
 							.addClass(this._staticConfig.draggingItemClass)
@@ -933,16 +948,39 @@
 			// 添加css  Transition
 			var transition = {};
 
-			transition[this._transitionType] = this._transformType + ' ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
+			transition[this._transitionType] = 'all ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
 
 			$obj.css(transition);
+		},
+
+		_applyAnimation: function($obj, index) {
+			// 添加css  Transition
+			var animation = {};
+
+			animation[this._animationType] = 'pos' + index + " 0.3s";
+
+			$obj.css(animation);
+		},
+
+		_disableAnimation: function($obj) {
+			// 去掉css  Transition
+			var animation = {};
+
+			animation[this._animationType] = "";
+
+			$obj.css(animation);
+		},
+
+		_createKeyframes: function(){
+			// 在不转屏的情况, 可直接生成keyframes动画, 直接填坑就好了
+
 		},
 
 		_disableTransition: function($obj) {
 			// 去掉css  Transition
 			var transition = {};
 
-			transition[this._transitionType] = '';
+			transition[this._transitionType] = 'all 0s ' + this._staticConfig._transitionTiming;
 
 			$obj.css(transition);
 		},
@@ -975,37 +1013,42 @@
 				this._animType = 'OTransform';
 				this._transformType = '-o-transform';
 				this._transitionType = 'OTransition';
+				this._animationType = '-o-animation';
 				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) this._animType = false;
 			}
 			if (bodyStyle.MozTransform !== undefined) {
 				this._animType = 'MozTransform';
 				this._transformType = '-moz-transform';
 				this._transitionType = 'MozTransition';
+				this._animationType = '-moz-animation';
 				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.MozPerspective === undefined) this._animType = false;
 			}
 			if (bodyStyle.webkitTransform !== undefined) {
 				this._animType = 'webkitTransform';
 				this._transformType = '-webkit-transform';
 				this._transitionType = 'webkitTransition';
+				this._animationType = '-webkit-animation';
 				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) this._animType = false;
 			}
 			if (bodyStyle.msTransform !== undefined) {
 				this._animType = 'msTransform';
 				this._transformType = '-ms-transform';
 				this._transitionType = 'msTransition';
+				this._animationType = '-ms-animation';
 				if (bodyStyle.msTransform === undefined) this._animType = false;
 			}
 			if (bodyStyle.transform !== undefined && this._animType !== false) {
 				this._animType = 'transform';
 				this._transformType = 'transform';
 				this._transitionType = 'transition';
+				this._animationType = 'animation';
 			}
 			this._transformsEnabled = this._staticConfig._useTransform && (this._animType !== null && this._animType !== false);
-			//this._transformsEnabled = false;// 测试用
+			this._transformsEnabled = false;// 测试用
 			//this._cssTransitions = false;// 测试用
 		},
 
-		_setPosition: function($obj, position) {
+		_setPosition: function($obj, position, Z) {
 			// 方法setCSS: 即时位置调整
 			var positionProps = {},
 				x, y;
@@ -1015,6 +1058,7 @@
 
 			if (this._transformsEnabled === false) {
 				$obj.css({'left': x, "top": y});
+				console.log('css', position)
 			} else {
 				positionProps = {};
 				if (this._cssTransitions === false) {
@@ -1035,7 +1079,12 @@
 
 			if (this._transformsEnabled === false) {
 				// 降级方案 使用animate方案
-				$obj.animate(position, this._config.cssDuration, 'swing', callback);
+				//$obj.animate(position, this._config.cssDuration, 'swing', callback);
+				this._applyTransition($obj);
+				$obj.css({'left': position.left + 'px', 'top': position.top + 'px'})
+				setTimeout(function(){
+					callback()
+				}, this._config.cssDuration);
 			} else {
 
 				if (this._cssTransitions === false) {

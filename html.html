@@ -4,6 +4,9 @@
 	<meta charset="UTF-8">
 	<title>DraggableMenu</title>
 	<link rel="stylesheet" href="style.css"/>
+	<style>
+
+	</style>
 </head>
 <body>
 
@@ -58,6 +61,80 @@
 		}
 
 	});
+
+
+</script>
+
+<script src="./css-animations.js"></script>
+<script>
+	function Animations() {
+		this.animations = {};
+	}
+
+	Animations.prototype.getDynamicSheet = function() {
+		var style = document.createElement('style');
+		style.rel = 'stylesheet';
+		style.type = 'text/css';
+		document.getElementsByTagName('head')[0].appendChild(style);
+		this.dynamicSheet = style.sheet;
+	};
+
+	Animations.prototype.create = function(name, frames) {
+
+		// name是keyframes的名称, frames对象是keyframes的内容
+//		var styles = this.getDynamicSheet();
+
+		var style = document.createElement('style');
+		style.rel = 'stylesheet';
+		style.type = 'text/css';
+		document.getElementsByTagName('head')[0].appendChild(style);
+		this.dynamicSheet = style.sheet;
+
+		try {
+			var idx = styles.insertRule('@keyframes ' + name + '{}',
+					styles.cssRules.length);
+		}
+		catch(e) {
+			if(e.name == 'SYNTAX_ERR' || e.name == 'SyntaxError') {
+				idx = styles.insertRule('@-webkit-keyframes ' + name + '{}',
+						styles.cssRules.length);
+			}
+			else {
+				throw e;
+			}
+		}
+
+//		var anim = new KeyframeAnimation(styles.cssRules[idx]);
+
+		var original = styles.cssRules[idx];
+
+//		this.animations[name] = anim;
+
+		if(frames) {
+			var obj = frames;
+			for(var kk in obj) {
+//				this.setKeyframe(k, obj[k]);
+				var  text = kk, css = obj[k];
+
+				var cssRule = text+" {";
+
+				for(var k in css) {
+					cssRule += k + ':' + css[k] + ';';
+				}
+				cssRule += "}";
+
+				if('appendRule' in original) {
+					original.appendRule(cssRule);
+				}
+				else {
+					original.insertRule(cssRule);
+				}
+			}
+//			anim.setKeyframes(frames);
+		}
+
+//		return anim;
+	};
 
 
 </script>
