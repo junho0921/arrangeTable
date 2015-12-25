@@ -780,6 +780,7 @@
 					//this._disableAnimation(this._$reorderItem);
 					this._$draggingItem =
 						this._$reorderItem.clone()
+							.removeClass(this._staticConfig.reorderItemClass)
 							.addClass(this._staticConfig.draggingItemClass)
 							.css({'z-index':'99'})
 							.appendTo(this._$container);// Bug: 改变了_$container的高度! 但可通过css固定高度
