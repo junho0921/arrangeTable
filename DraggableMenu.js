@@ -93,6 +93,7 @@
 改进空间:
 	1, 兼容转屏
 	2, 行为事件判断简化以确保主要事件能执行? 可能这是个假设错误, 逻辑不需要简化, 需要的是正确
+	3, 可以使用关闭按钮的情况是: 没有重新排序的情况就可以使用, 有重新排序的话就会隐藏关闭按钮的
 
  */
 
@@ -131,7 +132,6 @@
 			/*模式选择*/
 			var mode = this._staticConfig._mode[this._staticConfig._modeSelect];
 			for(var xx in mode.attr ){
-				console.log(xx,  mode.attr[xx])
 				this._staticConfig[xx] = mode.attr[xx];
 			}
 
@@ -382,7 +382,7 @@
 				'font-weight':'600'
 			},
 
-			_modeSelect: 'mode3',
+			_modeSelect: 'mode1',
 
 			_mode: {
 				'mode1': {
@@ -638,8 +638,6 @@
 				.append(
 				$(this._staticConfig.closeBtnHtml).css(this._staticConfig.closeBtnCss).on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
 			);
-
-			console.log('add ', this._config.reorderItemClass);
 
 			this._$reorderItem.addClass(this._staticConfig.reorderItemClass)
 		},
@@ -1059,8 +1057,8 @@
 			// 去掉css  Transition
 			var transition = {};
 
-			//transition[this._transitionType] = 'all 0s ' + this._staticConfig._transitionTiming;
-			transition[this._transitionType] = '';
+			transition[this._transitionType] = 'all 0s ' + this._staticConfig._transitionTiming;
+			//transition[this._transitionType] = '';
 
 			$obj.css(transition);
 		},
