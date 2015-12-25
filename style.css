@@ -60,10 +60,10 @@
 /*点击的动画效果*/
 
 .DrM-activeItem.DrM-reorderItem {
-    animation:zoomOutIn 0.5s;
-    -moz-animation:zoomOutIn 0.5s ; /* Firefox */
-    -webkit-animation:zoomOutIn 0.5s; /* Safari and Chrome */
-    -o-animation:zoomOutIn 0.5s; /* Opera */
+    /*animation:zoomOutIn 0.5s;*/
+    /*-moz-animation:zoomOutIn 0.5s ; /!* Firefox *!/*/
+    /*-webkit-animation:zoomOutIn 0.5s; /!* Safari and Chrome *!/*/
+    /*-o-animation:zoomOutIn 0.5s; /!* Opera *!/*/
 }
 .DrM-activeItem.DrM-DraggingItem {
     /*animation:none 0s 0s;*/
@@ -76,7 +76,6 @@
 /*0%, 100% {z-index:1; transform: translate3d(0, 0, 0) scale3d(1, 1, 1); opacity: 1}*/
 /*50% {z-index:88; transform: translate3d(0, 0, 0) scale3d(1.2, 1.2, 1.2); opacity: 0.3}*/
 /*}*/
-
 
 @-webkit-keyframes zoomOutIn{
     0%,100%{opacity:1; z-index:99; -webkit-transform:scale3d(1, 1, 1); transform:scale3d(1, 1, 1);}

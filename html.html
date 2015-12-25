@@ -20,7 +20,21 @@
 
 <script src="libs/jquery.js"></script>
 <script src="DraggableMenu.js"></script>
+<style>
+	.testA{
+		animation: testA 2s ease;
+	}
+
+	/*@-webkit-keyframes testA{*/
+		/*0%,100%{opacity:1}*/
+		/*50%{opacity:0.1}*/
+	/*}*/
+</style>
 <script>
+
+	$('h2').click(function(){
+		$(this).addClass('testA');
+	});
 
 	var DraggableMenu = new DraggableMenu({
 
@@ -67,6 +81,7 @@
 
 <script src="./css-animations.js"></script>
 <script>
+	/*
 	function Animations() {
 		this.animations = {};
 	}
@@ -135,7 +150,7 @@
 
 //		return anim;
 	};
-
+*/
 
 </script>
 </body>

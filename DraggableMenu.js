@@ -134,6 +134,13 @@
 
 			this._setProps();
 
+			//this._addKeyframes('testA',
+			//	{
+			//		'0%,100%':{opacity:1},
+			//		'50%':{opacity:0.1}
+			//	}
+			//);
+
 			if(this._staticConfig._reorderCSS){ // 以下方法应该独立为一个方法:
 				// 各item都绝对定位在(0, 0)css坐标
 				this._$items.css({'position':'absolute', 'top':0, 'left': 0});
@@ -362,7 +369,9 @@
 				'z-index': ' 99',
 				'font-weight':'600'
 			},
-			
+
+			_animation:true,
+
 			_reorderCSS: true,
 			// 灵敏模式
 			_sensitive: true,
@@ -436,7 +445,23 @@
 				position.left = inCol * this._itemW;
 				position.top = inRow * this._itemH;
 				this._posAry.push(position);
-				console.log(position)
+
+				var translateA = 'translate3D(' + position.left +'px, ' + position.top +'px, 0px)';
+
+				this._addKeyframes('pos' + i, {
+					'0%,100%': {
+						opacity: 1,
+						'z-index': 99,
+						'-webkit-transform': translateA + ' scale3d(1, 1, 1)',
+						transform: translateA + ' scale3d(1, 1, 1)'
+					},
+					'50%': {
+						opacity: 0.5,
+						'z-index': 99,
+						'-webkit-transform': translateA + ' scale3d(1.2, 1.2, 1.2)',
+						transform: translateA + ' scale3d(1.2, 1.2, 1.2)'
+					}
+				});
 			}
 		},
 
@@ -444,7 +469,7 @@
 			// index1, index2作为选择性执行的范围
 			var len, st = 0;
 
-			if(index1 && index2 && index1!== index2){
+			if(index1 && index2 && index1 !== index2){
 				if(index1 > index2){
 					st = index2;
 					len = index1 + 1;
@@ -554,9 +579,11 @@
 			// 进入编辑模式, 需要更新现在的排序位置reorderItemIndex为item对象的所在位置
 			this._reorderItemIndex = this._visualIndex;
 
-			console.log('position', this._posAry[this._visualIndex]);
+			//console.log('position', this._posAry[this._visualIndex]);
 
-			//this._applyAnimation(this._$touchTarget, this._visualIndex);
+			if(this._staticConfig._animation){
+				this._applyAnimation(this._$touchTarget, this._visualIndex);
+			}
 
 			// 提供外部执行的方法
 			this._config.onEditing(this._$items, this._$touchTarget);
@@ -777,7 +804,11 @@
 					this._draggableCount = this._$items.length - this._staticCount;
 
 					// 复制目标作为拖拽目标
-					//this._disableAnimation(this._$reorderItem);
+
+					if(this._staticConfig._animation){
+						this._disableAnimation(this._$reorderItem);
+						//this._applyAnimation(this._$touchTarget, this._visualIndex);
+					}
 					this._$draggingItem =
 						this._$reorderItem.clone()
 							.removeClass(this._staticConfig.reorderItemClass)
@@ -949,7 +980,8 @@
 			// 添加css  Transition
 			var transition = {};
 
-			transition[this._transitionType] = 'all ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
+			//transition[this._transitionType] = 'all ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
+			transition[this._transitionType] = this._transformType + ' ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
 
 			$obj.css(transition);
 		},
@@ -981,7 +1013,8 @@
 			// 去掉css  Transition
 			var transition = {};
 
-			transition[this._transitionType] = 'all 0s ' + this._staticConfig._transitionTiming;
+			//transition[this._transitionType] = 'all 0s ' + this._staticConfig._transitionTiming;
+			transition[this._transitionType] = '';
 
 			$obj.css(transition);
 		},
@@ -1045,7 +1078,7 @@
 				this._animationType = 'animation';
 			}
 			this._transformsEnabled = this._staticConfig._useTransform && (this._animType !== null && this._animType !== false);
-			this._transformsEnabled = false;// 测试用
+			//this._transformsEnabled = false;// 测试用
 			//this._cssTransitions = false;// 测试用
 		},
 
@@ -1080,12 +1113,12 @@
 
 			if (this._transformsEnabled === false) {
 				// 降级方案 使用animate方案
-				//$obj.animate(position, this._config.cssDuration, 'swing', callback);
-				this._applyTransition($obj);
-				$obj.css({'left': position.left + 'px', 'top': position.top + 'px'})
-				setTimeout(function(){
-					callback()
-				}, this._config.cssDuration);
+				$obj.animate(position, this._config.cssDuration, 'swing', callback);
+				//this._applyTransition($obj);
+				//$obj.css({'left': position.left + 'px', 'top': position.top + 'px'})
+				//setTimeout(function(){
+				//	callback()
+				//}, this._config.cssDuration);
 			} else {
 
 				if (this._cssTransitions === false) {
@@ -1137,11 +1170,58 @@
 
 		},
 
+		_addKeyframes: function(name, frames){
+			// 参数name, frames是必须的
+
+			// 生成style标签
+			var styleTag = document.createElement('style');
+			styleTag.rel = 'stylesheet';
+			styleTag.type = 'text/css';
+			// 插入到head里
+			document.getElementsByTagName('head')[0].appendChild(styleTag);
+
+			var styles = styleTag.sheet;
+
+			// 生成name命名的keyframes
+			try {
+				var idx = styles.insertRule('@keyframes ' + name + '{}',
+					styles.cssRules.length);
+			}
+			catch(e) {
+				if(e.name == 'SYNTAX_ERR' || e.name == 'SyntaxError') {
+					idx = styles.insertRule('@-webkit-keyframes ' + name + '{}',
+						styles.cssRules.length);
+				}
+				else {
+					throw e;
+				}
+			}
+
+			var original = styles.cssRules[idx];
+
+			// 遍历参数2frames对象里的属性, 来添加到keyframes里
+			for(var text in frames) {
+				var  css = frames[text];
+
+				var cssRule = text + " {";
+
+				for(var k in css) {
+					cssRule += k + ':' + css[k] + ';';
+				}
+				cssRule += "}";
+				if('appendRule' in original) {
+					original.appendRule(cssRule);
+				}
+				else {
+					original.insertRule(cssRule);
+				}
+			}
+		},
+
 		// 方法: 获取触控点坐标
 		_page :  function (coord, event) {
 			return (this._hasTouch? event.originalEvent.touches[0]: event)['page' + coord.toUpperCase()];
 		}
-
 	};
 
 	return (typeof define !== 'undefined') ? DraggableMenu : (window.DraggableMenu = DraggableMenu);
