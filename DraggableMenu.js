@@ -134,14 +134,7 @@
 
 			this._setProps();
 
-			//this._addKeyframes('testA',
-			//	{
-			//		'0%,100%':{opacity:1},
-			//		'50%':{opacity:0.1}
-			//	}
-			//);
-
-			if(this._staticConfig._reorderCSS){ // 以下方法应该独立为一个方法:
+			if(this._staticConfig._reorderTransition){ // 以下方法应该独立为一个方法:
 				// 各item都绝对定位在(0, 0)css坐标
 				this._$items.css({'position':'absolute', 'top':0, 'left': 0});
 				// 获取初始排序的数组, 以item文本位置序号为内容的数组
@@ -159,6 +152,7 @@
 					this._applyTransition(this._$items);
 				}, this), 1)
 			}
+			this._applyTransition(this._$items);
 
 			var _this = this;
 
@@ -370,9 +364,43 @@
 				'font-weight':'600'
 			},
 
-			_animation:true,
+			_modeSelect: 'mode1',
 
-			_reorderCSS: true,
+			// 为了三大效果:
+			// 1, 拖拽效果
+			// 2, 排序效果
+			// 3, press的放大效果: 暂时使用keyframes, 可以考虑使用font-size调整
+			// 4,
+			_mode: {
+				'mode1': {
+					attr: {
+						'_reorderTransition': false,
+						'_useTransform': true
+					},
+					name: 'DomFlow-css',
+					desc: 'item文本流排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果没有过度; 2,不管是不是使用translate来定位, 用户自己都可以写keyframes, 因为translate是从0开始;'
+				},
+				'mode2': {
+					attr: {
+						'_reorderTransition': true,
+						'_useTransform': false // _useTransform必须为false来使用css定位才可以提供用户自定义keyframes
+					},
+					name: 'Float-css',
+					desc: 'item浮动排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果有过度; 2, 指定用户自己来写keyframes '
+				},
+				'mode3': {
+					attr: {
+						'_reorderTransition': true,
+						'_useTransform': true
+					},
+					name: 'Float-translate',
+					desc: 'item浮动排序的基础, 用户定义item的keyframes动画的话需要在config里定义, 特点:1, 排序的效果有过度; 2, 指定用户在config来添加keyframes '
+				}
+			},
+
+			_animation:true,// 可删除的属性, 因为mode3
+
+			_reorderTransition: true,
 			// 灵敏模式
 			_sensitive: true,
 			// 选择transform动画
@@ -533,7 +561,7 @@
 			this._textIndex = this._$touchTarget.addClass(this._staticConfig.activeItemClass).index();
 			console.log(this._indexAry);
 
-			if(this._staticConfig._reorderCSS){
+			if(this._staticConfig._reorderTransition){
 				// 由于DOM结构固定, 所以需要在变量indexAry数组里获取DOM-index所在的视觉位置序号
 				this._visualIndex = $.inArray(this._textIndex, this._indexAry);
 			} else {
@@ -606,7 +634,7 @@
 			// 删除dataList里视觉位置的item原始数据
 			//this._config.dataList.splice(this._reorderItemIndex, 1);
 
-			if(this._staticConfig._reorderCSS){
+			if(this._staticConfig._reorderTransition){
 
 				//console.log('删除item对象内容 ',
 					// 删除reorderItemsAry里视觉位置的item
@@ -711,7 +739,7 @@
 
 			var resetX, resetY;
 
-			if(this._staticConfig._reorderCSS){
+			if(this._staticConfig._reorderTransition){
 				resetX = this._posAry[this._reorderItemIndex].left;
 				resetY = this._posAry[this._reorderItemIndex].top;
 			} else {
@@ -798,7 +826,7 @@
 					this._enterEditingMode();
 
 					// 在基于relative拖拽的模式, 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
-					if(!this._staticConfig._reorderCSS){this._$items = this._$container.children();}
+					if(!this._staticConfig._reorderTransition){this._$items = this._$container.children();}
 
 					// 重新获取可以拖拉的数量
 					this._draggableCount = this._$items.length - this._staticCount;
@@ -819,7 +847,7 @@
 					this.dragItemOriginalpos = this._$draggingItem.position();
 
 					// _$draggingItem的坐标调整等于$dragTarget的坐标
-					if(this._staticConfig._reorderCSS){
+					if(this._staticConfig._reorderTransition){
 						// $dragTarget的坐标 = reorderItem的坐标
 						this._draggingItemStartPos = this._posAry[this._visualIndex];
 						//console.log(this._posAry,this._visualIndex,  this._draggingItemStartPos);
@@ -859,7 +887,7 @@
 			cssX = Move_ex - this._eventStartX;
 			cssY = Move_ey - this._eventStartY;
 
-			if(this._staticConfig._reorderCSS){
+			if(this._staticConfig._reorderTransition){
 				// 计算触控点移动距离
 				cssX = this._draggingItemStartPos.left + cssX;
 				cssY = this._draggingItemStartPos.top + cssY;
@@ -903,7 +931,7 @@
 
 			var targetCenterPosX, targetCenterPosY;
 
-			if(this._staticConfig._reorderCSS){
+			if(this._staticConfig._reorderTransition){
 				targetCenterPosX = cssX + this._itemW/2;
 				targetCenterPosY = cssY + this._itemW/2;
 			}else{
@@ -917,7 +945,7 @@
 			// 4, 排序位置
 			var reorderIndex;
 
-			if(this._staticConfig._reorderCSS){
+			if(this._staticConfig._reorderTransition){
 				// 基于绝对定位, 不用考虑文本流的插入index值的调整
 				if(visionIndex >= 0 && visionIndex < this._draggableCount){
 					reorderIndex = visionIndex;
@@ -948,7 +976,7 @@
 				// 位移未超出一个li位置, 就取消执行
 				return false;
 			} else {
-				if(this._staticConfig._reorderCSS){
+				if(this._staticConfig._reorderTransition){
 					//console.log('点击  ', this._reorderItemIndex,'计算', visionIndex);
 					this._reorderFn(this._$items, this._reorderItemIndex, reorderIndex);
 					this._reorderFn(this._indexAry, this._reorderItemIndex, reorderIndex);
@@ -980,8 +1008,8 @@
 			// 添加css  Transition
 			var transition = {};
 
-			//transition[this._transitionType] = 'all ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
-			transition[this._transitionType] = this._transformType + ' ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
+			transition[this._transitionType] = 'all ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
+			//transition[this._transitionType] = this._transformType + ' ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
 
 			$obj.css(transition);
 		},
