@@ -9,7 +9,19 @@
 	长按item --> 进入编辑模式 --> 松开item --> 点击关闭按钮, 删除编辑的item, 退出编辑模式<br/>
 	长按item --> 进入编辑模式 --> 拖拽item --> 拖动到新位置, items排序, 让出位置给排序item --> 在新位置松开item --> 被拖动的item有滑动归位效果<br/>
 
-模式1: 文本流拖拽
+视觉效果及技术原理:
+	1, 拖拽效果  --- css || translate
+	2, 排序效果  --- transition || animate
+	3, press的放大效果, 发生在dragItem上, 不是reorderItem上:
+		1, 暂时使用keyframes{transform:scale},
+		2, 可以考虑使用font-size调整, 配合所有item尺寸是em单位
+		3, 用户自定义width, height变化
+		// 所以进入编辑模式就立即生成dragItem且先设transition为很短时间(这样才不至于有分歧的情况), 在拖拽前才设transition为0秒
+	4, 关闭按钮的出现于消失都有动画效果
+	5, 禁止指定的排位
+	6, 生成dragItem能定位到触控点中心对齐!, 问hugo!
+
+ 模式1: 文本流拖拽
 
 	原理:
 		item以position:relative布局,
@@ -79,9 +91,8 @@
 	9, 关闭按钮的容器高度调整为适应高度
 
 改进空间:
-	1, 考虑转屏问题orientationchange, resize??
-	2, 剥离transition等的方法成为一个组件
-	5, 长按震动的动画效果不好, 有重复
+	1, 兼容转屏
+	2, 行为事件判断简化以确保主要事件能执行? 可能这是个假设错误, 逻辑不需要简化, 需要的是正确
 
  */
 
@@ -116,6 +127,13 @@
 			this._hasTouch = 'ontouchstart' in window;
 
 			this._config = $.extend({}, this._defaultConfig, options);
+
+			/*模式选择*/
+			var mode = this._staticConfig._mode[this._staticConfig._modeSelect];
+			for(var xx in mode.attr ){
+				console.log(xx,  mode.attr[xx])
+				this._staticConfig[xx] = mode.attr[xx];
+			}
 
 			/*测试*/
 			for(var i = 0; i < this._config.dataList.length; i++){
@@ -364,55 +382,55 @@
 				'font-weight':'600'
 			},
 
-			_modeSelect: 'mode1',
+			_modeSelect: 'mode3',
 
-			// 为了三大效果:
-			// 1, 拖拽效果
-			// 2, 排序效果
-			// 3, press的放大效果: 暂时使用keyframes, 可以考虑使用font-size调整
-			// 4,
 			_mode: {
 				'mode1': {
 					attr: {
-						'_reorderTransition': false,
-						'_useTransform': true
+						_reorderTransition: false,
+						_useTransform: true
 					},
 					name: 'DomFlow-css',
-					desc: 'item文本流排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果没有过度; 2,不管是不是使用translate来定位, 用户自己都可以写keyframes, 因为translate是从0开始;'
+					desc: '降级模式: item文本流排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果没有过度; 2,不管是不是使用translate来定位, 用户自己都可以写keyframes, 因为translate是从0开始;'
 				},
 				'mode2': {
 					attr: {
-						'_reorderTransition': true,
-						'_useTransform': false // _useTransform必须为false来使用css定位才可以提供用户自定义keyframes
+						_reorderTransition: true,
+						_useTransform: false // _useTransform必须为false来使用css定位才可以提供用户自定义keyframes
 					},
 					name: 'Float-css',
-					desc: 'item浮动排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果有过度; 2, 指定用户自己来写keyframes '
+					desc: '项目模式: item浮动排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果有过度; 2, 指定用户自己来写keyframes '
 				},
 				'mode3': {
 					attr: {
-						'_reorderTransition': true,
-						'_useTransform': true
+						_reorderTransition: true,
+						_useTransform: true,
+						_animation: true// 可删除的属性, 因为mode3模式应该直接使用本属性, 但要具体看修改代码时候的情况
 					},
 					name: 'Float-translate',
-					desc: 'item浮动排序的基础, 用户定义item的keyframes动画的话需要在config里定义, 特点:1, 排序的效果有过度; 2, 指定用户在config来添加keyframes '
+					desc: '最优动画模式: item浮动排序的基础, 用户定义item的keyframes动画的话需要在config里定义, 特点:1, 排序的效果有过度; 2, 指定用户在config来添加keyframes; 3, 动画效果有最好的效果 '
 				}
 			},
 
-			_animation:true,// 可删除的属性, 因为mode3
-
-			_reorderTransition: true,
-			// 灵敏模式
+			// 灵敏模式, 准备删除
 			_sensitive: true,
-			// 选择transform动画
-			_useTransform: true,
-			// 选择模板
+			// 选择模板, 看是否能删除, 应该可以, 但不用, 因为只需要保留true值就可以, 意思是只需要用户传值渲染数据都会使用自定义模板
 			_templateRender: true,
-			// 选择transition动画, 也就是选择translate3D
+			// _useCSS的正否是选择translate3D还是translate, 当然最后会由环境来判断, 这里一直默认是true
 			_useCSS: true,
 			// 选择transition的动画效果属性
 			_transitionTiming: "ease",
 			// 点击时间间隔
-			_clickDuration: 250
+			_clickDuration: 250,
+
+
+			/*模式属性, 默认为模式2*/
+			// _animation的正否决定是否由本组件负责生产keyframes, 默认否
+			_animation: false,
+			// 排序的过度动画效果, 决定了使用文本流还是浮层
+			_reorderTransition: true,
+			// 选择transform动画来定位, 当使用translate定位的话会影响到keyframes的自定义使用
+			_useTransform: false
 		},
 
 		_render: function(){
