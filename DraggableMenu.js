@@ -632,16 +632,6 @@
 		},
 
 		_enterEditingMode: function(){
-			//if(!this._editing){
-			//	this._editing = true;
-			//}else{
-			//	if(this._$reorderItem === this._$touchTarget){
-			//		return
-			//	}else{
-			//		//this._$reorderItem.find(this._closeBtnClass).remove();
-			//	}
-			//}
-
 			if(this._$reorderItem === this._$touchTarget){return}
 
 			this._editing = true;
@@ -654,9 +644,9 @@
 
 			this._$touchTarget.find('.' + this._config.closeBtnClassName)
 				.on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
-				//.addClass(this._staticConfig.reorderItemClass);
+				.addClass(this._staticConfig.reorderItemClass);
 
-			this._$reorderItem = this._$touchTarget.addClass(this._staticConfig.reorderItemClass);
+			this._$reorderItem = this._$touchTarget;
 
 			/* 生成拖拽的item */
 			this._$container.append(
@@ -664,17 +654,11 @@
 					this._$reorderItem.clone()
 						.removeClass(this._staticConfig.reorderItemClass)
 						.addClass(this._staticConfig.draggingItemClass)
-						//.css({'z-index':'999'});
+						.css({'z-index':'999'})
 			);
-			//this._applyTransition(this._$draggingItem, this._config.focusDuration);
-
-			// _$draggingItem的坐标调整等于$dragTarget的坐标
-			// $dragTarget的坐标 = reorderItem的坐标
-			//this._draggingItemStartPos = this._posAry[this._visualIndex];
-			//this._reorderItemIndex = this._visualIndex;
-			//this._setPosition(this._$draggingItem, this._posAry[this._visualIndex], '1.2');
 
 			// 放大效果: 先缩短transitionDuration, 在设定scale为1.2倍
+			this._$draggingItem.position();// 这没实际用处, 但可以transition, 否则没有渐变效果!! 重要发现!
 			this._applyTransition(this._$draggingItem, this._config.focusDuration);
 			this._setPosition(this._$draggingItem, this._posAry[this._visualIndex], '1.2');
 		},
