@@ -55,8 +55,14 @@
     border-radius: 100%;
     cursor: pointer;
     z-index: 1000;
-}
+    transform: scale3D(0,0,0);
+    transition-duration:200ms;
 
+}
+.DrM-activeItem .DrM-closeBtn{
+    transform: scale3D(1, 1, 1);
+
+}
 /*点击的动画效果*/
 .DrM-activeItem{
     /*-webkit-transform:scale3d(1, 1, 1);*/

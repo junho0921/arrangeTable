@@ -151,6 +151,12 @@
 
 			this._size();
 
+			var _this = this;
+			this._$items.each(function(i, item){
+				$(item).append(
+					$(_this._staticConfig.closeBtnHtml)
+				)
+			});
 			this._setProps();
 
 			if(this._staticConfig._reorderTransition){ // 以下方法应该独立为一个方法:
@@ -633,10 +639,17 @@
 			// 提供外部执行的方法
 			this._config.onEditing(this._$items, this._$touchTarget);
 
-			this._$reorderItem = this._$touchTarget
-				.append(
-				$(this._staticConfig.closeBtnHtml).css(this._staticConfig.closeBtnCss).on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
-			);
+			//this._$reorderItem = this._$touchTarget
+			//	.append(
+			//	$(this._staticConfig.closeBtnHtml).css(this._staticConfig.closeBtnCss).on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
+			//);
+
+			this._$reorderItem =
+				this._$touchTarget;
+			this._$touchTarget
+					.find(this._closeBtnClass)
+					.on(this._startEvent, $.proxy(this._clickCloseBtnFn, this));
+
 
 			this._$reorderItem.addClass(this._staticConfig.reorderItemClass);
 
@@ -1151,9 +1164,6 @@
 			var positionProps = {},
 				x, y;
 
-			scale = scale || '1';
-			scale = "scale3d(" + scale + ', ' + scale + ', ' + scale + ")";
-
 			x =  Math.ceil(position.left) + 'px';
 			y =  Math.ceil(position.top) + 'px';
 
@@ -1167,6 +1177,11 @@
 					$obj.css(positionProps);
 					//console.log(positionProps)
 				} else {
+
+					// 当使用translate3D定位时就需要同时配置scale, 因为方便放大效果
+					scale = scale || '1';
+					scale = "scale3d(" + scale + ', ' + scale + ', ' + scale + ")";
+
 					positionProps[this._animType] = 'translate3d(' + x + ', ' + y + ', 0px) ' + scale;
 					$obj.css(positionProps);
 					//console.log(positionProps)
