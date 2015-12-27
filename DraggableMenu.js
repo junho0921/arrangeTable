@@ -20,6 +20,7 @@
 	4, 关闭按钮的出现于消失都有动画效果
 	5, 禁止指定的排位
 	6, 生成dragItem能定位到触控点中心对齐!, 问hugo!
+		若可以直接定位到触控点位置的话就可以使用font-size配合margin来放大
 
  模式1: 文本流拖拽
 
@@ -186,8 +187,10 @@
 
 			// 长按的时间间隔
 			pressDuration: 300,
-			// 动画的时间长度
-			cssDuration: 400,
+			// 排序效果动画的过度时间transition-duration值
+			reorderDuration: 400,
+			// 放大效果动画的过度时间transition-duration值
+			focusDuration: 100,
 			// 允许触控的边缘值, 单位px
 			rangeXY: 12,
 
@@ -382,7 +385,7 @@
 				'font-weight':'600'
 			},
 
-			_modeSelect: 'mode1',
+			_modeSelect: 'mode3',
 
 			_mode: {
 				'mode1': {
@@ -408,7 +411,7 @@
 						_animation: true// 可删除的属性, 因为mode3模式应该直接使用本属性, 但要具体看修改代码时候的情况
 					},
 					name: 'Float-translate',
-					desc: '最优动画模式: item浮动排序的基础, 用户定义item的keyframes动画的话需要在config里定义, 特点:1, 排序的效果有过度; 2, 指定用户在config来添加keyframes; 3, 动画效果有最好的效果 '
+					desc: '最优动画模式: item浮动排序的基础, 用户定义item的keyframes动画的话需要在config里定义, 特点:1, 排序的效果有过度; 2, 指定用户在config来添加keyframes; 3, 动画效果有最好的效果. 模式3是最麻烦的模式, 因为使用了translate定位是影响到transform的其他属性的使用, 所以在放大效果需要scale的话就需要本组件自己设定好transform里translate值与scale同步'
 				}
 			},
 
@@ -494,20 +497,20 @@
 
 				var translateA = 'translate3D(' + position.left +'px, ' + position.top +'px, 0px)';
 
-				this._addKeyframes('pos' + i, {
-					'0%,100%': {
-						opacity: 1,
-						'z-index': 99,
-						'-webkit-transform': translateA + ' scale3d(1, 1, 1)',
-						transform: translateA + ' scale3d(1, 1, 1)'
-					},
-					'50%': {
-						opacity: 0.5,
-						'z-index': 99,
-						'-webkit-transform': translateA + ' scale3d(1.2, 1.2, 1.2)',
-						transform: translateA + ' scale3d(1.2, 1.2, 1.2)'
-					}
-				});
+				//this._addKeyframes('pos' + i, {
+				//	'0%,100%': {
+				//		opacity: 1,
+				//		'z-index': 99,
+				//		'-webkit-transform': translateA + ' scale3d(1, 1, 1)',
+				//		transform: translateA + ' scale3d(1, 1, 1)'
+				//	},
+				//	'50%': {
+				//		opacity: 0.5,
+				//		'z-index': 99,
+				//		'-webkit-transform': translateA + ' scale3d(1.2, 1.2, 1.2)',
+				//		transform: translateA + ' scale3d(1.2, 1.2, 1.2)'
+				//	}
+				//});
 			}
 		},
 
@@ -627,10 +630,6 @@
 
 			//console.log('position', this._posAry[this._visualIndex]);
 
-			if(this._staticConfig._animation){
-				this._applyAnimation(this._$touchTarget, this._visualIndex);
-			}
-
 			// 提供外部执行的方法
 			this._config.onEditing(this._$items, this._$touchTarget);
 
@@ -639,7 +638,46 @@
 				$(this._staticConfig.closeBtnHtml).css(this._staticConfig.closeBtnCss).on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
 			);
 
-			this._$reorderItem.addClass(this._staticConfig.reorderItemClass)
+			this._$reorderItem.addClass(this._staticConfig.reorderItemClass);
+
+
+			/* 生成拖拽的item */
+			this._$draggingItem =
+				this._$reorderItem.clone()
+					.removeClass(this._staticConfig.reorderItemClass)
+					.addClass(this._staticConfig.draggingItemClass)
+					.css({'z-index':'99'})
+					.appendTo(this._$container);// Bug: 改变了_$container的高度! 但可通过css固定高度
+
+			this.dragItemOriginalpos = this._$draggingItem.position();
+
+			this._applyTransition(this._$draggingItem, this._config.focusDuration);
+
+			// _$draggingItem的坐标调整等于$dragTarget的坐标
+			if(this._staticConfig._reorderTransition){
+				// $dragTarget的坐标 = reorderItem的坐标
+				this._draggingItemStartPos = this._posAry[this._visualIndex];
+				this._reorderItemIndex = this._visualIndex;
+				this._setPosition(this._$draggingItem, this._posAry[this._visualIndex], '1.2')
+			}else{
+				// $dragTarget的坐标 = 相对于reorderItem坐标与自身文本流坐标的差距
+				this._dragItemStartX = this.itemStartPos.left - this._$draggingItem.position().left;
+				this._dragItemStartY = this.itemStartPos.top - this._$draggingItem.position().top;
+				this._$draggingItem.css({'position':'relative','left': this._dragItemStartX,'top': this._dragItemStartY});
+				this._reorderItemIndex = this._visualIndex + 1;
+				this.MEMOvisionIndex = this._visualIndex;
+			}
+
+			//if(this._staticConfig._animation){
+			//	this._applyAnimation(this._$draggingItem, this._visualIndex);
+			//}
+			//var initW = this._$draggingItem.width();
+            //
+			//var _this = this;
+			//_this._$draggingItem.width(initW);
+			//setTimeout(function(){
+			//	_this._$draggingItem.css({'width': initW + 100 + 'px', 'margin-left': '-50px'});
+			//}, 10)
 		},
 
 		_clickCloseBtnFn: function(){
@@ -686,6 +724,7 @@
 		},
 
 		_stopEventFunc: function(){
+
 			// 方法stopEventFunc功能:
 			// 1,取消绑定moveEvent事件(但不负责取消_stopEvent事件);
 			// 2,清理定时器;
@@ -694,6 +733,7 @@
 			// draggableMenu有三个应用情况: a, _stopEvent情况应用; b,moveEvent里的取消拖动的两种情况:太快, 触控变位(闪拉情况)
 			//$('.draggableMenutittle3').text(''+ this._dragging);
 			clearTimeout(this._setTimeFunc);
+			console.log('结束');
 
 			$('body').off(this._moveEvent + " " + this._stopEvent);
 
@@ -741,6 +781,12 @@
 							// 非编辑模式的情况下的点击事件是正常点击:
 							this._config.onItemTap(this._$touchTargetData);
 						}
+					} else {
+						this._$reorderItem.find(this._closeBtnClass).remove();
+
+						this._$draggingItem.remove();
+
+						this._editing = false;
 					}
 
 				}
@@ -782,7 +828,6 @@
 		},
 
 		_dragEventFn: function(event){
-			var dragItemStartX, dragItemStartY;
 
 			// draggableMenu里_moveEvent的理念是按住后拖动, 非立即拖动
 			this._dragging = true;// 进入拖动模式
@@ -839,6 +884,7 @@
 				}else{
 					// 满足两个条件后, 初始化(仅进行一次)
 
+					// 进入编辑模式, 生成dragItem
 					this._enterEditingMode();
 
 					// 在基于relative拖拽的模式, 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
@@ -850,37 +896,8 @@
 					// 复制目标作为拖拽目标
 
 					if(this._staticConfig._animation){
-						this._disableAnimation(this._$reorderItem);
+						this._disableAnimation(this._$draggingItem);
 						//this._applyAnimation(this._$touchTarget, this._visualIndex);
-					}
-					this._$draggingItem =
-						this._$reorderItem.clone()
-							.removeClass(this._staticConfig.reorderItemClass)
-							.addClass(this._staticConfig.draggingItemClass)
-							.css({'z-index':'99'})
-							.appendTo(this._$container);// Bug: 改变了_$container的高度! 但可通过css固定高度
-
-					this.dragItemOriginalpos = this._$draggingItem.position();
-
-					// _$draggingItem的坐标调整等于$dragTarget的坐标
-					if(this._staticConfig._reorderTransition){
-						// $dragTarget的坐标 = reorderItem的坐标
-						this._draggingItemStartPos = this._posAry[this._visualIndex];
-						//console.log(this._posAry,this._visualIndex,  this._draggingItemStartPos);
-						// 由于clone方法同时复制了位置属性, 所以不需要_setPosition来调整位置
-						//this._setPosition(
-						//	this._$draggingItem,
-						//	this._draggingItemStartPos
-						//);
-
-						this._reorderItemIndex = this._visualIndex;
-					}else{
-						// $dragTarget的坐标 = 相对于reorderItem坐标与自身文本流坐标的差距
-						dragItemStartX = this.itemStartPos.left - this._$draggingItem.position().left;
-						dragItemStartY = this.itemStartPos.top - this._$draggingItem.position().top;
-						this._$draggingItem.css({'position':'relative','left': dragItemStartX,'top': dragItemStartY});
-						this._reorderItemIndex = this._visualIndex + 1;
-						this.MEMOvisionIndex = this._visualIndex;
 					}
 
 					// 清空transition来实现无延迟拖拽
@@ -911,13 +928,13 @@
 				// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
 				if (this._transformsEnabled === false) {
 					//_$draggingItem拖拽时的位置 = 它的坐标 + 拖拽距离
-					cssX = dragItemStartX + cssX;
-					cssY = dragItemStartY + cssY;
+					cssX = this._dragItemStartX + cssX;
+					cssY = this._dragItemStartY + cssY;
 				}
 			}
 
 			// 拖拽
-			this._setPosition(this._$draggingItem, {'left': cssX, 'top': cssY});
+			this._setPosition(this._$draggingItem, {'left': cssX, 'top': cssY}, '1.2');
 			//this._$draggingItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
 
 			// 重新排序
@@ -1020,12 +1037,15 @@
 		/*-----------------------------------------------------------------------------------------------*/
 		/*-----------------------------------------------------------------------------------------------*/
 
-		_applyTransition: function($obj) {
+		_applyTransition: function($obj, duration) {
 			// 添加css  Transition
 			var transition = {};
 
-			transition[this._transitionType] = 'all ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
-			//transition[this._transitionType] = this._transformType + ' ' + this._config.cssDuration + 'ms ' + this._staticConfig._transitionTiming;
+			// 默认过渡时间是排序过渡时间
+			duration = duration || this._config.reorderDuration;
+
+			transition[this._transitionType] = 'all ' + duration + 'ms ' + this._staticConfig._transitionTiming;
+			//transition[this._transitionType] = this._transformType + ' ' + this._config.reorderDuration + 'ms ' + this._staticConfig._transitionTiming;
 
 			$obj.css(transition);
 		},
@@ -1126,10 +1146,13 @@
 			//this._cssTransitions = false;// 测试用
 		},
 
-		_setPosition: function($obj, position, Z) {
+		_setPosition: function($obj, position, scale) {
 			// 方法setCSS: 即时位置调整
 			var positionProps = {},
 				x, y;
+
+			scale = scale || '1';
+			scale = "scale3d(" + scale + ', ' + scale + ', ' + scale + ")";
 
 			x =  Math.ceil(position.left) + 'px';
 			y =  Math.ceil(position.top) + 'px';
@@ -1144,7 +1167,7 @@
 					$obj.css(positionProps);
 					//console.log(positionProps)
 				} else {
-					positionProps[this._animType] = 'translate3d(' + x + ', ' + y + ', 0px)';
+					positionProps[this._animType] = 'translate3d(' + x + ', ' + y + ', 0px) ' + scale;
 					$obj.css(positionProps);
 					//console.log(positionProps)
 				}
@@ -1157,12 +1180,12 @@
 
 			if (this._transformsEnabled === false) {
 				// 降级方案 使用animate方案
-				$obj.animate(position, this._config.cssDuration, 'swing', callback);
+				$obj.animate(position, this._config.reorderDuration, 'swing', callback);
 				//this._applyTransition($obj);
 				//$obj.css({'left': position.left + 'px', 'top': position.top + 'px'})
 				//setTimeout(function(){
 				//	callback()
-				//}, this._config.cssDuration);
+				//}, this._config.reorderDuration);
 			} else {
 
 				if (this._cssTransitions === false) {
@@ -1178,7 +1201,7 @@
 
 					$(startPosition)// 这个位置是拖拽的最后的位置, 也就是_moveEvent的位置
 						.animate(position, {
-							duration: this._config.cssDuration,
+							duration: this._config.reorderDuration,
 							step: function(now, data) {
 								pr[data.prop] = now;
 								$.extend(curPosition, pr);
@@ -1206,7 +1229,7 @@
 							//DrM._disableTransition($obj);
 
 							callback.call();
-						}, this._config.cssDuration);
+						}, this._config.reorderDuration);
 					}
 				}
 
