@@ -34,11 +34,11 @@
 }
 
 .draggableMenu .dragItem, .draggableMenu {
-    -webkit-transform: translate3d(0, 0, 0);
-    -moz-transform: translate3d(0, 0, 0);
-    -ms-transform: translate3d(0, 0, 0);
-    -o-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
+    /*-webkit-transform: translate3d(0, 0, 0);*/
+    /*-moz-transform: translate3d(0, 0, 0);*/
+    /*-ms-transform: translate3d(0, 0, 0);*/
+    /*-o-transform: translate3d(0, 0, 0);*/
+    /*transform: translate3d(0, 0, 0);*/
 }
 
 .DrM-closeBtn{
@@ -61,8 +61,14 @@
 }
 .DrM-activeItem .DrM-closeBtn{
     transform: scale3D(1, 1, 1);
-
 }
+.DrM-reorderItem .DrM-closeBtn{
+    transform: scale3D(1, 1, 1);
+}
+.DrM-editingItem .DrM-closeBtn{
+    transform: scale3D(1, 1, 1);
+}
+
 /*点击的动画效果*/
 .DrM-activeItem{
     /*-webkit-transform:scale3d(1, 1, 1);*/
@@ -75,8 +81,8 @@
     /*-o-animation:zoomOutIn 0.5s; /!* Opera *!/*/
 }
 .DrM-activeItem.DrM-DraggingItem {
-    -webkit-transform:scale3d(1.2, 1.2, 1.2);
-    transform:scale3d(1.2, 1.2, 1.2);
+    /*-webkit-transform:scale3d(1.2, 1.2, 1.2);*/
+    /*transform:scale3d(1.2, 1.2, 1.2);*/
     /*animation:none 0s 0s;*/
     /*-moz-animation:none 0s 0s ; /!* Firefox *!/*/
     /*-webkit-animation:none 0s 0s ; /!* Safari and Chrome *!/*/

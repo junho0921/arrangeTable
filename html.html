@@ -22,7 +22,7 @@
 <script src="DraggableMenu.js"></script>
 <style>
 	.testA{
-		animation: testA 2s ease;
+		/*animation: testA 2s ease;*/
 	}
 
 	/*@-webkit-keyframes testA{*/
@@ -43,9 +43,7 @@
 		$(this).addClass('testA');
 	});
 
-	var DraggableMenu = new DraggableMenu({
-
-		container:".draggableMenu",
+	var DraggableMenu = new DraggableMenu($(".draggableMenu"), {
 
 		dataList:[
 			{text:'0  信用卡', icon:"c", id:"credit", url:"example/index/mycountDetail"},
@@ -62,8 +60,9 @@
 		renderer: function(data, i){
 			// <li class="dragItem" id="recharge"><i class="list-ico h"></i><span>话费充值</span></li>
 			return $('<li>').addClass('dragItem').attr({'id': data.id})
-							.append($("<i class='list-ico'>").addClass(data.icon))
-							.append($('<span>').text(data.text))
+					.append($("<i class='list-ico'>").addClass(data.icon))
+					.append($('<span>').text(data.text))
+					.append($('<span class="DrM-closeBtn">').text('-')); // 关闭按钮都是用户自定义的,
 		},
 
 		onItemTap: function(data){
