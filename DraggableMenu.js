@@ -642,16 +642,16 @@
 			// 提供外部执行的方法
 			this._config.onEditing(this._$items, this._$touchTarget);
 
-			this._$touchTarget.find('.' + this._config.closeBtnClassName)
-				.on(this._startEvent, $.proxy(this._clickCloseBtnFn, this))
-				.addClass(this._staticConfig.reorderItemClass);
+			this._$touchTarget
+				.addClass(this._staticConfig.reorderItemClass)
+				.find('.' + this._config.closeBtnClassName)
+				.on(this._startEvent, $.proxy(this._clickCloseBtnFn, this));
 
 			this._$reorderItem = this._$touchTarget;
 
 			/* 生成拖拽的item */
 			this._$container.append(
-				this._$draggingItem =
-					this._$reorderItem.clone()
+				this._$draggingItem = this._$reorderItem.clone()
 						.removeClass(this._staticConfig.reorderItemClass)
 						.addClass(this._staticConfig.draggingItemClass)
 						.css({'z-index':'999'})
@@ -862,32 +862,15 @@
 					return false;
 				}else{
 					// 满足两个条件后, 初始化(仅进行一次)
+					this._InitializeMoveEvent = true;
+					// 重新获取可以拖拉的数量
+					this._draggableCount = this._$items.length - this._staticCount;
 
 					// 进入编辑模式, 生成dragItem
 					this._enterEditingMode();
 
-					// 在基于relative拖拽的模式, 需要重新获取_$items, 否则this._$items仅仅指向旧有的集合, 不是新排序或调整的集合
-					if(!this._staticConfig._reorderTransition){this._$items = this._$container.children();}
-
-					// 重新获取可以拖拉的数量
-					this._draggableCount = this._$items.length - this._staticCount;
-
-					// 复制目标作为拖拽目标
-
-					if(this._staticConfig._animation){
-						this._disableAnimation(this._$draggingItem);
-						//this._applyAnimation(this._$touchTarget, this._visualIndex);
-					}
-
 					// 清空transition来实现无延迟拖拽
 					this._disableTransition(this._$draggingItem);
-
-					//this.fireEvent("beforeDrag", [this._$draggingItem]);
-
-					this._InitializeMoveEvent = true;
-
-					this._$reorderItem.addClass(this._staticConfig.reorderItemClass);
-
 				}
 			}
 
@@ -895,26 +878,16 @@
 			event.preventDefault();
 
 			var cssX, cssY;
-			// 计算触控点移动距离
+			// 计算触控点拖拽距离
 			cssX = Move_ex - this._eventStartX;
 			cssY = Move_ey - this._eventStartY;
 
-			if(this._staticConfig._reorderTransition){
-				// 计算触控点移动距离
-				cssX = this._draggingItemStartPos.left + cssX;
-				cssY = this._draggingItemStartPos.top + cssY;
-			}else{
-				// 若不适用CSS3的属性transform, 只能使用css坐标来拖拽
-				if (this._transformsEnabled === false) {
-					//_$draggingItem拖拽时的位置 = 它的坐标 + 拖拽距离
-					cssX = this._dragItemStartX + cssX;
-					cssY = this._dragItemStartY + cssY;
-				}
-			}
+			// 计算item被拖拽时的坐标
+			cssX = this._draggingItemStartPos.left + cssX;
+			cssY = this._draggingItemStartPos.top + cssY;
 
 			// 拖拽
 			this._setPosition(this._$draggingItem, {'left': cssX, 'top': cssY}, '1.2');
-			//this._$draggingItem.css({'left':Move_ex - eX, 'top':Move_ey - eY});// 测试用, 没有优化动画的模式
 
 			// 重新排序
 			this._reorder(cssX, cssY);
@@ -925,8 +898,8 @@
 			if(touchX < 0 ||touchX > this._containerW || touchY < 0 ||touchY > this._containerH){
 				return
 			}
-			var curCol = Math.floor(touchX/this._itemW) + 1;// 列数
-			var curRow = Math.floor(touchY/this._itemH);// 行数
+			var curCol = Math.floor(touchX / this._itemW) + 1;// 列数
+			var curRow = Math.floor(touchY / this._itemH);// 行数
 			return (curRow * this._containerCols + curCol - 1);// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
 		},
 
@@ -938,76 +911,30 @@
 			// 但Bug!!! 缩放屏幕会出现偏差. 根本原因是步骤1与2的获取位置的原理不同, 缩放时各自变化比例不同, 所以不能同时使用思路1
 
 			/* 思路2: 监听拖动项的中心位置来插入空白格子 */
-			// 1, 计算target中心的初始位置targetCenterStart, 直接获取this.targetCenterStartX,this.targetCenterStartY
-			// 2, 计算拖拽时target中心位置的坐标targetCenterPos
+			// 1, 计算拖拽时target中心位置的坐标targetCenterPos
+			var targetCenterPosX = cssX + this._itemW / 2,
+				targetCenterPosY = cssY + this._itemH / 2;
 
-			var targetCenterPosX, targetCenterPosY;
-
-			if(this._staticConfig._reorderTransition){
-				targetCenterPosX = cssX + this._itemW/2;
-				targetCenterPosY = cssY + this._itemW/2;
-			}else{
-				targetCenterPosX = this.targetCenterStartX + cssX;
-				targetCenterPosY = this.targetCenterStartY + cssY;
-			}
-
-			// 3, 以targetCenterPos坐标来计算触控点所在视觉位置visionIndex
+			// 2, 以targetCenterPos坐标来计算触控点所在视觉位置visionIndex
 			var visionIndex = this._getTouchIndex(targetCenterPosX, targetCenterPosY) || 0;
 
-			// 4, 排序位置
-			var reorderIndex;
+			// 3, 选择性的进行排序
+			// 基于绝对定位, 不用考虑文本流的插入index值的调整
+			if(
+				visionIndex !== this._reorderItemIndex && // 在同一item上的拖拽不执行重新排序
+				visionIndex >= 0 && visionIndex < this._draggableCount // 超过items数量范围的拖拽不执行重新排序
+			){
+				// 重新排序数组
+				this._reorderFn(this._$items, this._reorderItemIndex, visionIndex);
+				this._reorderFn(this._indexAry, this._reorderItemIndex, visionIndex);
 
-			if(this._staticConfig._reorderTransition){
-				// 基于绝对定位, 不用考虑文本流的插入index值的调整
-				if(visionIndex >= 0 && visionIndex < this._draggableCount){
-					reorderIndex = visionIndex;
-				} else if(visionIndex < 0){
-					reorderIndex = 0;
-				} else if(visionIndex >= this._draggableCount){
-					reorderIndex = this._draggableCount - 1;
-				}
-			}else{
-				// 基于文本流的插入, 需要index值的调整
-				// 以计算值visionIndex来得出插入位置reorderIndex, 基于在获取其他item来使用before插入activeItem的的原理
-				// 区间1[负数 - 0] -->为0
-				// 区间2[0 - initialIndex] -->为visionIndex
-				// 区间3[initialIndex - this.draggableCount] -->为initialIndex
-				// 区间4[this.draggableCount - 无限大] -->为draggableCount
-				if(visionIndex < 0){
-					reorderIndex = 0;
-				}else if(visionIndex < this._visualIndex){
-					reorderIndex = visionIndex;
-				} else if (visionIndex >= this._draggableCount){
-					reorderIndex = this._draggableCount;
-				} else if (visionIndex >= this._visualIndex){
-					reorderIndex = visionIndex + 1;
-				}
+				// 重新排序items位置, 只对有视觉上需要位移的items进行排序
+				this._setItemsPos(this._$items, this._reorderItemIndex, visionIndex);
 
-			}
-			if(reorderIndex === this._reorderItemIndex){
-				// 位移未超出一个li位置, 就取消执行
-				return false;
-			} else {
-				if(this._staticConfig._reorderTransition){
-					//console.log('点击  ', this._reorderItemIndex,'计算', visionIndex);
-					this._reorderFn(this._$items, this._reorderItemIndex, reorderIndex);
-					this._reorderFn(this._indexAry, this._reorderItemIndex, reorderIndex);
-					console.log(this._indexAry);
-					this._setItemsPos(this._$items, this._reorderItemIndex, reorderIndex);
-					//this._reorderFn(this._config.dataList, this._reorderItemIndex, reorderIndex);
-				}else{
-					// 5, 以reorderIndex作为插入的位置
-					this._$items.eq(reorderIndex).before(this._$reorderItem);
-
-					//this._reorderFn(this._config.dataList, this.MEMOvisionIndex, visionIndex);
-
-					// 记录本次调整后新的文本位置
-					this.MEMOvisionIndex = visionIndex;
-				}
 				// 更新本次位置
-				this._reorderItemIndex = reorderIndex;
-
-			} // 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
+				this._reorderItemIndex = visionIndex;
+			}
+			// 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
 		},
 
 		/*-----------------------------------------------------------------------------------------------*/
@@ -1132,8 +1059,8 @@
 
 			if (this._transformsEnabled === false) {
 				positionProps = {'left': x, "top": y};
-				scale = "scale(" + scale + ', ' + scale + ")";
-				positionProps[this._animType] = scale;
+				//scale = "scale(" + scale + ', ' + scale + ")";
+				//positionProps[this._animType] = scale;
 			} else {
 				// 配置scale, 提供用户使用放大效果
 				if (this._cssTransitions === false) {
@@ -1144,7 +1071,7 @@
 					positionProps[this._animType] = 'translate3d(' + x + ', ' + y + ', 0px) ' + scale;
 				}
 			}
-			console.log('positionProps', positionProps);
+			//console.log('positionProps', positionProps);
 			$obj.css(positionProps);
 		},
 
