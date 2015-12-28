@@ -46,6 +46,8 @@
     /*transform: scale3D(1, 1, 1);*/
 /*}*/
 
+.DrM-activeItem.DrM-reorderItem{opacity: 0.01}
+
 /*ԭʼֵ*/
 .DrM-activeItem .DrM-closeBtn, .DrM-closeBtn{transform: scale3D(0, 0, 0);}
 

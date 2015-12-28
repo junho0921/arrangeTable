@@ -678,11 +678,9 @@
 			// 停止事件都要移除activeItemClass与reorderItemClass, 但editingItemClass是伴随编辑模式的
 
 			if(this._InitializeMoveEvent){
-				this._$draggingItem
-					.removeClass(this._staticConfig.draggingItemClass)
-					.css('background','lightcyan')
-					//.addClass('DrM-reItem')
-				;
+				// 先去掉draggingItemClass, 脱离拖拽状态
+				this._$draggingItem.removeClass(this._staticConfig.draggingItemClass)//.addClass('DrM-reItem');
+
 				// 状态: 拖拽了item的释放触控
 				this._applyTransition(this._$draggingItem);
 
@@ -690,7 +688,6 @@
 					'left': this._posAry[this._reorderItemIndex].left,
 					'top': this._posAry[this._reorderItemIndex].top
 				});
-
 
 				if(this._dragToReorder){
 					// 状态: 拖拽item并产生重新排序items的释放触控
@@ -704,7 +701,7 @@
 					_this._$draggingItem.remove();
 
 					// 在动画后才移除className, 动画中需保持样式
-					_this._$reorderItem.removeClass(removeClassName).css('opacity', 1);
+					_this._$reorderItem.removeClass(removeClassName)//.css('opacity', 1);
 
 					// 提供外部的方法, 传参排序后的jQuery对象集合
 					_this._config.onDragEnd(_this._$items);
@@ -806,9 +803,9 @@
 					// 进入编辑模式, 生成dragItem
 					this._enterEditingMode();
 
+					// 进入拖拽状态前必须先清空reorderItem的transition, 因为需要reorderItem立即变化为透明与在释放dragItem动画后立即显示reorderItem
 					this._disableTransition(this._$reorderItem);
 
-					this._$reorderItem.css('opacity', 0.01);
 					// 清空transition来实现无延迟拖拽
 					this._disableTransition(this._$draggingItem);
 				}
