@@ -17,21 +17,14 @@
     text-align: center;
 }
 
-.draggableMenu .dragItem.DrM-activeItem{
-    background: lightblue;
-    transition-duration:100ms;
-}
 
-.DrM-reorderItem {opacity: 0!important;}
+/*.DrM-reorderItem {opacity: 0!important;}*/
 
 /*.DrM-reorderItem .DrM-closeBtn{opacity: 0;}*/
 
-.draggableMenu .dragItem.DrM-activeItem.DrM-draggingItem {
-    opacity:1;
-    position:relative;
-    background: deepskyblue;
-    z-index: 99;
-}
+.dragItem.DrM-activeItem.DrM-draggingItem {background: deepskyblue;}
+
+.dragItem.DrM-activeItem.DrM-reItem{background: lightcyan!important;}
 
 .DrM-closeBtn{
     position: absolute;
@@ -47,23 +40,20 @@
     border-radius: 100%;
     cursor: pointer;
     z-index: 1000;
-    transform: scale3D(0,0,0);
-    opacity: 0;
     transition:all 300ms ease-in-out;
 }
 /*.DrM-activeItem .DrM-closeBtn{*/
     /*transform: scale3D(1, 1, 1);*/
 /*}*/
-.DrM-activeItem.DrM-reorderItem .DrM-closeBtn{
-    opacity: 1;
-    transform: scale3D(1, 1, 1);
-}
+
+/*ԭʼֵ*/
+.DrM-activeItem .DrM-closeBtn, .DrM-closeBtn{transform: scale3D(0, 0, 0);}
+
+.DrM-activeItem.DrM-reorderItem .DrM-closeBtn{transform: scale3D(1, 1, 1)}
+
 .dragItem.DrM-activeItem.DrM-reorderItem.DrM-editingItem .DrM-closeBtn,
 .DrM-activeItem.DrM-reorderItem .DrM-closeBtn,
-.DrM-editingItem .DrM-closeBtn{
-    opacity: 1;
-    transform: scale3D(1, 1, 1);
-}
+.DrM-editingItem .DrM-closeBtn{transform: scale3D(1, 1, 1)}
 
 /* for nuui-draggableMenu end */
 

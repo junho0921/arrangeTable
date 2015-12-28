@@ -189,7 +189,7 @@
 				// 长按的时间间隔
 				pressDuration: 300,
 				// 排序效果动画的过度时间transition-duration值
-				reorderDuration: 400,
+				reorderDuration: 800,
 				// 放大效果动画的过度时间transition-duration值
 				focusDuration: 80,
 				// 允许触控的边缘值, 单位px
@@ -359,9 +359,9 @@
 			 * 固定设置, jun的开发配置
 			 * */
 			_staticConfig :{
-			// class名称
-			// 激活的item, 包括拖动的item和排序的item
-			activeItemClass: "DrM-activeItem",
+				// class名称
+				// 激活的item, 包括拖动的item和排序的item
+				activeItemClass: "DrM-activeItem",
 				// 排序的item
 				reorderItemClass: "DrM-reorderItem",
 				// 拖动的item
@@ -535,6 +535,7 @@
 			if(event.target.className == this._config.closeBtnClassName){
 				console.log('点击关闭按钮'); return
 			}
+			this._applyTransition(this._$items);
 
 			this._$touchTarget = $(event.currentTarget);
 
@@ -677,6 +678,11 @@
 			// 停止事件都要移除activeItemClass与reorderItemClass, 但editingItemClass是伴随编辑模式的
 
 			if(this._InitializeMoveEvent){
+				this._$draggingItem
+					.removeClass(this._staticConfig.draggingItemClass)
+					.css('background','lightcyan')
+					//.addClass('DrM-reItem')
+				;
 				// 状态: 拖拽了item的释放触控
 				this._applyTransition(this._$draggingItem);
 
@@ -685,6 +691,7 @@
 					'top': this._posAry[this._reorderItemIndex].top
 				});
 
+
 				if(this._dragToReorder){
 					// 状态: 拖拽item并产生重新排序items的释放触控
 					// 按支付宝效果, 若拖拽产生位移的话, 退出编辑模式
@@ -692,13 +699,12 @@
 					this._editing = false;
 					this._dragToReorder = false;
 				}
-
 				// 动画效果后的callback
 				setTimeout(function(){
 					_this._$draggingItem.remove();
 
 					// 在动画后才移除className, 动画中需保持样式
-					_this._$reorderItem.removeClass(removeClassName);
+					_this._$reorderItem.removeClass(removeClassName).css('opacity', 1);
 
 					// 提供外部的方法, 传参排序后的jQuery对象集合
 					_this._config.onDragEnd(_this._$items);
@@ -800,6 +806,9 @@
 					// 进入编辑模式, 生成dragItem
 					this._enterEditingMode();
 
+					this._disableTransition(this._$reorderItem);
+
+					this._$reorderItem.css('opacity', 0.01);
 					// 清空transition来实现无延迟拖拽
 					this._disableTransition(this._$draggingItem);
 				}
