@@ -102,6 +102,7 @@
 	1, 兼容转屏
 	2, 行为事件判断简化以确保主要事件能执行? 可能这是个假设错误, 逻辑不需要简化, 需要的是正确
 	3, 可以使用关闭按钮的情况是: 没有重新排序的情况就可以使用, 有重新排序的话就会隐藏关闭按钮的
+	4, 尝试把addClass与removeClass放在统一逻辑方法
 
  */
 
@@ -167,6 +168,8 @@
 			// items对应位置对齐
 			this._setItemsPos(this._$items);
 
+			this._$container.on(this._startEvent,'.' + this._config.closeBtnClassName, {onlyBtn: true}, $.proxy(this._clickCloseBtnFn, this));
+
 			// 延迟使用transition, 避免初始化的生成html所带有的动画
 			setTimeout($.proxy(function(){
 				this._applyTransition(this._$items, this._config.reorderDuration);
@@ -188,7 +191,7 @@
 			// 排序效果动画的过度时间transition-duration值
 			reorderDuration: 400,
 			// 放大效果动画的过度时间transition-duration值
-			focusDuration: 400,
+			focusDuration: 80,
 			// 允许触控的边缘值, 单位px
 			rangeXY: 12,
 
@@ -431,7 +434,7 @@
 			// _useCSS的正否是选择translate3D还是translate, 当然最后会由环境来判断, 这里一直默认是true
 			_useCSS: true,
 			// 选择transition的动画效果属性
-			_transitionTiming: "ease",
+			_transitionTiming: "ease-in-out",
 			// 点击时间间隔
 			_clickDuration: 250,
 
@@ -565,26 +568,13 @@
 		},
 
 		_startEventFunc :function(event){
-			// 禁止多点触控
-			var fingerCount = event.originalEvent && event.originalEvent.touches !== undefined ?
-				event.originalEvent.touches.length: 1;
-			if(fingerCount > 1){return;}
+			// 判断事件的对象是否本对象, 否则退出事件
+			if($.inArray(event.target, this._$items) < 0 ){
+				// 本判断很重要, 因为关闭按钮的点击事件会引发item的touchStart事件, 所以判断避开
+				console.log('非点击拖动对象'); return
+			}
 
 			this._$touchTarget = $(event.currentTarget);
-
-			//if(
-			//	!this._$draggingItem.hasClass()
-			//	&& this._$touchTarget.parent('.' + )
-			//){
-			//	return true;
-			//}
-
-			//if(event.currentTarget.className.indexOf(this.ItemClassName > -1)){
-			//	this._$touchTarget =  $(event.currentTarget);
-			//}else {
-			//	console.log('非点击拖动对象'); return
-			//}
-
 
 			this._startTime = event.timeStamp || +new Date();
 
@@ -624,7 +614,10 @@
 		},
 
 		_enterEditingMode: function(){
-			if(this._$reorderItem === this._$touchTarget){return}
+			if(this._reorderItemIndex == this._visualIndex && this._editing){
+				// 避免item重复执行进入编辑模式的方法
+				return true
+			}
 
 			if(this._editing){
 				this._$reorderItem.removeClass(this._staticConfig.editingItemClass);
@@ -635,14 +628,11 @@
 			// 进入编辑模式, 需要更新现在的排序位置reorderItemIndex为item对象的所在位置
 			this._reorderItemIndex = this._visualIndex;
 
-
 			// 提供外部执行的方法
 			this._config.onEditing(this._$items, this._$touchTarget);
 
 			this._$touchTarget
-				.addClass(this._staticConfig.reorderItemClass + " " + this._staticConfig.editingItemClass)
-				.find('.' + this._config.closeBtnClassName)
-				.on(this._startEvent, $.proxy(this._clickCloseBtnFn, this));
+				.addClass(this._staticConfig.reorderItemClass + " " + this._staticConfig.editingItemClass);
 
 			this._$reorderItem = this._$touchTarget;
 
@@ -656,18 +646,22 @@
 
 			// 放大效果: 先缩短transitionDuration, 在设定scale为1.2倍
 			this._$draggingItem.position();// 这没实际用处, 但可以transition, 否则没有渐变效果!! 重要发现!
+
 			this._applyTransition(this._$draggingItem, this._config.focusDuration);
 			this._setPosition(this._$draggingItem, this._posAry[this._visualIndex], {scale: '1.2'});
 		},
 
-		_clickCloseBtnFn: function(){
+		_clickCloseBtnFn: function(e){
 			//console.log('格子序号', this._reorderItemIndex);
-
 			// 说明: 变量reorderItemIndex是当前进行编辑模式的item所在视觉位置
 
-			// 删除dataList里视觉位置的item原始数据
-			this._config.dataList.splice(this._reorderItemIndex, 1);
+			// 必须要清除关闭按钮所在item的定时事件, 因为本关闭按钮方法绑定在$container上对子元素进行捕获才发生, 所以必然会先捕获关闭按钮所在item, 触发item的touchStart事件(但不会触发touchEnd事件, 因为捕获了关闭按钮就不会冒泡!), 所以这里这里必须清理item的在startEvent里的所有绑定事件包括setTimeout和touchStart和touchMove事件
+			// 使用方法stopEventFunc是最好的选择, 因为可以清理startEvent带来的所有事件, 并关闭编辑模式
+			this._startTime = e.timeStamp || +new Date();
 
+			this._stopEventFunc();
+
+			console.log('_clickCloseBtnFn', e.data.onlyBtn);
 			//console.log('删除item对象内容 ',
 			// 删除reorderItemsAry里视觉位置的item
 			this._$items.splice(this._reorderItemIndex, 1);
@@ -685,6 +679,7 @@
 				}
 			}
 
+			//console.log(this._indexAry);
 			// 调整容器的高度为适当高度
 			this._$container.height(
 				Math.ceil(this._$items.length / this._containerCols) * this._itemH
@@ -695,10 +690,18 @@
 			// 提供外部执行的方法, 传参修改后的items对象集合
 			this._config.onClose(this._$items);
 
-			this._editing = false;
+			// 清空排序的序号, 否则长按与本_reorderItemIndex值相同的视觉位置item会没有反应
+			this._reorderItemIndex = null;
+			//var _this = this;
+			//setTimeout(function(){
+			//	_this._reorderItemIndex = null;
+			//}, _this._config.pressDuration + 100);
+
 
 			// 动画"定位"剩下的items
 			this._setItemsPos(this._$items);
+
+			return false;
 		},
 
 		_stopEventFunc: function(event){
@@ -709,16 +712,16 @@
 			// B,没有拖动的话, 思考是什么情况:
 			// draggableMenu有三个应用情况: a, _stopEvent情况应用; b,moveEvent里的取消拖动的两种情况:太快, 触控变位(闪拉情况)
 			//$('.draggableMenutittle3').text(''+ this._dragging);
+			var _this = this;
 			clearTimeout(this._setTimeFunc);
 			console.log('结束');
-
 			this._$DOM.off(this._moveEvent + " " + this._stopEvent);
 
-			// 停止事件的可能性
+			this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
 
 			if(this._InitializeMoveEvent){
-				// 已经拖拽了的情况, 执行拖拽项的归位动画
-				var _this = this, removeClassName = _this._staticConfig.activeItemClass + " " + _this._staticConfig.reorderItemClass;
+				// 状态: 拖拽了item的释放触控
+				var removeClassName = this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass;
 
 				this._applyTransition(this._$draggingItem);
 
@@ -728,12 +731,14 @@
 				});
 
 				if(this._dragToReorder){
-					// 若拖拽产生位移的话, 退出编辑模式
-					removeClassName += (" " + _this._staticConfig.editingItemClass);
-					_this._editing = false;
+					// 状态: 拖拽item并产生重新排序items的释放触控
+					// 按支付宝效果, 若拖拽产生位移的话, 退出编辑模式
+					removeClassName += (" " + this._staticConfig.editingItemClass);
+					this._editing = false;
 					this._dragToReorder = false;
 				}
 
+				// 动画效果后的callback
 				setTimeout(function(){
 					_this._$draggingItem.remove();
 
@@ -746,21 +751,17 @@
 
 			}else{
 
-				this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
-
 				if(this._dragging === false){
-
+					// 状态: 没有拖拽且没有滑动触控点
 					var newTime = new Date();
 
-					if(newTime - this._startTime < this._staticConfig._clickDuration){ // 没有拖拽后且没有滑动且只在限制时间内才是click事件
+					if(newTime - this._startTime < this._staticConfig._clickDuration){ // 判断: 没有拖拽后且没有滑动且只在限制时间内才是click事件
+						// 状态: 没有拖拽的点击
+						//this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
 
 						if(this._editing){
+							// 状态: 在编辑模式中, 没有拖拽的点击
 							// 编辑模式的情况下的点击事件是结束编辑或取消编辑的点击:
-							//this._$reorderItem.find(this._closeBtnClass).remove();
-
-							//this._$container.trigger("editEnd", [this._$reorderItem]);
-							console.log(this._$reorderItem.text());
-
 							this._$items.removeClass(this._staticConfig.editingItemClass);
 
 							this._editing = false;
@@ -769,13 +770,25 @@
 							this._config.onItemTap(this._$touchTargetData);
 						}
 					} else {
+						// 状态: 长按而没有拖拽的释放触控, 认为是进入了编辑模式的释放触控
+						//this._$draggingItem.remove();
 
-						//this._$container.children().removeClass(this._staticConfig.editingItemClass);
-						//if(this._editing && "对象是本对象的话返回"){
-						//	console.log('进入下一个编辑的item')
-						//}
-						// 超过时间的, 认为是进入了编辑模式的释放触控, 但没有拖拽的情况, 是纯粹的长按后释放触控
-						this._$draggingItem.remove();
+						//动画事件 与callback删除draggingItem
+						this._setPosition(this._$draggingItem, {
+							'left': this._draggingItemStartPos.left,
+							'top': this._draggingItemStartPos.top
+						});
+
+						_this._$draggingItem.animate({opacity:0},_this._config.focusDuration,function(){
+							//_this._$container.children().removeClass(_this._staticConfig.activeItemClass + " " + _this._staticConfig.reorderItemClass);
+							_this._$draggingItem.remove();
+						});
+
+						//setTimeout(function(){
+						//	_this._$draggingItem.animate({'opacity':0},600,function(){
+						//		_this._$draggingItem.remove();
+						//	});
+						//}, this._config.focusDuration);
 					}
 
 				}
@@ -784,18 +797,6 @@
 			this._InitializeMoveEvent = false;
 			this._dragging = false;
 		},
-
-		//_dragItemReset: function(callback){
-		//	// 本方法是计算dragItem基于touchStart位置面向的最终滑向位置, 最后执行动画
-		//
-		//	var resetX, resetY;
-		//
-		//	resetX = this._posAry[this._reorderItemIndex].left;
-		//	resetY = this._posAry[this._reorderItemIndex].top;
-		//
-		//	// 执行滑动效果
-		//	this._animateSlide(this._$draggingItem, {'left': resetX, 'top': resetY}, callback);
-		//},
 
 		_dragEventFn: function(event){
 			// draggableMenu里_moveEvent的理念是按住后拖动, 非立即拖动

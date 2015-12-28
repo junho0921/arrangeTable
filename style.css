@@ -56,16 +56,20 @@
     cursor: pointer;
     z-index: 1000;
     transform: scale3D(0,0,0);
-    transition-duration:200ms;
-
+    opacity: 0;
+    transition:all 600ms ease-in-out;
 }
-.DrM-activeItem .DrM-closeBtn{
+/*.DrM-activeItem .DrM-closeBtn{*/
+    /*transform: scale3D(1, 1, 1);*/
+/*}*/
+.DrM-activeItem.DrM-reorderItem .DrM-closeBtn{
+    opacity: 1;
     transform: scale3D(1, 1, 1);
 }
-.DrM-reorderItem .DrM-closeBtn{
-    transform: scale3D(1, 1, 1);
-}
+.dragItem.DrM-activeItem.DrM-reorderItem.DrM-editingItem .DrM-closeBtn,
+.DrM-activeItem.DrM-reorderItem .DrM-closeBtn,
 .DrM-editingItem .DrM-closeBtn{
+    opacity: 1;
     transform: scale3D(1, 1, 1);
 }
 
