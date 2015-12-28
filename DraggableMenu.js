@@ -400,14 +400,6 @@
 			_modeSelect: 'mode3',
 
 			_mode: {
-				'mode1': {
-					attr: {
-						_reorderTransition: false,
-						_useTransform: true
-					},
-					name: 'DomFlow-css',
-					desc: '降级模式: item文本流排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果没有过度; 2,不管是不是使用translate来定位, 用户自己都可以写keyframes, 因为translate是从0开始;'
-				},
 				'mode2': {
 					attr: {
 						_reorderTransition: true,
@@ -438,12 +430,9 @@
 			// 点击时间间隔
 			_clickDuration: 250,
 
-
 			/*模式属性, 默认为模式2*/
 			// _animation的正否决定是否由本组件负责生产keyframes, 默认否
 			_animation: false,
-			// 排序的过度动画效果, 决定了使用文本流还是浮层
-			_reorderTransition: true,
 			// 选择transform动画来定位, 当使用translate定位的话会影响到keyframes的自定义使用
 			_useTransform: false
 		},
@@ -602,9 +591,7 @@
 				// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
 				var _this = this;
 				this._setTimeFunc = setTimeout(function(){
-
 					_this._enterEditingMode();
-
 				}, this._config.pressDuration);
 
 				// 绑定拖拽事件
@@ -631,22 +618,19 @@
 			// 提供外部执行的方法
 			this._config.onEditing(this._$items, this._$touchTarget);
 
-			this._$touchTarget
-				.addClass(this._staticConfig.reorderItemClass + " " + this._staticConfig.editingItemClass);
+			this._$touchTarget.addClass(this._staticConfig.reorderItemClass + " " + this._staticConfig.editingItemClass);
 
 			this._$reorderItem = this._$touchTarget;
 
 			/* 生成拖拽的item */
-			this._$container.append(
-				this._$draggingItem = this._$reorderItem.clone()
-						.removeClass(this._staticConfig.reorderItemClass)
-						.addClass(this._staticConfig.draggingItemClass)
-						.css({'z-index':'999'})
-			);
+			this._$draggingItem = this._$reorderItem.clone()
+				.removeClass(this._staticConfig.reorderItemClass)
+				.addClass(this._staticConfig.draggingItemClass)
+				.css({'z-index':'1001'})
+				.appendTo(this._$container);
 
 			// 放大效果: 先缩短transitionDuration, 在设定scale为1.2倍
 			this._$draggingItem.position();// 这没实际用处, 但可以transition, 否则没有渐变效果!! 重要发现!
-
 			this._applyTransition(this._$draggingItem, this._config.focusDuration);
 			this._setPosition(this._$draggingItem, this._posAry[this._visualIndex], {scale: '1.2'});
 		},
@@ -664,7 +648,7 @@
 			console.log('_clickCloseBtnFn', e.data.onlyBtn);
 			//console.log('删除item对象内容 ',
 			// 删除reorderItemsAry里视觉位置的item
-			this._$items.splice(this._reorderItemIndex, 1);
+			this._$items.splice(this._reorderItemIndex, 1)
 			//[0]);
 			//console.log('删除后, 更新的对象集', this._$items);
 
@@ -679,7 +663,6 @@
 				}
 			}
 
-			//console.log(this._indexAry);
 			// 调整容器的高度为适当高度
 			this._$container.height(
 				Math.ceil(this._$items.length / this._containerCols) * this._itemH
@@ -687,34 +670,34 @@
 
 			// 删除本item
 			this._$reorderItem.remove();
+
 			// 提供外部执行的方法, 传参修改后的items对象集合
 			this._config.onClose(this._$items);
 
 			// 清空排序的序号, 否则长按与本_reorderItemIndex值相同的视觉位置item会没有反应
 			this._reorderItemIndex = null;
-			//var _this = this;
-			//setTimeout(function(){
-			//	_this._reorderItemIndex = null;
-			//}, _this._config.pressDuration + 100);
-
 
 			// 动画"定位"剩下的items
 			this._setItemsPos(this._$items);
-
-			return false;
 		},
 
-		_stopEventFunc: function(event){
-			// 方法stopEventFunc功能:
-			// 1,取消绑定moveEvent事件(但不负责取消_stopEvent事件);
-			// 2,清理定时器;
-			// 3,判断停止事件后触发的事件: A,有拖动item的话就动画执行item的回归
-			// B,没有拖动的话, 思考是什么情况:
-			// draggableMenu有三个应用情况: a, _stopEvent情况应用; b,moveEvent里的取消拖动的两种情况:太快, 触控变位(闪拉情况)
-			//$('.draggableMenutittle3').text(''+ this._dragging);
+		_stopEventFunc: function(){
+			/*
+			 stopEventFunc有什么意义?
+				意义是所有停止动作事件所执行的方法.
+				意义是清理className, 清理startEvent所绑定的事件与定时器, 选择性的退出编辑模式, 对拖拽的item负责任: 动画回归
+
+				执行本停止事件方法的情况:
+					A,拖拽item后
+					B,无拖拽:
+						a, 点击: (点击item与点击关闭按钮)
+							a1: 编辑状态的点击, 退出
+							a2: 非编辑状态的点击, 执行正常点击事件
+						b, 长按后释放触控: 继续保持编辑模式, 但动画回归dragItem后移除dragItem
+			 */
 			var _this = this;
 			clearTimeout(this._setTimeFunc);
-			console.log('结束');
+			console.log('stopEventFunc');
 			this._$DOM.off(this._moveEvent + " " + this._stopEvent);
 
 			this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
@@ -771,26 +754,17 @@
 						}
 					} else {
 						// 状态: 长按而没有拖拽的释放触控, 认为是进入了编辑模式的释放触控
-						//this._$draggingItem.remove();
-
-						//动画事件 与callback删除draggingItem
+						//动画
 						this._setPosition(this._$draggingItem, {
 							'left': this._draggingItemStartPos.left,
 							'top': this._draggingItemStartPos.top
 						});
-
+						//动画事件后的callback删除draggingItem
 						_this._$draggingItem.animate({opacity:0},_this._config.focusDuration,function(){
 							//_this._$container.children().removeClass(_this._staticConfig.activeItemClass + " " + _this._staticConfig.reorderItemClass);
 							_this._$draggingItem.remove();
 						});
-
-						//setTimeout(function(){
-						//	_this._$draggingItem.animate({'opacity':0},600,function(){
-						//		_this._$draggingItem.remove();
-						//	});
-						//}, this._config.focusDuration);
 					}
-
 				}
 			}
 
