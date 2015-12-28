@@ -1,9 +1,10 @@
 
 *{padding:0; margin:0;}
+
+/* for nuui-draggableMenu start */
 .draggableMenu {
     list-style: none;
     position: relative;
-
     perspective: 62px;
 }
 
@@ -15,30 +16,21 @@
     background: lightcyan;
     text-align: center;
 }
+
 .draggableMenu .dragItem.DrM-activeItem{
     background: lightblue;
     transition-duration:100ms;
 }
-.DrM-reorderItem {
-    opacity: 0.3;
-}
-.DrM-reorderItem .DrM-closeBtn{
-    opacity: 0;
-}
+
+.DrM-reorderItem {opacity: 0!important;}
+
+/*.DrM-reorderItem .DrM-closeBtn{opacity: 0;}*/
 
 .draggableMenu .dragItem.DrM-activeItem.DrM-draggingItem {
     opacity:1;
     position:relative;
     background: deepskyblue;
     z-index: 99;
-}
-
-.draggableMenu .dragItem, .draggableMenu {
-    /*-webkit-transform: translate3d(0, 0, 0);*/
-    /*-moz-transform: translate3d(0, 0, 0);*/
-    /*-ms-transform: translate3d(0, 0, 0);*/
-    /*-o-transform: translate3d(0, 0, 0);*/
-    /*transform: translate3d(0, 0, 0);*/
 }
 
 .DrM-closeBtn{
@@ -57,7 +49,7 @@
     z-index: 1000;
     transform: scale3D(0,0,0);
     opacity: 0;
-    transition:all 600ms ease-in-out;
+    transition:all 300ms ease-in-out;
 }
 /*.DrM-activeItem .DrM-closeBtn{*/
     /*transform: scale3D(1, 1, 1);*/
@@ -72,6 +64,43 @@
     opacity: 1;
     transform: scale3D(1, 1, 1);
 }
+
+/* for nuui-draggableMenu end */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*点击的动画效果*/
 .DrM-activeItem{

@@ -147,10 +147,10 @@
 			// 检测环境选择属性
 			this._setProps();
 
-					/*测试 start*/
-					for(var i = 0; i < this._config.dataList.length; i++){
-						this._config.dataList[i].url = this._config.dataList[i].text
-					}/*测试 end*/
+			/*测试 start*/
+			for(var i = 0; i < this._config.dataList.length; i++){
+				this._config.dataList[i].url = this._config.dataList[i].text
+			}/*测试 end*/
 
 			this._$container = $container.css({'position': 'relative', "padding":0});
 
@@ -186,23 +186,23 @@
 			// 关闭按钮的对象$
 			closeBtnClassName: "DrM-closeBtn",
 
-			// 长按的时间间隔
-			pressDuration: 300,
-			// 排序效果动画的过度时间transition-duration值
-			reorderDuration: 400,
-			// 放大效果动画的过度时间transition-duration值
-			focusDuration: 80,
-			// 允许触控的边缘值, 单位px
-			rangeXY: 12,
+				// 长按的时间间隔
+				pressDuration: 300,
+				// 排序效果动画的过度时间transition-duration值
+				reorderDuration: 400,
+				// 放大效果动画的过度时间transition-duration值
+				focusDuration: 80,
+				// 允许触控的边缘值, 单位px
+				rangeXY: 12,
 
-			// 渲染html的数据内容
-			dataList: [],
+				// 渲染html的数据内容
+				dataList: [],
 
-			// 使用放大效果, 基于perspective
-			usePerspective: null,
+				// 使用放大效果, 基于perspective
+				usePerspective: null,
 
-			// 渲染html的方法
-			renderer: function(data, i, datas){
+				// 渲染html的方法
+				renderer: function(data, i, datas){
 				// 本方法提供给用户修改, 但要求必须返回html字符串作为每个item的内容
 				return $('<li>').addClass('dragItem').append(
 					$('<div>')
@@ -214,12 +214,12 @@
 
 			// 公开事件: 正常点击事件
 			onItemTap: null,
-			// 公开事件: 拖放后的事件
-			onDragEnd: null,
-			// 公开事件: 删除item的事件
-			onClose: null,
-			// 公开事件: 进入编辑模式的事件
-			onEditing: null
+				// 公开事件: 拖放后的事件
+				onDragEnd: null,
+				// 公开事件: 删除item的事件
+				onClose: null,
+				// 公开事件: 进入编辑模式的事件
+				onEditing: null
 		},
 
 		/**
@@ -229,212 +229,184 @@
 		/**
 		 * items集合
 		 */
-		_$items: null,
+			_$items: null,
 		/**
 		 * 排序对象
 		 */
-		_$reorderItem: null,
+			_$reorderItem: null,
 		/**
 		 * 拖拽对象
 		 */
-		_$draggingItem: null,
+			_$draggingItem: null,
 		/**
 		 * 点击对象
 		 */
-		_$touchTarget:null,
+			_$touchTarget:null,
+		/**
+		 * 编辑对象
+		 */
+			_$editingTarget:null,
 
 		/**
 		 * item尺寸
 		 */
-		_itemW: null,
-		_itemH: null,
-		/*
-		* items数量
-		* */
-		_itemsLen: null,
+			_itemW: null,
+			_itemH: null,
+
 		/**
 		 * 容器尺寸
 		 */
-		_containerW: null,
-		_containerH: null,
+			_containerW: null,
+			_containerH: null,
 
 		/**
 		 * 容器列数行数
 		 */
-		_containerCols: null,
-		_containerRows: null,
+			_containerCols: null,
+			_containerRows: null,
 
 		/**
 		 * 事件类型
 		 */
-		_hasTouch: null,
-		_startEvent: null,
-		_stopEvent: null,
-		_moveEvent: null,
-
-		/*
-		 * 删除了的数组index值, 基于初始化的index
-		 * */
-		_deleteIndex: [],
+			_hasTouch: null,
+			_startEvent: null,
+			_stopEvent: null,
+			_moveEvent: null,
 
 		/**
-		 * 状态: _dragging是进入touchMove的状态
+		 * 状态: _dragging是进入touchMove的状态, sensitive模式下可能不需要
 		 */
-		_dragging: false,
+			_dragging: false,
 		/**
 		 * 状态: editing编辑模式是针对长按状态里添加"添加或删除"按钮进行编辑, 逻辑是长按进入编辑状态
 		 */
-		_editing: false,
+			_editing: false,
 
-		/*
-		 * touchStart的坐标
-		 * */
-		_eventStartX: null,
-		_eventStartY: null,
+			/*
+			 * touchStart的坐标
+			 * */
+			_eventStartX: null,
+			_eventStartY: null,
 
-		/*
-		 * reorderItem现在的位置序号, 也是作为进入编辑模式的item所在视觉位置序号
-		 * */
-		_reorderItemIndex: null,
+			/*
+			 * reorderItem现在的位置序号, 也是作为进入编辑模式的item所在视觉位置序号
+			 * */
+			_reorderItemIndex: null,
 
-		/*
-		 * reorderItem视觉位置
-		 * */
-		_visualIndex: null,
+			/*
+			 * reorderItem视觉位置
+			 * */
+			_visualIndex: null,
 
-		/*
-		 * touchStart时间
-		 * */
-		_startTime: null,
+			/*
+			 * touchStart时间点
+			 * */
+			_startTime: null,
 
-		/*
-		 * 拖拽的初始化状态
-		 * */
-		_InitializeMoveEvent: false,
+			/*
+			 * 拖拽的初始化状态
+			 * */
+			_InitializeMoveEvent: false,
 
-		/*
-		 * 定时器
-		 * */
-		_setTimeFunc: null,
+			/*
+			 * 定时器
+			 * */
+			_setTimeFunc: null,
 
-		/*
-		 * 环境是否支持Transitions
-		 * */
-		_cssTransitions: null,
-		/*
-		 * 环境是否支持transforms
-		 * */
-		_transformsEnabled: null,
+			/*
+			 * 环境是否支持Transitions
+			 * */
+			_cssTransitions: null,
+			/*
+			 * 环境是否支持transforms
+			 * */
+			_transformsEnabled: null,
 
-		/*
-		 * css属性transition/transform/translate前缀
-		 * */
-		_transitionType: null,
-		_transformType: null,
-		_animType: null,
+			/*
+			 * css属性transition/transform/translate前缀
+			 * */
+			_transitionType: null,
+			_transformType: null,
+			_animType: null,
 
-		/*
-		 * 不可拖动与可拖动的数量
-		 * */
-		_staticCount: 0,
-		_draggableCount: 0,
+			/*
+			 * 不可拖动与可拖动的数量
+			 * */
+			_staticCount: 0,
+			_draggableCount: 0,
 
-		/*
-		 * 各item文本位置的数组, 有顺序
-		 * */
-		_indexAry: null,
+			/*
+			 * 各item文本位置的数组, 有顺序
+			 * */
+			_indexAry: null,
 
-		/*
-		 * 格子的坐标
-		 * */
-		_posAry: null,
+			/*
+			 * 静态位置的坐标数组
+			 * */
+			_posAry: null,
 
-		/*
-		 * 点击目标的原始数据
-		 * */
-		_$touchTargetData: null,
+			/*
+			 * 点击目标的原始数据
+			 * */
+			_$touchTargetData: null,
 
-		/*
-		 * 在基于relative的拖拽模式, 本变量保存上次视觉位置的index值, 不用每次使用.index()方法
-		 * */
-		MEMOvisionIndex: null,
+			/*
+			 * 拖拽item有没有引发排序, 因支付宝效果所需要的状态
+			 * */
+			_dragToReorder: false,
 
-		/*
-		* 拖拽item有没有引发排序
-		* */
-		_dragToReorder: false,
-
-		/*
-		 * 固定设置, jun的开发配置
-		 * */
-		_staticConfig :{
+			/*
+			 * 固定设置, jun的开发配置
+			 * */
+			_staticConfig :{
 			// class名称
 			// 激活的item, 包括拖动的item和排序的item
 			activeItemClass: "DrM-activeItem",
-			// 排序的item
-			reorderItemClass: "DrM-reorderItem",
-			// 拖动的item
-			draggingItemClass: "DrM-draggingItem",
-			// 编辑中的item
-			editingItemClass: "DrM-editingItem",
-			
-			// 关闭按钮html:
-			closeBtnHtml: "<span class='DrM-closeBtn'>-</span>",
-			// 关闭按钮css
-			closeBtnCss: {
-				'position': 'absolute',
-				'right': '3px',
-				'top': '3px',
-				'color': '#ffffff',
-				'width': '0.64em',
-				'height': '0.64em',
-				'line-height': '0.5em',
-				'background': 'lightcoral',
-				'font-size': '60px',
-				'border-radius': ' 100%',
-				'cursor': ' pointer',
-				'z-index': ' 99',
-				'font-weight':'600'
-			},
+				// 排序的item
+				reorderItemClass: "DrM-reorderItem",
+				// 拖动的item
+				draggingItemClass: "DrM-draggingItem",
+				// 编辑中的item
+				editingItemClass: "DrM-editingItem",
 
-			_modeSelect: 'mode3',
+				_modeSelect: 'mode3',
 
-			_mode: {
-				'mode2': {
-					attr: {
-						_reorderTransition: true,
-						_useTransform: false // _useTransform必须为false来使用css定位才可以提供用户自定义keyframes
+				_mode: {
+					'mode2': {
+						attr: {
+							_reorderTransition: true,
+							_useTransform: false // _useTransform必须为false来使用css定位才可以提供用户自定义keyframes
+						},
+						name: 'Float-css',
+						desc: '项目模式: item浮动排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果有过度; 2, 指定用户自己来写keyframes '
 					},
-					name: 'Float-css',
-					desc: '项目模式: item浮动排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果有过度; 2, 指定用户自己来写keyframes '
-				},
-				'mode3': {
-					attr: {
-						_reorderTransition: true,
-						_useTransform: true,
-						_animation: true// 可删除的属性, 因为mode3模式应该直接使用本属性, 但要具体看修改代码时候的情况
-					},
-					name: 'Float-translate',
-					desc: '最优动画模式: item浮动排序的基础, 用户定义item的keyframes动画的话需要在config里定义, 特点:1, 排序的效果有过度; 2, 指定用户在config来添加keyframes; 3, 动画效果有最好的效果. 模式3是最麻烦的模式, 因为使用了translate定位是影响到transform的其他属性的使用, 所以在放大效果需要scale的话就需要本组件自己设定好transform里translate值与scale同步'
-				}
+					'mode3': {
+						attr: {
+							_reorderTransition: true,
+							_useTransform: true,
+							_animation: true// 可删除的属性, 因为mode3模式应该直接使用本属性, 但要具体看修改代码时候的情况
+						},
+						name: 'Float-translate',
+						desc: '最优动画模式: item浮动排序的基础, 用户定义item的keyframes动画的话需要在config里定义, 特点:1, 排序的效果有过度; 2, 指定用户在config来添加keyframes; 3, 动画效果有最好的效果. 模式3是最麻烦的模式, 因为使用了translate定位是影响到transform的其他属性的使用, 所以在放大效果需要scale的话就需要本组件自己设定好transform里translate值与scale同步'
+					}
 			},
 
 			// 灵敏模式, 准备删除
 			_sensitive: false,
-			// 选择模板, 看是否能删除, 应该可以, 但不用, 因为只需要保留true值就可以, 意思是只需要用户传值渲染数据都会使用自定义模板
-			_templateRender: true,
-			// _useCSS的正否是选择translate3D还是translate, 当然最后会由环境来判断, 这里一直默认是true
-			_useCSS: true,
-			// 选择transition的动画效果属性
-			_transitionTiming: "ease-in-out",
-			// 点击时间间隔
-			_clickDuration: 250,
+				// 选择模板, 看是否能删除, 应该可以, 但不用, 因为只需要保留true值就可以, 意思是只需要用户传值渲染数据都会使用自定义模板
+				_templateRender: true,
+				// _useCSS的正否是选择translate3D还是translate, 当然最后会由环境来判断, 这里一直默认是true
+				_useCSS: true,
+				// 选择transition的动画效果属性
+				_transitionTiming: "ease-in-out",
+				// 点击时间间隔
+				_clickDuration: 250,
 
-			/*模式属性, 默认为模式2*/
-			// _animation的正否决定是否由本组件负责生产keyframes, 默认否
-			_animation: false,
-			// 选择transform动画来定位, 当使用translate定位的话会影响到keyframes的自定义使用
-			_useTransform: false
+				/*模式属性, 默认为模式2*/
+				// _animation的正否决定是否由本组件负责生产keyframes, 默认否
+				_animation: false,
+				// 选择transform动画来定位, 当使用translate定位的话会影响到keyframes的自定义使用
+				_useTransform: false
 		},
 
 		_renderItems: function(){
@@ -464,8 +436,6 @@
 
 		_getSize: function(){
 			this._$items = this._$container.children();
-			// items数量
-			this._itemsLen = this._$items.length;
 
 			// 获取子项li尺寸
 			this._itemH = this._$items.outerHeight(true);
@@ -476,7 +446,7 @@
 
 			// 计算容器的列数和行数
 			this._containerCols = Math.floor(this._containerW / this._itemW);
-			this._containerRows = Math.ceil(this._itemsLen / this._containerCols);
+			this._containerRows = Math.ceil(this._$items.length / this._containerCols);
 
 			// 锁定容器尺寸
 			this._$container.css({
@@ -495,7 +465,7 @@
 			// 获取初始排序的数组, 以item文本位置序号为内容的数组
 			this._indexAry = [];
 
-			for(var i = 0; i < this._itemsLen; i++){
+			for(var i = 0; i < this._$items.length; i++){
 				this._indexAry[i] // 视觉位置
 					= i; // i是文本位置的序号
 
@@ -557,10 +527,13 @@
 		},
 
 		_startEventFunc :function(event){
-			// 判断事件的对象是否本对象, 否则退出事件
-			if($.inArray(event.target, this._$items) < 0 ){
-				// 本判断很重要, 因为关闭按钮的点击事件会引发item的touchStart事件, 所以判断避开
-				console.log('非点击拖动对象'); return
+			//if($.inArray(event.target, this._$items) < 0 ){
+			//	console.log('非点击拖动对象'); return
+			//}
+
+			// 拖点击对象是关闭按钮, 则不能执行本方法
+			if(event.target.className == this._config.closeBtnClassName){
+				console.log('点击关闭按钮'); return
 			}
 
 			this._$touchTarget = $(event.currentTarget);
@@ -645,7 +618,6 @@
 
 			this._stopEventFunc();
 
-			console.log('_clickCloseBtnFn', e.data.onlyBtn);
 			//console.log('删除item对象内容 ',
 			// 删除reorderItemsAry里视觉位置的item
 			this._$items.splice(this._reorderItemIndex, 1)
@@ -683,29 +655,29 @@
 
 		_stopEventFunc: function(){
 			/*
-			 stopEventFunc有什么意义?
-				意义是所有停止动作事件所执行的方法.
-				意义是清理className, 清理startEvent所绑定的事件与定时器, 选择性的退出编辑模式, 对拖拽的item负责任: 动画回归
+			 stopEventFunc意义:
+			 所有停止动作事件所执行的方法.
+			 意义是清理className, 清理startEvent所绑定的事件与定时器, 选择性的退出编辑模式, 对拖拽的item负责任: 动画回归, 关闭_InitializeMoveEvent与_dragging
 
-				执行本停止事件方法的情况:
-					A,拖拽item后
-					B,无拖拽:
-						a, 点击: (点击item与点击关闭按钮)
-							a1: 编辑状态的点击, 退出
-							a2: 非编辑状态的点击, 执行正常点击事件
-						b, 长按后释放触控: 继续保持编辑模式, 但动画回归dragItem后移除dragItem
+			 执行本停止事件方法的情况:
+			 A,拖拽item后
+			 B,无拖拽:
+			 a, 点击: (点击item与点击关闭按钮)
+			 a1: 编辑状态的点击, 退出
+			 a2: 非编辑状态的点击, 执行正常点击事件
+			 b, 长按后释放触控: 继续保持编辑模式, 但动画回归dragItem后移除dragItem
 			 */
-			var _this = this;
+			var _this = this,
+				removeClassName = this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass;
+
 			clearTimeout(this._setTimeFunc);
 			console.log('stopEventFunc');
 			this._$DOM.off(this._moveEvent + " " + this._stopEvent);
 
-			this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
+			// 停止事件都要移除activeItemClass与reorderItemClass, 但editingItemClass是伴随编辑模式的
 
 			if(this._InitializeMoveEvent){
 				// 状态: 拖拽了item的释放触控
-				var removeClassName = this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass;
-
 				this._applyTransition(this._$draggingItem);
 
 				this._setPosition(this._$draggingItem, {
@@ -725,6 +697,7 @@
 				setTimeout(function(){
 					_this._$draggingItem.remove();
 
+					// 在动画后才移除className, 动画中需保持样式
 					_this._$reorderItem.removeClass(removeClassName);
 
 					// 提供外部的方法, 传参排序后的jQuery对象集合
@@ -733,15 +706,14 @@
 				}, this._config.reorderDuration);
 
 			}else{
+				this._$container.children().removeClass(removeClassName);
 
 				if(this._dragging === false){
 					// 状态: 没有拖拽且没有滑动触控点
-					var newTime = new Date();
+					var stopTime = new Date();
 
-					if(newTime - this._startTime < this._staticConfig._clickDuration){ // 判断: 没有拖拽后且没有滑动且只在限制时间内才是click事件
+					if(stopTime - this._startTime < this._staticConfig._clickDuration){ // 判断: 没有拖拽后且没有滑动且只在限制时间内才是click事件
 						// 状态: 没有拖拽的点击
-						//this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
-
 						if(this._editing){
 							// 状态: 在编辑模式中, 没有拖拽的点击
 							// 编辑模式的情况下的点击事件是结束编辑或取消编辑的点击:
@@ -749,7 +721,7 @@
 
 							this._editing = false;
 						} else{
-							// 非编辑模式的情况下的点击事件是正常点击:
+							// 状态: 非编辑模式且没有拖拽的点击, 是正常的点击
 							this._config.onItemTap(this._$touchTargetData);
 						}
 					} else {
@@ -761,7 +733,6 @@
 						});
 						//动画事件后的callback删除draggingItem
 						_this._$draggingItem.animate({opacity:0},_this._config.focusDuration,function(){
-							//_this._$container.children().removeClass(_this._staticConfig.activeItemClass + " " + _this._staticConfig.reorderItemClass);
 							_this._$draggingItem.remove();
 						});
 					}
@@ -800,7 +771,6 @@
 						// 非灵敏模式, 区分触控点变化范围
 						if((Move_ex - this._eventStartX ) > 1 || (Move_ey - this._eventStartY) > 1){
 							console.log('非拖拽的swipe');
-							//this.fireEvent("swipe", []);
 							this._stopEventFunc();
 							return;
 						} else {
