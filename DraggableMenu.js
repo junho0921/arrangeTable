@@ -357,6 +357,11 @@
 		MEMOvisionIndex: null,
 
 		/*
+		* 拖拽item有没有引发排序
+		* */
+		_dragToReorder: false,
+
+		/*
 		 * 固定设置, jun的开发配置
 		 * */
 		_staticConfig :{
@@ -580,19 +585,12 @@
 			//	console.log('非点击拖动对象'); return
 			//}
 
-			//this.fireEvent("touchStart", [this._$container]);
 
 			this._startTime = event.timeStamp || +new Date();
 
 			// 记录初始位置
 			this._eventStartX = this._page('x', event);
 			this._eventStartY = this._page('y', event);
-
-			//###
-			//this._itemStartPagePos = this._$touchTarget.offset();
-			//this.itemStartPos = this._$touchTarget.position();
-			//this.targetCenterStartX = this.itemStartPos.left + this._itemW/2;
-			//this.targetCenterStartY = this.itemStartPos.top + this._itemH/2;
 
 			// 获取文本位置的序号
 			this._textIndex = this._$touchTarget.addClass(this._staticConfig.activeItemClass).index();
@@ -601,10 +599,6 @@
 			this._visualIndex = $.inArray(this._textIndex, this._indexAry);
 
 			this._draggingItemStartPos = this._posAry[this._visualIndex];
-
-			// 计算target中心的初始位置targetCenterStart
-			this.targetCenterStartX = this._draggingItemStartPos.left + this._itemW/2;
-			this.targetCenterStartY = this._draggingItemStartPos.top + this._itemH/2;
 
 			// 获取本DOM的原始数据
 			if(this._config.dataList){
@@ -616,13 +610,11 @@
 
 			if(!this._$touchTargetData || (this._$touchTargetData && !this._$touchTargetData.static)){
 				// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
-				var DrM = this;
+				var _this = this;
 				this._setTimeFunc = setTimeout(function(){
 
-					DrM._enterEditingMode();
+					_this._enterEditingMode();
 
-					// 以pressDuration为间隔触发press事件
-					//DrM.fireEvent("press",[this._$reorderItem]);
 				}, this._config.pressDuration);
 
 				// 绑定拖拽事件
@@ -634,16 +626,21 @@
 		_enterEditingMode: function(){
 			if(this._$reorderItem === this._$touchTarget){return}
 
+			if(this._editing){
+				this._$reorderItem.removeClass(this._staticConfig.editingItemClass);
+			}
+
 			this._editing = true;
 
 			// 进入编辑模式, 需要更新现在的排序位置reorderItemIndex为item对象的所在位置
 			this._reorderItemIndex = this._visualIndex;
 
+
 			// 提供外部执行的方法
 			this._config.onEditing(this._$items, this._$touchTarget);
 
 			this._$touchTarget
-				.addClass(this._staticConfig.reorderItemClass)
+				.addClass(this._staticConfig.reorderItemClass + " " + this._staticConfig.editingItemClass)
 				.find('.' + this._config.closeBtnClassName)
 				.on(this._startEvent, $.proxy(this._clickCloseBtnFn, this));
 
@@ -660,7 +657,7 @@
 			// 放大效果: 先缩短transitionDuration, 在设定scale为1.2倍
 			this._$draggingItem.position();// 这没实际用处, 但可以transition, 否则没有渐变效果!! 重要发现!
 			this._applyTransition(this._$draggingItem, this._config.focusDuration);
-			this._setPosition(this._$draggingItem, this._posAry[this._visualIndex], '1.2');
+			this._setPosition(this._$draggingItem, this._posAry[this._visualIndex], {scale: '1.2'});
 		},
 
 		_clickCloseBtnFn: function(){
@@ -669,34 +666,29 @@
 			// 说明: 变量reorderItemIndex是当前进行编辑模式的item所在视觉位置
 
 			// 删除dataList里视觉位置的item原始数据
-			//this._config.dataList.splice(this._reorderItemIndex, 1);
+			this._config.dataList.splice(this._reorderItemIndex, 1);
 
-			if(this._staticConfig._reorderTransition){
+			//console.log('删除item对象内容 ',
+			// 删除reorderItemsAry里视觉位置的item
+			this._$items.splice(this._reorderItemIndex, 1);
+			//[0]);
+			//console.log('删除后, 更新的对象集', this._$items);
 
-				//console.log('删除item对象内容 ',
-					// 删除reorderItemsAry里视觉位置的item
-					this._$items.splice(this._reorderItemIndex, 1);
-				//[0]);
-				//console.log('删除后, 更新的对象集', this._$items);
+			// 删除
+			this._indexAry.splice(this._reorderItemIndex, 1);
 
-				// 动画"定位"剩下的items
-				this._setItemsPos(this._$items);
-
-				// 删除
-				this._indexAry.splice(this._reorderItemIndex, 1);
-
-				// 遍历更新
-				for (var y = 0; y < this._indexAry.length; y++){
-					var indexValue = this._indexAry[y];
-					if(indexValue > this._textIndex){
-						this._indexAry[y] = indexValue - 1;
-					}
+			// 遍历更新
+			for (var y = 0; y < this._indexAry.length; y++){
+				var indexValue = this._indexAry[y];
+				if(indexValue > this._textIndex){
+					this._indexAry[y] = indexValue - 1;
 				}
 			}
 
 			// 调整容器的高度为适当高度
-			var newH = Math.ceil(this._$items.length / this._containerCols) * this._itemH;
-			this._$container.height(newH);
+			this._$container.height(
+				Math.ceil(this._$items.length / this._containerCols) * this._itemH
+			);
 
 			// 删除本item
 			this._$reorderItem.remove();
@@ -704,10 +696,12 @@
 			this._config.onClose(this._$items);
 
 			this._editing = false;
+
+			// 动画"定位"剩下的items
+			this._setItemsPos(this._$items);
 		},
 
-		_stopEventFunc: function(){
-
+		_stopEventFunc: function(event){
 			// 方法stopEventFunc功能:
 			// 1,取消绑定moveEvent事件(但不负责取消_stopEvent事件);
 			// 2,清理定时器;
@@ -720,28 +714,37 @@
 
 			this._$DOM.off(this._moveEvent + " " + this._stopEvent);
 
+			// 停止事件的可能性
+
 			if(this._InitializeMoveEvent){
 				// 已经拖拽了的情况, 执行拖拽项的归位动画
-				var _this = this;
+				var _this = this, removeClassName = _this._staticConfig.activeItemClass + " " + _this._staticConfig.reorderItemClass;
 
-				this._dragItemReset(function(){
-					// 提供外部的方法, 传参排序后的jQuery对象集合
-					_this._$draggingItem.remove();
+				this._applyTransition(this._$draggingItem);
 
-					_this._$reorderItem
-						.removeClass(_this._staticConfig.activeItemClass + " " + _this._staticConfig.reorderItemClass)
-						//.find(_this._closeBtnClass).remove();
-
-					_this._editing = false;
-
-					_this._config.onDragEnd(_this._$items);
-
-					//_this.fireEvent("afterDrag", [_this._$reorderItem]);
+				this._setPosition(this._$draggingItem, {
+					'left': this._posAry[this._reorderItemIndex].left,
+					'top': this._posAry[this._reorderItemIndex].top
 				});
 
-			}else{
+				if(this._dragToReorder){
+					// 若拖拽产生位移的话, 退出编辑模式
+					removeClassName += (" " + _this._staticConfig.editingItemClass);
+					_this._editing = false;
+					this._dragToReorder = false;
+				}
 
-				//this._$reorderItem.removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
+				setTimeout(function(){
+					_this._$draggingItem.remove();
+
+					_this._$reorderItem.removeClass(removeClassName);
+
+					// 提供外部的方法, 传参排序后的jQuery对象集合
+					_this._config.onDragEnd(_this._$items);
+
+				}, this._config.reorderDuration);
+
+			}else{
 
 				this._$container.children().removeClass(this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass);
 
@@ -751,13 +754,14 @@
 
 					if(newTime - this._startTime < this._staticConfig._clickDuration){ // 没有拖拽后且没有滑动且只在限制时间内才是click事件
 
-						//this.fireEvent("click", [this._$reorderItem]);
-
 						if(this._editing){
 							// 编辑模式的情况下的点击事件是结束编辑或取消编辑的点击:
 							//this._$reorderItem.find(this._closeBtnClass).remove();
 
 							//this._$container.trigger("editEnd", [this._$reorderItem]);
+							console.log(this._$reorderItem.text());
+
+							this._$items.removeClass(this._staticConfig.editingItemClass);
 
 							this._editing = false;
 						} else{
@@ -765,11 +769,13 @@
 							this._config.onItemTap(this._$touchTargetData);
 						}
 					} else {
-						//this._$reorderItem.find(this._closeBtnClass).remove();
 
+						//this._$container.children().removeClass(this._staticConfig.editingItemClass);
+						//if(this._editing && "对象是本对象的话返回"){
+						//	console.log('进入下一个编辑的item')
+						//}
+						// 超过时间的, 认为是进入了编辑模式的释放触控, 但没有拖拽的情况, 是纯粹的长按后释放触控
 						this._$draggingItem.remove();
-
-						this._editing = false;
 					}
 
 				}
@@ -779,39 +785,19 @@
 			this._dragging = false;
 		},
 
-		_dragItemReset: function(callback){
-			// 本方法是计算dragItem基于touchStart位置面向的最终滑向位置, 最后执行动画
-
-			var resetX, resetY;
-
-			if(this._staticConfig._reorderTransition){
-				resetX = this._posAry[this._reorderItemIndex].left;
-				resetY = this._posAry[this._reorderItemIndex].top;
-			} else {
-				if (this._transformsEnabled) {
-					// 1-1, 基于translate情况:  计算touchStart时dragTarget的坐标和最终滑向位置$dragTarget的坐标之间的差距, 作为translate的xy轴的值
-					// 计算最终dragItem滑向位置的坐标:this._$reorderItem.offset();
-					var targetPos = this._$reorderItem.offset();
-					// 差距 = 最终位置 - touchStart时dragItem的位置
-					resetX =  targetPos.left - this._itemStartPagePos.left;
-					resetY = targetPos.top - this._itemStartPagePos.top;
-				}else{
-					// 1-2, 若不适用CSS3的属性transform, 只能使用css坐标通过animate来实现
-					// 基于css坐标的话不能像translate那样参考触控位移的距离, 只参考dragItem原本产生时的css坐标和最后的$dragTarget的坐标
-					// _$draggingItem最终的css坐标 = 最终$dragTarget相对父级的位置 - 原本_$draggingItem相对父级的位置
-					resetX =
-						this._$container.find("."+ this._staticConfig.activeItemClass).position().left // 需要重新获取元素,不能直接$dragTarget.position(). 因为这样得出的时$dragTarget基于位移之前的坐标, 而不是基于父级的坐标
-						- this.dragItemOriginalpos.left;
-					resetY = this._$container.find("."+ this._staticConfig.activeItemClass).position().top - this.dragItemOriginalpos.top;
-				}
-			}
-
-			// 执行滑动效果
-			this._animateSlide(this._$draggingItem, {'left': resetX, 'top': resetY}, callback);
-		},
+		//_dragItemReset: function(callback){
+		//	// 本方法是计算dragItem基于touchStart位置面向的最终滑向位置, 最后执行动画
+		//
+		//	var resetX, resetY;
+		//
+		//	resetX = this._posAry[this._reorderItemIndex].left;
+		//	resetY = this._posAry[this._reorderItemIndex].top;
+		//
+		//	// 执行滑动效果
+		//	this._animateSlide(this._$draggingItem, {'left': resetX, 'top': resetY}, callback);
+		//},
 
 		_dragEventFn: function(event){
-
 			// draggableMenu里_moveEvent的理念是按住后拖动, 非立即拖动
 			this._dragging = true;// 进入拖动模式
 
@@ -887,7 +873,7 @@
 			cssY = this._draggingItemStartPos.top + cssY;
 
 			// 拖拽
-			this._setPosition(this._$draggingItem, {'left': cssX, 'top': cssY}, '1.2');
+			this._setPosition(this._$draggingItem, {'left': cssX, 'top': cssY}, {scale: '1.2'});
 
 			// 重新排序
 			this._reorder(cssX, cssY);
@@ -895,12 +881,11 @@
 
 		_getTouchIndex: function(touchX, touchY){
 			// 不能超出容器范围
-			if(touchX < 0 ||touchX > this._containerW || touchY < 0 ||touchY > this._containerH){
-				return
+			if(touchX > 0 && touchX <= this._containerW && touchY > 0 && touchY <= this._containerH){
+				var curCol = Math.floor(touchX / this._itemW) + 1;// 列数
+				var curRow = Math.floor(touchY / this._itemH);// 行数
+				return (curRow * this._containerCols + curCol - 1);// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
 			}
-			var curCol = Math.floor(touchX / this._itemW) + 1;// 列数
-			var curRow = Math.floor(touchY / this._itemH);// 行数
-			return (curRow * this._containerCols + curCol - 1);// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
 		},
 
 		_reorder: function(cssX, cssY) {
@@ -924,6 +909,7 @@
 				visionIndex !== this._reorderItemIndex && // 在同一item上的拖拽不执行重新排序
 				visionIndex >= 0 && visionIndex < this._draggableCount // 超过items数量范围的拖拽不执行重新排序
 			){
+				this._dragToReorder = true;
 				// 重新排序数组
 				this._reorderFn(this._$items, this._reorderItemIndex, visionIndex);
 				this._reorderFn(this._indexAry, this._reorderItemIndex, visionIndex);
@@ -934,7 +920,7 @@
 				// 更新本次位置
 				this._reorderItemIndex = visionIndex;
 			}
-			// 对比思路1, 由于位移的cssX与cssY是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
+			// 对比思路1, 由于拖拽距离是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
 		},
 
 		/*-----------------------------------------------------------------------------------------------*/
@@ -1047,12 +1033,13 @@
 			//this._cssTransitions = false;// 测试用
 		},
 
-		_setPosition: function($obj, position, scale) {
+		_setPosition: function($obj, position, option) {
 			// 方法setCSS: 即时位置调整
 			// 之后扩展可以参考scale来做
+			option = option || {};
 			var positionProps = {},
-				x, y;
-			scale = scale || '1';
+				x, y,
+				scale = option.scale || '1';
 
 			x =  Math.ceil(position.left) + 'px';
 			y =  Math.ceil(position.top) + 'px';
