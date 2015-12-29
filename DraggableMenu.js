@@ -5,6 +5,8 @@
 /*
 思考:
 	1, 关闭按钮应该在初始化渲染item的时候用户自定义模板自己写的, 不是进入编辑模式由本组件完成的, 表象是组件控制了关闭按钮的出现与事件, 但逻辑上应该是关闭按钮初始化后就一直存在, 只是显示在事件判断出现
+	2, 进入编辑模式原本有两个渠道:1,touchStart后设定时进入;2,拖拽初始化进入.这概念是保证了长按状态与拖拽状态都会进入, 但会产生重复进入, 所以设定了禁止同一个对象重复进入, 这个禁止也产生问题:第二次点击该对象不能进入编辑模式, 这也不对
+		现在,只通过touchStart后设定时进入, 因为拖拽是长按才发生的, 而且长按后释放触控会执行stopEvent取消定时, 所以逻辑上更关心stopEvent的处理
 
  // 本组件的原本思维是先让文本append到html里, 获取items格子的文本位置, 再让items脱离文本流, 重新定位排队, 所以初始化比较耗性能
  // 这样的思路是有利于提供多尺寸的items, 但由于posAry没有相应的调整, 所以其实没有意义!
@@ -135,6 +137,7 @@
 			this._dragEventFn = $.proxy(this._dragEventFn, this);
 			this._stopEventFunc = $.proxy(this._stopEventFunc, this);
 
+
 			// 属性设置
 			this._config = $.extend({}, this._defaultConfig, options);
 
@@ -148,6 +151,7 @@
 			this._setProps();
 
 			/*测试 start*/
+			if(this._getOS() === "pc"){this._staticConfig._sensitive = false}
 			for(var i = 0; i < this._config.dataList.length; i++){
 				this._config.dataList[i].url = this._config.dataList[i].text
 			}/*测试 end*/
@@ -158,6 +162,7 @@
 			if(this._staticConfig._templateRender && this._config.dataList.length){
 				this._renderItems();
 			}
+
 
 			// 获取尺寸数据
 			this._getSize();
@@ -183,26 +188,26 @@
 		 * 默认设置
 		 * */
 		_defaultConfig: {
-			// 关闭按钮的对象$
+			// 关闭按钮的className
 			closeBtnClassName: "DrM-closeBtn",
 
-				// 长按的时间间隔
-				pressDuration: 300,
-				// 排序效果动画的过度时间transition-duration值
-				reorderDuration: 800,
-				// 放大效果动画的过度时间transition-duration值
-				focusDuration: 80,
-				// 允许触控的边缘值, 单位px
-				rangeXY: 12,
+			// 长按的时间间隔
+			pressDuration: 300,
+			// 排序效果动画的过度时间transition-duration值
+			reorderDuration: 300,
+			// 放大效果动画的过度时间transition-duration值
+			focusDuration: 80,
+			// 允许触控的边缘值, 单位px
+			rangeXY: 4,
 
-				// 渲染html的数据内容
-				dataList: [],
+			// 渲染html的数据内容
+			dataList: [],
 
-				// 使用放大效果, 基于perspective
-				usePerspective: null,
+			// 使用放大效果, 基于perspective
+			usePerspective: null,
 
-				// 渲染html的方法
-				renderer: function(data, i, datas){
+			// 渲染html的方法
+			renderer: function(data, i, datas){
 				// 本方法提供给用户修改, 但要求必须返回html字符串作为每个item的内容
 				return $('<li>').addClass('dragItem').append(
 					$('<div>')
@@ -214,12 +219,12 @@
 
 			// 公开事件: 正常点击事件
 			onItemTap: null,
-				// 公开事件: 拖放后的事件
-				onDragEnd: null,
-				// 公开事件: 删除item的事件
-				onClose: null,
-				// 公开事件: 进入编辑模式的事件
-				onEditing: null
+			// 公开事件: 拖放后的事件
+			onDragEnd: null,
+			// 公开事件: 删除item的事件
+			onClose: null,
+			// 公开事件: 进入编辑模式的事件
+			onEditing: null
 		},
 
 		/**
@@ -392,7 +397,7 @@
 			},
 
 			// 灵敏模式, 准备删除
-			_sensitive: false,
+			_sensitive: true,
 				// 选择模板, 看是否能删除, 应该可以, 但不用, 因为只需要保留true值就可以, 意思是只需要用户传值渲染数据都会使用自定义模板
 				_templateRender: true,
 				// _useCSS的正否是选择translate3D还是translate, 当然最后会由环境来判断, 这里一直默认是true
@@ -408,17 +413,11 @@
 				// 选择transform动画来定位, 当使用translate定位的话会影响到keyframes的自定义使用
 				_useTransform: false
 		},
-
 		_renderItems: function(){
 			// 填充template内容并收集所有item的html的jQuery包装集
 			var data = this._config.dataList,
 				len = data.length,
-				$itemHtml, $itemsHtml = [],
-				initialCss = {'position': 'absolute'};
-
-			if(this._transformsEnabled){
-				$.extend(initialCss, {left: 0, top: 0});
-			}
+				$itemHtml, $itemsHtml = [];
 
 			for(var i = 0; i < len; i++){
 				$itemHtml = this._config.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
@@ -427,7 +426,7 @@
 					$itemHtml.addClass('DrM-static');
 					this._staticCount++;// 记数
 				}
-				$itemsHtml.push($itemHtml.css(initialCss));// ps: 假设static项写在数组的最后
+				$itemsHtml.push($itemHtml);// ps: 假设static项写在数组的最后
 			}
 
 			// 把所有item的html的jQuery包装集渲染到容器里
@@ -445,7 +444,14 @@
 			this._containerW = this._$container.width();
 
 			// 计算容器的列数和行数
-			this._containerCols = Math.floor(this._containerW / this._itemW);
+			//this._containerCols = Math.floor(this._containerW / this._itemW);
+			// 遍历方法来计算容器列数, 方法是计算第i个换行的,那i就是列数, 这方法的意义是按照css设计者的样式计算
+			for(var i = 0; i < this._$items.length; i++){
+				if(this._$items.eq(i).position().top > 1){
+					this._containerCols = i;
+					break;
+				}
+			}
 			this._containerRows = Math.ceil(this._$items.length / this._containerCols);
 
 			// 锁定容器尺寸
@@ -453,6 +459,7 @@
 				'height': this._containerH = this._containerRows * this._itemH,
 				'width' : this._containerW, 'overflow' : 'hidden'
 			});
+			this._$items.css({position: 'absolute', left: 0, top: 0})
 		},
 
 		// 根据容器的尺寸计算出一个数组, 长度为items.length, 内容是格子左上角坐标
@@ -575,12 +582,7 @@
 		},
 
 		_enterEditingMode: function(){
-			if(this._reorderItemIndex == this._visualIndex && this._editing){
-				// 避免item重复执行进入编辑模式的方法
-				return true
-			}
-
-			if(this._editing){
+			if(this._editing && this._reorderItemIndex !== this._visualIndex){
 				this._$reorderItem.removeClass(this._staticConfig.editingItemClass);
 			}
 
@@ -668,6 +670,10 @@
 			 a2: 非编辑状态的点击, 执行正常点击事件
 			 b, 长按后释放触控: 继续保持编辑模式, 但动画回归dragItem后移除dragItem
 			 */
+
+			// 判断维度:
+			//
+
 			var _this = this,
 				removeClassName = this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass;
 
@@ -739,6 +745,19 @@
 							_this._$draggingItem.remove();
 						});
 					}
+				} else {
+					if(this._editing){
+						// 状态: 长按而没有拖拽的释放触控, 认为是进入了编辑模式的释放触控
+						//动画
+						this._setPosition(this._$draggingItem, {
+							'left': this._draggingItemStartPos.left,
+							'top': this._draggingItemStartPos.top
+						});
+						//动画事件后的callback删除draggingItem
+						_this._$draggingItem.animate({opacity:0},_this._config.focusDuration,function(){
+							_this._$draggingItem.remove();
+						});
+					}
 				}
 			}
 
@@ -747,7 +766,6 @@
 		},
 
 		_dragEventFn: function(event){
-			// draggableMenu里_moveEvent的理念是按住后拖动, 非立即拖动
 			this._dragging = true;// 进入拖动模式
 
 			var Move_ex = this._page('x', event),
@@ -755,60 +773,56 @@
 
 			// 初始化MoveEvent
 			if(!this._InitializeMoveEvent){
-				// move过程中对事件的判断有两个重要变量: 延时与范围
-				// 都满足: 按住拉动
-				// 都不满足: swipe
-				// 满足2, 不满足1: 是触控微动, 不停止, 只是忽略
-				// 满足1, 不满足2: 是错位, 可以理解是双触点, 按住了一点, 满足时间后立即同时点下第二点
-				// 在app实际运行时, 触控滑动监听的_moveEvent事件比较灵敏, 即使是快速touchMove, 也计算出触控点位置仅仅移动了1px, 也就是Move_ey - this._eventStartY = 1px, 所以这里在未满足时间情况完全不考虑触控点移动而直接停止方法return出来
-
 				// 条件1: 限时内
 				var inShort = (event.timeStamp - this._startTime) < this._config.pressDuration;
-
-				if (inShort){
-					if(this._staticConfig._sensitive){
-						// 灵敏模式, 不可能区分触控点变化范围
+				if(this._staticConfig._sensitive){
+					// 灵敏模式, 只关心满足时间条件就可以拖拽
+					if (inShort){
 						this._stopEventFunc();
 						return;
-					}else{
+					}
+				} else {
+					// move过程中对事件的判断有两个重要变量: 延时与范围
+					// 都满足: 按住拉动
+					// 都不满足: swipe
+					// 满足2, 不满足1: 是触控微动, 不停止, 只是忽略
+					// 满足1, 不满足2: 是错位, 可以理解是双触点, 按住了一点, 满足时间后立即同时点下第二点
+					// 在app实际运行时, 触控滑动监听的_moveEvent事件比较灵敏, 即使是快速touchMove, 也计算出触控点位置仅仅移动了1px, 也就是Move_ey - this._eventStartY = 1px, 所以这里在未满足时间情况完全不考虑触控点移动而直接停止方法return出来
+					console.log('pc模式判断事件');
+					var rangeXY = this._config.rangeXY;
+					var outRang = (Move_ex - this._eventStartX ) > rangeXY || (Move_ey - this._eventStartY) > rangeXY;
+
+					if (inShort){
 						// 非灵敏模式, 区分触控点变化范围
-						if((Move_ex - this._eventStartX ) > 1 || (Move_ey - this._eventStartY) > 1){
+						console.log(Math.abs(Move_ex - this._eventStartX), Math.abs(Move_ey - this._eventStartY));
+						if(Math.abs(Move_ex - this._eventStartX) > rangeXY || Math.abs(Move_ey - this._eventStartY) > rangeXY){
 							console.log('非拖拽的swipe');
 							this._stopEventFunc();
 							return;
 						} else {
 							// 允许微动, 忽略(return)本次操作, 不停止绑定_moveEvent事件, 因为只是微动或震动, 是允许范围
-							//console.log('允许微动, 忽略(return)本次操作, 可继续绑定触发_moveEvent');
+							console.log('允许微动, 忽略(return)本次操作, 可继续绑定触发_moveEvent');
 							return;
 						}
 					}
+					// 条件2: 范围外  ps:建议范围rangeXY不要太大, 否则变成了定时拖动.
+					if(outRang){
+						console.warn('按住达到一定时间后瞬间move超距离, 认为是操作失误');
+						this._stopEventFunc();
+						return false;
+					}
 				}
 
-				// 条件2: 范围外  ps:建议范围rangeXY不要太大, 否则变成了定时拖动.
-				var rangeXY = this._config.rangeXY * ((this._staticConfig._sensitive) ? 3 : 1);
+				// 满足两个条件后, 初始化(仅进行一次)
+				this._InitializeMoveEvent = true;
+				// 重新获取可以拖拉的数量
+				this._draggableCount = this._$items.length - this._staticCount;
 
-				var outRang = (Move_ex - this._eventStartX ) > rangeXY ||
-					(Move_ey - this._eventStartY) > rangeXY;
+				// 进入拖拽状态前必须先清空reorderItem的transition, 因为需要reorderItem立即变化为透明与在释放dragItem动画后立即显示reorderItem
+				this._disableTransition(this._$reorderItem);
 
-				if(outRang){
-					console.warn('按住达到一定时间后瞬间move超距离, 认为是操作失误');
-					this._stopEventFunc();
-					return false;
-				}else{
-					// 满足两个条件后, 初始化(仅进行一次)
-					this._InitializeMoveEvent = true;
-					// 重新获取可以拖拉的数量
-					this._draggableCount = this._$items.length - this._staticCount;
-
-					// 进入编辑模式, 生成dragItem
-					this._enterEditingMode();
-
-					// 进入拖拽状态前必须先清空reorderItem的transition, 因为需要reorderItem立即变化为透明与在释放dragItem动画后立即显示reorderItem
-					this._disableTransition(this._$reorderItem);
-
-					// 清空transition来实现无延迟拖拽
-					this._disableTransition(this._$draggingItem);
-				}
+				// 清空transition来实现无延迟拖拽
+				this._disableTransition(this._$draggingItem);
 			}
 
 			// 在初始化拖动后才禁止默认事件行为
@@ -1127,6 +1141,23 @@
 		// 方法: 获取触控点坐标
 		_page :  function (coord, event) {
 			return (this._hasTouch? event.originalEvent.touches[0]: event)['page' + coord.toUpperCase()];
+		},
+
+		_getOS: function browserRedirect() {
+			var sUserAgent = navigator.userAgent.toLowerCase();
+			var bIsIpad = sUserAgent.match(/ipad/i) == "ipad";
+			var bIsIphoneOs = sUserAgent.match(/iphone os/i) == "iphone os";
+			var bIsMidp = sUserAgent.match(/midp/i) == "midp";
+			var bIsUc7 = sUserAgent.match(/rv:1.2.3.4/i) == "rv:1.2.3.4";
+			var bIsUc = sUserAgent.match(/ucweb/i) == "ucweb";
+			var bIsAndroid = sUserAgent.match(/android/i) == "android";
+			var bIsCE = sUserAgent.match(/windows ce/i) == "windows ce";
+			var bIsWM = sUserAgent.match(/windows mobile/i) == "windows mobile";
+			if (bIsIpad || bIsIphoneOs || bIsMidp || bIsUc7 || bIsUc || bIsAndroid || bIsCE || bIsWM) {
+				return "phone";
+			} else {
+				return "pc";
+			}
 		}
 	};
 
