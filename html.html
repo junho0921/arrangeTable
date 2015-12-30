@@ -13,36 +13,14 @@
 <div style="height:900px"></div>
 <h2 class="DraggableMenutittle" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">DraggableMenu</h2>
 <button>获取数据</button>
-<!--<div class="DraggableMenu"></div>-->
 <ul class="draggableMenu">
 
 </ul>
 
 <script src="libs/jquery.js"></script>
 <script src="DraggableMenu.js"></script>
-<style>
-	.testA{
-		/*animation: testA 2s ease;*/
-	}
 
-	/*@-webkit-keyframes testA{*/
-		/*0%,100%{opacity:1}*/
-		/*50%{opacity:0.1}*/
-	/*}*/
-
-	.dragItem.DrM-activeItem.DrM-draggingItem{
-		/*height:300px;*/
-		/*width:300px;*/
-		/*-webkit-transform:scale3d(1.2, 1.2, 1.2);*/
-		/*transform:scale3d(1.2, 1.2, 1.2);*/
-	}
-</style>
 <script>
-
-	$('h2').click(function(){
-		$(this).addClass('testA');
-	});
-
 	var DraggableMenu = new DraggableMenu($(".draggableMenu"), {
 
 		dataList:[
@@ -76,6 +54,7 @@
 		onClose:function(){
 			$('.DraggableMenutittle').text('onClose');
 		},
+
 		onEditing:function(){
 //			console.log('进入编辑模式')
 		}
@@ -85,78 +64,5 @@
 
 </script>
 
-<script>
-	/*
-	function Animations() {
-		this.animations = {};
-	}
-
-	Animations.prototype.getDynamicSheet = function() {
-		var style = document.createElement('style');
-		style.rel = 'stylesheet';
-		style.type = 'text/css';
-		document.getElementsByTagName('head')[0].appendChild(style);
-		this.dynamicSheet = style.sheet;
-	};
-
-	Animations.prototype.create = function(name, frames) {
-
-		// name是keyframes的名称, frames对象是keyframes的内容
-//		var styles = this.getDynamicSheet();
-
-		var style = document.createElement('style');
-		style.rel = 'stylesheet';
-		style.type = 'text/css';
-		document.getElementsByTagName('head')[0].appendChild(style);
-		this.dynamicSheet = style.sheet;
-
-		try {
-			var idx = styles.insertRule('@keyframes ' + name + '{}',
-					styles.cssRules.length);
-		}
-		catch(e) {
-			if(e.name == 'SYNTAX_ERR' || e.name == 'SyntaxError') {
-				idx = styles.insertRule('@-webkit-keyframes ' + name + '{}',
-						styles.cssRules.length);
-			}
-			else {
-				throw e;
-			}
-		}
-
-//		var anim = new KeyframeAnimation(styles.cssRules[idx]);
-
-		var original = styles.cssRules[idx];
-
-//		this.animations[name] = anim;
-
-		if(frames) {
-			var obj = frames;
-			for(var kk in obj) {
-//				this.setKeyframe(k, obj[k]);
-				var  text = kk, css = obj[k];
-
-				var cssRule = text+" {";
-
-				for(var k in css) {
-					cssRule += k + ':' + css[k] + ';';
-				}
-				cssRule += "}";
-
-				if('appendRule' in original) {
-					original.appendRule(cssRule);
-				}
-				else {
-					original.insertRule(cssRule);
-				}
-			}
-//			anim.setKeyframes(frames);
-		}
-
-//		return anim;
-	};
-*/
-
-</script>
 </body>
 </html>

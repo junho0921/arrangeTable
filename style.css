@@ -1,7 +1,6 @@
 
 *{padding:0; margin:0;}
 
-/* for nuui-draggableMenu start */
 .draggableMenu {
     list-style: none;
     position: relative;
@@ -17,15 +16,12 @@
     text-align: center;
 }
 
-
-/*.DrM-reorderItem {opacity: 0!important;}*/
-
-/*.DrM-reorderItem .DrM-closeBtn{opacity: 0;}*/
-
 .dragItem.DrM-activeItem.DrM-draggingItem {background: deepskyblue;}
 
 .dragItem.DrM-activeItem.DrM-reItem{background: lightcyan!important;}
 
+
+/* for nuui-draggableMenu start */
 .DrM-closeBtn{
     position: absolute;
     right:3px;
@@ -42,17 +38,17 @@
     z-index: 1000;
     transition:all 300ms ease-in-out;
 }
-
-.DrM-activeItem.DrM-reorderItem{opacity: 0.01}
+/*隐藏*/
+.DrM-reorderItem{opacity: 0.01!important;}
 
 /*原始值*/
-.DrM-activeItem .DrM-closeBtn, .DrM-closeBtn{transform: scale3D(0, 0, 0);}
-
-.DrM-activeItem.DrM-reorderItem .DrM-closeBtn{transform: scale3D(1, 1, 1)}
-
-.dragItem.DrM-activeItem.DrM-reorderItem.DrM-editingItem .DrM-closeBtn,
-.DrM-activeItem.DrM-reorderItem .DrM-closeBtn,
-.DrM-editingItem .DrM-closeBtn{transform: scale3D(1, 1, 1)}
+.DrM-closeBtn{transform: scale3D(0, 0, 0);}
+/*显示关闭按钮的状态*/
+.dragItem.DrM-editingItem .DrM-closeBtn,/*editingItem*/
+.dragItem.DrM-draggingItem .DrM-closeBtn,/*dragItem*/
+.dragItem.DrM-reorderItem .DrM-closeBtn,/*reorderItem*/
+.dragItem.DrM-reItem .DrM-closeBtn/*释放dragItem到消失的状态*/
+{transform: scale3D(1, 1, 1)}
 
 /* for nuui-draggableMenu end */
 

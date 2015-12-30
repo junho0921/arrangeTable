@@ -7,6 +7,7 @@
 	1, 关闭按钮应该在初始化渲染item的时候用户自定义模板自己写的, 不是进入编辑模式由本组件完成的, 表象是组件控制了关闭按钮的出现与事件, 但逻辑上应该是关闭按钮初始化后就一直存在, 只是显示在事件判断出现
 	2, 进入编辑模式原本有两个渠道:1,touchStart后设定时进入;2,拖拽初始化进入.这概念是保证了长按状态与拖拽状态都会进入, 但会产生重复进入, 所以设定了禁止同一个对象重复进入, 这个禁止也产生问题:第二次点击该对象不能进入编辑模式, 这也不对
 		现在,只通过touchStart后设定时进入, 因为拖拽是长按才发生的, 而且长按后释放触控会执行stopEvent取消定时, 所以逻辑上更关心stopEvent的处理
+	3, 更好的去解耦方法, 原本stopEvent是很累赘的方法, 因为包含很多逻辑, 这样需要把里面的逻辑与方法解耦出来, 分开了_enterEditMode/_quitEditMode与_removeDragItem/_renderDragItem
 
  // 本组件的原本思维是先让文本append到html里, 获取items格子的文本位置, 再让items脱离文本流, 重新定位排队, 所以初始化比较耗性能
  // 这样的思路是有利于提供多尺寸的items, 但由于posAry没有相应的调整, 所以其实没有意义!
@@ -103,8 +104,7 @@
 改进空间:
 	1, 兼容转屏
 	2, 行为事件判断简化以确保主要事件能执行? 可能这是个假设错误, 逻辑不需要简化, 需要的是正确
-	3, 可以使用关闭按钮的情况是: 没有重新排序的情况就可以使用, 有重新排序的话就会隐藏关闭按钮的
-	4, 尝试把addClass与removeClass放在统一逻辑方法
+	3, 思考transition的使用, 现在还很乱!
 
  */
 
@@ -163,7 +163,6 @@
 				this._renderItems();
 			}
 
-
 			// 获取尺寸数据
 			this._getSize();
 
@@ -173,7 +172,8 @@
 			// items对应位置对齐
 			this._setItemsPos(this._$items);
 
-			this._$container.on(this._startEvent,'.' + this._config.closeBtnClassName, {onlyBtn: true}, $.proxy(this._clickCloseBtnFn, this));
+			// 绑定关闭按钮的事件
+			this._$container.on(this._startEvent,'.' + this._config.closeBtnClassName, $.proxy(this._clickCloseBtnFn, this));
 
 			// 延迟使用transition, 避免初始化的生成html所带有的动画
 			setTimeout($.proxy(function(){
@@ -367,8 +367,8 @@
 				// class名称
 				// 激活的item, 包括拖动的item和排序的item
 				activeItemClass: "DrM-activeItem",
-				// 排序的item
-				reorderItemClass: "DrM-reorderItem",
+				// editingItem的幽灵状态, 这个状态是在dragItem存在的时候才有的
+				ghostItemClass: "DrM-reorderItem",
 				// 拖动的item
 				draggingItemClass: "DrM-draggingItem",
 				// 编辑中的item
@@ -534,26 +534,24 @@
 		},
 
 		_startEventFunc :function(event){
-			//if($.inArray(event.target, this._$items) < 0 ){
-			//	console.log('非点击拖动对象'); return
-			//}
+			this._startTime = event.timeStamp || +new Date();
 
-			// 拖点击对象是关闭按钮, 则不能执行本方法
-			if(event.target.className == this._config.closeBtnClassName){
-				console.log('点击关闭按钮'); return
+			if(
+				event.target.className == this._config.closeBtnClassName || // 拖点击对象是关闭按钮, 则不能执行本方法
+				(this._stopTime && (this._startTime - this._stopTime) < this._config.reorderDuration) // 离上一次操作完毕太短时间
+			){
+				console.log('点击关闭按钮或距离上一次操作太快'); return
 			}
-			this._applyTransition(this._$items);
 
 			this._$touchTarget = $(event.currentTarget);
-
-			this._startTime = event.timeStamp || +new Date();
 
 			// 记录初始位置
 			this._eventStartX = this._page('x', event);
 			this._eventStartY = this._page('y', event);
 
-			// 获取文本位置的序号
-			this._textIndex = this._$touchTarget.addClass(this._staticConfig.activeItemClass).index();
+			this._textIndex =
+				this._$touchTarget.addClass(this._staticConfig.activeItemClass)// 进入激活模式
+					.index();// 获取文本位置的序号
 
 			// 由于DOM结构固定, 所以需要在变量indexAry数组里获取DOM-index所在的视觉位置序号
 			this._visualIndex = $.inArray(this._textIndex, this._indexAry);
@@ -571,8 +569,10 @@
 			if(!this._$touchTargetData || (this._$touchTargetData && !this._$touchTargetData.static)){
 				// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
 				var _this = this;
+
 				this._setTimeFunc = setTimeout(function(){
 					_this._enterEditMode();
+					_this._renderDragItem();
 				}, this._config.pressDuration);
 
 				// 绑定拖拽事件
@@ -585,8 +585,8 @@
 		/*
 		 进入编辑模式:
 		 touchItem --> editItem
-		 生成dragItem
 		 数据: reorderItemIndex = visualIndex
+		 取消editItem的transition
 		 */
 		_enterEditMode: function(){
 			// 在编辑模式中, 再次进入编辑模式的话, 若不是原本对象, 先把原本对象转为正常item
@@ -604,14 +604,56 @@
 			this._config.onEditing(this._$items, this._$touchTarget);
 
 			// touchTarget 转为 editItem
-			this._$editItem = this._$touchTarget.addClass(this._staticConfig.reorderItemClass + " " + this._staticConfig.editingItemClass);
+			this._$editItem = this._$touchTarget.addClass(this._staticConfig.editingItemClass);
 
+			// 停止动画, 因为进入编辑模式的item需要立即的效果切换, 如透明度, 立即显示与立即隐藏
+			this._disableTransition(this._$editItem);
+		},
+
+		/*
+		 退出编辑模式:
+		 editItem --> item
+		 数据清空
+		 恢复editItem的transition
+		 */
+		_quitEditMode: function(){
+			if(!this._editing){return}
+
+			// 需要隔开时间, 先让css的透明度立即呈现
+			var _this = this, target = this._$editItem;
+			setTimeout(function(){
+				_this._applyTransition(target);
+			},20);
+
+			this._$editItem.removeClass(this._staticConfig.editingItemClass);
+
+			this._$editItem = null;
+
+			this._reorderItemIndex = null;//????需要这样处理么
+
+			this._editing = false;
+			// 若编辑对象不是本对象的话(情景如在编辑模式中点击其他item), 意味没有dragItem, 只需要把editItem转换正常item
+			//if(this._$editItem !== this._$touchTarget){}
+		},
+
+		//_stayEditMode: function(){
+		//	// 其实可以放在_removeDragItem里处理的, 但分离出来是方便理解
+		//	// 保留了属性this._editing=true, this._$editItem, this._reorderItemIndex
+		//	this._$editItem.removeClass(this._staticConfig.ghostItemClass);
+		//},
+
+		_renderDragItem: function(){
 			// 生成dragItem
-			this._$draggingItem = this._$touchTarget.clone()
-				.removeClass(this._staticConfig.reorderItemClass)
+			if(!this._$editItem){return}
+
+			this._$draggingItem = this._$editItem.clone()
+				.removeClass(this._staticConfig.editingItemClass)
 				.addClass(this._staticConfig.draggingItemClass)
 				.css({'z-index':'1001'})
 				.appendTo(this._$container);
+
+			// editItem --> ghostItem
+			this._$editItem.addClass(this._staticConfig.ghostItemClass);
 
 			// 动画放大dragItem
 			this._$draggingItem.position();// 这没实际用处, 但可成功使用transition, 否则没有渐变效果!! 重要发现!
@@ -620,39 +662,15 @@
 		},
 
 		/*
-		 退出编辑模式:
-		 editItem --> item
-		 dragItem --> Item
-		 动画回归dragItem后:1,删除它2,editItem --> item
-		 */
-		_quitEditMode: function(callback){
-			if(!this._editing){return}
-
-			//	var removeClassName = this._staticConfig.reorderItemClass;
-			//if(_this._dragToReorder){removeClassName += " " + this._staticConfig.editingItemClass;};
-
-			var removeClassName = this._staticConfig.reorderItemClass + " " + this._staticConfig.editingItemClass;
-
-			// 若编辑对象不是本对象的话(情景如在编辑模式中点击其他item), 意味没有dragItem, 只需要把editItem转换正常item
-			//if(this._$editItem !== this._$touchTarget){
-
-				this._$editItem.removeClass(removeClassName);
-
-				this._editing = false;
-
-				return true;
-			//}
-
-		},
-
-		/*
 		* 先dragItem --> Item
 		* 动画回归dragItem后执行callback
 		* */
-		_resetDragItem: function(callback){
+		_removeDragItem: function(callback){
+			if(!this._editing){return}
+
 			var _this = this;
 			// dragItem在释放触控的一刻转为普通item
-			this._$draggingItem.removeClass(this._staticConfig.draggingItemClass)//.addClass('DrM-reItem');
+			this._$draggingItem.removeClass(this._staticConfig.draggingItemClass).addClass('DrM-reItem');
 			// 动画回归
 			this._applyTransition(this._$draggingItem);
 			this._setPosition(this._$draggingItem, this._posAry[this._reorderItemIndex], 1);
@@ -662,17 +680,10 @@
 
 				_this._$draggingItem.remove();
 
-				callback();
+				// ghostItem  --> editItem
+				_this._$editItem.removeClass(_this._staticConfig.ghostItemClass);
 
-				// 在动画后才移除className, 动画中需保持样式
-				//_this._$editItem.removeClass(removeClassName);
-
-				//if(_this._dragToReorder){
-				//	// 提供外部的方法, 传参排序后的jQuery对象集合
-				//	callback();//_this._config.onDragEnd(_this._$items);
-				//	// 关闭编辑模式
-				//	_this._editing = false;
-				//}
+				if(callback){callback()}
 
 			}, this._config.reorderDuration);
 		},
@@ -681,12 +692,7 @@
 			//console.log('格子序号', this._reorderItemIndex);
 			// 说明: 变量reorderItemIndex是当前进行编辑模式的item所在视觉位置
 
-			// 必须要清除关闭按钮所在item的定时事件, 因为本关闭按钮方法绑定在$container上对子元素进行捕获才发生, 所以必然会先捕获关闭按钮所在item, 触发item的touchStart事件(但不会触发touchEnd事件, 因为捕获了关闭按钮就不会冒泡!), 所以这里这里必须清理item的在startEvent里的所有绑定事件包括setTimeout和touchStart和touchMove事件
-			// 使用方法stopEventFunc是最好的选择, 因为可以清理startEvent带来的所有事件, 并关闭编辑模式
-			this._startTime = e.timeStamp || +new Date();
-
-			//this._leaveEditingMode();
-			//this._stopEventFunc();
+			this._stopTime = e.timeStamp || +new Date();
 
 			//console.log('删除item对象内容 ',
 			// 删除reorderItemsAry里视觉位置的item
@@ -712,6 +718,8 @@
 
 			// 删除本item
 			this._$editItem.remove();
+
+			this._quitEditMode();
 
 			// 提供外部执行的方法, 传参修改后的items对象集合
 			this._config.onClose(this._$items);
@@ -753,13 +761,13 @@
 			// 2,限时内滑动了
 
 			var _this = this,
-				removeClassName = this._staticConfig.activeItemClass + " " + this._staticConfig.reorderItemClass;
+				removeClassName = this._staticConfig.activeItemClass + " " + this._staticConfig.ghostItemClass;
 
 			clearTimeout(this._setTimeFunc);
 			console.log('stopEventFunc');
 			this._$DOM.off(this._moveEvent + " " + this._stopEvent);
 
-			// 停止事件都要移除activeItemClass与reorderItemClass, 但editingItemClass是伴随编辑模式的
+			// 停止事件都要移除activeItemClass与ghostItemClass, 但editingItemClass是伴随编辑模式的
 
 			if(this._InitializeMoveEvent){
 				// 先去掉draggingItemClass, 脱离拖拽状态
@@ -834,36 +842,38 @@
 			this._dragging = false;
 		},
 
-		_stopEventFunc: function(event){
-			console.log('stopEventFunc  event.type', event && event.type);
+		_cleanEvent: function(){
+			// 清空绑定事件与定时器, 清空由startEvent于moveEvent放生的状态与事件
 
-			var _this = this;
-			//var stopTime = new Date(),
-			//	isPress = (stopTime - this._startTime) > this._config.pressDuration;
-
-			this._stopTime = event.timeStamp || +new Date();
-
-			var isPress = (this._stopTime - this._startTime) > this._config.pressDuration;
-
+			// 退出激活模式
 			this._$container.children().removeClass(this._staticConfig.activeItemClass);
-
-			this._dragging = false;// 这属性都不在这里使用, 先关闭
-
-			this._startTime = stopTime;// 方便判断双击
 
 			clearTimeout(this._setTimeFunc);
 
 			this._$DOM.off(this._moveEvent + " " + this._stopEvent);
 
+			this._dragging = false;// 这属性都不在这里使用, 先关闭
+
 			this._InitializeMoveEvent = false;// 这属性都不在这里使用, 先关闭
 
+		},
+
+		_stopEventFunc: function(event){
+
+			this._stopTime = event.timeStamp || +new Date();
+
+			var isPress = (this._stopTime - this._startTime) > this._config.pressDuration, _this = this;
+
+			this._startTime = this._stopTime;// 方便判断双击
+
+			this._cleanEvent();
 
 			if(isPress && this._editing){
 				// 情景: 有编辑模式就必然有dragItem
 				// 以下两种区分是按照支付宝效果:
 				if(this._dragToReorder){
 					// 情景: 编辑模式且拖拽产生排序
-					this._resetDragItem(function(){//callback
+					this._removeDragItem(function(){//callback
 						// 取消编辑状态
 						_this._quitEditMode();
 						// 提供外部的方法, 传参排序后的jQuery对象集合
@@ -874,7 +884,7 @@
 
 				} else {
 					// 情景: 编辑模式且拖拽没有产生排序, 应该在reset dragItem后保留编辑状态
-					this._resetDragItem();
+					this._removeDragItem();
 				}
 
 			} else if(!isPress){
@@ -889,75 +899,6 @@
 
 				}
 			}
-
-			// 停止事件都要移除activeItemClass与reorderItemClass, 但editingItemClass是伴随编辑模式的
-
-			//if(this._InitializeMoveEvent){
-			//	// 先去掉draggingItemClass, 脱离拖拽状态
-			//	this._$draggingItem.removeClass(this._staticConfig.draggingItemClass);
-            //
-			//	// 状态: 拖拽了item的释放触控
-			//	this._applyTransition(this._$draggingItem);
-            //
-			//	this._setPosition(this._$draggingItem, this._posAry[this._reorderItemIndex]);
-            //
-			//	if(this._dragToReorder){
-			//		// 状态: 拖拽item并产生重新排序items的释放触控
-			//		// 按支付宝效果, 若拖拽产生位移的话, 退出编辑模式
-			//		removeClassName += (" " + this._staticConfig.editingItemClass);
-			//		this._editing = false;
-			//		this._dragToReorder = false;
-			//	}
-			//	// 动画效果后的callback
-			//	setTimeout(function(){
-			//		_this._$draggingItem.remove();
-            //
-			//		// 在动画后才移除className, 动画中需保持样式
-			//		_this._$editItem.removeClass(removeClassName);
-            //
-			//		// 提供外部的方法, 传参排序后的jQuery对象集合
-			//		_this._config.onDragEnd(_this._$items);
-            //
-			//	}, this._config.reorderDuration);
-            //
-			//}else{
-			//	this._$container.children().removeClass(removeClassName);
-            //
-			//	if(this._dragging === false){
-			//		// 状态: 没有拖拽且没有滑动触控点
-			//		if(stopTime - this._startTime < this._staticConfig._clickDuration){ // 判断: 没有拖拽后且没有滑动且只在限制时间内才是click事件
-			//			// 状态: 没有拖拽的点击
-			//			if(this._editing){
-			//				// 状态: 在编辑模式中, 没有拖拽的点击
-			//				// 编辑模式的情况下的点击事件是结束编辑或取消编辑的点击:
-			//				this._$items.removeClass(this._staticConfig.editingItemClass);
-            //
-			//				this._editing = false;
-			//			} else{
-			//				// 状态: 非编辑模式且没有拖拽的点击, 是正常的点击
-			//				this._config.onItemTap(this._$touchTargetData);
-			//			}
-			//		} else {
-			//			// 状态: 长按而没有拖拽的释放触控, 认为是进入了编辑模式的释放触控
-			//			//动画
-			//			this._setPosition(this._$draggingItem, this._draggingItemStartPos);
-			//			//动画事件后的callback删除draggingItem
-			//			_this._$draggingItem.animate({opacity:0},_this._config.focusDuration,function(){
-			//				_this._$draggingItem.remove();
-			//			});
-			//		}
-			//	} else {
-			//		if(this._editing){
-			//			// 状态: 长按而没有拖拽的释放触控, 认为是进入了编辑模式的释放触控
-			//			//动画
-			//			this._setPosition(this._$draggingItem, this._draggingItemStartPos);
-			//			//动画事件后的callback删除draggingItem
-			//			_this._$draggingItem.animate({opacity:0},_this._config.focusDuration,function(){
-			//				_this._$draggingItem.remove();
-			//			});
-			//		}
-			//	}
-			//}
 
 		},
 
@@ -974,7 +915,8 @@
 				if(this._staticConfig._sensitive){
 					// 灵敏模式, 只关心满足时间条件就可以拖拽
 					if (inShort){
-						this._stopEventFunc();
+						//this._stopEventFunc();
+						this._cleanEvent();
 						return;
 					}
 				} else {
@@ -1119,11 +1061,6 @@
 			animation[this._animationType] = "";
 
 			$obj.css(animation);
-		},
-
-		_createKeyframes: function(){
-			// 在不转屏的情况, 可直接生成keyframes动画, 直接填坑就好了
-
 		},
 
 		_disableTransition: function($obj) {

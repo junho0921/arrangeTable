@@ -3,6 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="3d6f705b-ebdc-405d-99df-be8f38840f8f" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DraggableMenu.js" afterPath="$PROJECT_DIR$/DraggableMenu.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/html.html" afterPath="$PROJECT_DIR$/html.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/style.css" afterPath="$PROJECT_DIR$/style.css" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="junDrag.iws" />
@@ -23,14 +25,14 @@
     <favorites_list name="junDrag" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.20989583">
+    <splitter split-orientation="horizontal" split-proportion="0.27447918">
       <split-first>
         <leaf>
           <file leaf-file-name="DraggableMenu.js" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.0">
-                  <caret line="173" column="44" selection-start-line="173" selection-start-column="44" selection-end-line="173" selection-end-column="44" />
+                <state vertical-scroll-proportion="3.9055614">
+                  <caret line="921" column="24" selection-start-line="921" selection-start-column="24" selection-end-line="921" selection-end-column="24" />
                   <folding>
                     <element signature="n#!!doc" expanded="true" />
                   </folding>
@@ -41,9 +43,11 @@
           <file leaf-file-name="html.html" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/html.html">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.0">
-                  <caret line="70" column="0" selection-start-line="70" selection-start-column="0" selection-end-line="70" selection-end-column="0" />
-                  <folding />
+                <state vertical-scroll-proportion="-3.5666666">
+                  <caret line="22" column="8" selection-start-line="22" selection-start-column="8" selection-end-line="22" selection-end-column="8" />
+                  <folding>
+                    <element signature="n#style#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -52,7 +56,7 @@
             <entry file="file://$PROJECT_DIR$/style.css">
               <provider selected="true" editor-type-id="text-editor">
                 <state vertical-scroll-proportion="0.0">
-                  <caret line="62" column="0" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="0" />
+                  <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
                   <folding />
                 </state>
               </provider>
@@ -65,8 +69,8 @@
           <file leaf-file-name="DraggableMenu.js" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.5900755">
-                  <caret line="707" column="27" selection-start-line="707" selection-start-column="27" selection-end-line="707" selection-end-column="27" />
+                <state vertical-scroll-proportion="0.6440129">
+                  <caret line="1131" column="10" selection-start-line="1131" selection-start-column="10" selection-end-line="1131" selection-end-column="10" />
                   <folding>
                     <element signature="n#!!doc" expanded="true" />
                   </folding>
@@ -100,9 +104,9 @@
         <option value="$PROJECT_DIR$/slick.js" />
         <option value="D:/用户目录/Desktop/css-animations.js-master/css-animations.js-master/css-animations.js" />
         <option value="$PROJECT_DIR$/css-animations.js" />
-        <option value="$PROJECT_DIR$/html.html" />
         <option value="$USER_HOME$/Desktop/junDrag/DraggableMenu.js" />
         <option value="$USER_HOME$/Desktop/Sortable-master/index.html" />
+        <option value="$PROJECT_DIR$/html.html" />
         <option value="$PROJECT_DIR$/style.css" />
         <option value="$PROJECT_DIR$/DraggableMenu.js" />
       </list>
@@ -350,12 +354,6 @@
       <created>1448872141692</created>
       <option name="number" value="Default" />
       <updated>1448872141692</updated>
-    </task>
-    <task id="LOCAL-00041" summary="项目版本v1.6">
-      <created>1449745713754</created>
-      <option name="number" value="00041" />
-      <option name="project" value="LOCAL" />
-      <updated>1449745713754</updated>
     </task>
     <task id="LOCAL-00042" summary="改变类名">
       <created>1449759999342</created>
@@ -645,7 +643,13 @@
       <option name="project" value="LOCAL" />
       <updated>1451387940899</updated>
     </task>
-    <option name="localTasksCounter" value="90" />
+    <task id="LOCAL-00090" summary="小修改">
+      <created>1451439624212</created>
+      <option name="number" value="00090" />
+      <option name="project" value="LOCAL" />
+      <updated>1451439624227</updated>
+    </task>
+    <option name="localTasksCounter" value="91" />
     <servers />
   </component>
   <component name="TodoView" selected-index="2">
@@ -663,6 +667,7 @@
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.11927083" sideWeight="0.48167005" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32892057" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32478634" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32985073" sideWeight="0.5" order="11" side_tool="true" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.9144603" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
@@ -672,7 +677,6 @@
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.119791664" sideWeight="0.5183299" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32478634" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
@@ -694,7 +698,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="修复一些bug, 现在处理iphone的bug" />
     <MESSAGE value="小改动" />
     <MESSAGE value="项目版本混合模式V2.0" />
     <MESSAGE value="总结混合模式" />
@@ -719,7 +722,8 @@
     <MESSAGE value="注释" />
     <MESSAGE value="仿支付宝效果的transition调整, 比较乱" />
     <MESSAGE value="需要整理一下sopFunc" />
-    <option name="LAST_COMMIT_MESSAGE" value="需要整理一下sopFunc" />
+    <MESSAGE value="小修改" />
+    <option name="LAST_COMMIT_MESSAGE" value="小修改" />
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.83806145" />
   </component>
   <component name="XDebuggerManager">
@@ -741,7 +745,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="68" column="61" selection-start-line="68" selection-start-column="61" selection-end-line="68" selection-end-column="61" />
-          <folding />
+          <folding>
+            <element signature="n#style#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1087,26 +1093,28 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/style.css">
+    <entry file="file://$PROJECT_DIR$/html.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="62" column="0" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="0" />
-          <folding />
+        <state vertical-scroll-proportion="-3.5666666">
+          <caret line="22" column="8" selection-start-line="22" selection-start-column="8" selection-end-line="22" selection-end-column="8" />
+          <folding>
+            <element signature="n#style#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/html.html">
+    <entry file="file://$PROJECT_DIR$/style.css">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="70" column="0" selection-start-line="70" selection-start-column="0" selection-end-line="70" selection-end-column="0" />
+          <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5900755">
-          <caret line="707" column="27" selection-start-line="707" selection-start-column="27" selection-end-line="707" selection-end-column="27" />
+        <state vertical-scroll-proportion="0.6440129">
+          <caret line="1131" column="10" selection-start-line="1131" selection-start-column="10" selection-end-line="1131" selection-end-column="10" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
           </folding>
