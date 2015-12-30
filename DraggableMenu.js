@@ -396,8 +396,8 @@
 					}
 			},
 
-			// 灵敏模式, 准备删除
-			_sensitive: true,
+				// 灵敏模式, 准备删除
+				_sensitive: true,
 				// 选择模板, 看是否能删除, 应该可以, 但不用, 因为只需要保留true值就可以, 意思是只需要用户传值渲染数据都会使用自定义模板
 				_templateRender: true,
 				// _useCSS的正否是选择translate3D还是translate, 当然最后会由环境来判断, 这里一直默认是true
@@ -457,7 +457,8 @@
 			// 锁定容器尺寸
 			this._$container.css({
 				'height': this._containerH = this._containerRows * this._itemH,
-				'width' : this._containerW, 'overflow' : 'hidden'
+				'width' : this._containerW,
+				'overflow': 'hidden'
 			});
 			this._$items.css({position: 'absolute', left: 0, top: 0})
 		},
@@ -507,13 +508,6 @@
 			for(var i = st; i < len; i++){
 				this._setPosition($($items[i]), this._posAry[i])
 			}
-		},
-
-		_reorderFn: function(targetAry, reorderItemIndex, newIndex){
-			// 抽出
-			var reorderItem = targetAry.splice(reorderItemIndex, 1)[0];
-			// 指定插入
-			targetAry.splice(newIndex, 0, reorderItem);
 		},
 
 		_startEventFunc :function(event){
@@ -859,6 +853,13 @@
 				this._reorderItemIndex = visionIndex;
 			}
 			// 对比思路1, 由于拖拽距离是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
+		},
+
+		_reorderFn: function(targetAry, reorderItemIndex, newIndex){
+			// 抽出
+			var reorderItem = targetAry.splice(reorderItemIndex, 1)[0];
+			// 指定插入
+			targetAry.splice(newIndex, 0, reorderItem);
 		},
 
 		/*-----------------------------------------------------------------------------------------------*/
