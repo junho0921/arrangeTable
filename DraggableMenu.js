@@ -834,24 +834,29 @@
 			this._dragging = false;
 		},
 
-		_stopEventFunc: function(){
-			console.log('stopEventFunc');
+		_stopEventFunc: function(event){
+			console.log('stopEventFunc  event.type', event && event.type);
 
-			var _this = this,
-				stopTime = new Date(),
-				isPress = (stopTime - this._startTime) > this._staticConfig._clickDuration;
+			var _this = this;
+			//var stopTime = new Date(),
+			//	isPress = (stopTime - this._startTime) > this._config.pressDuration;
+
+			this._stopTime = event.timeStamp || +new Date();
+
+			var isPress = (this._stopTime - this._startTime) > this._config.pressDuration;
+
+			this._$container.children().removeClass(this._staticConfig.activeItemClass);
+
+			this._dragging = false;// 这属性都不在这里使用, 先关闭
+
+			this._startTime = stopTime;// 方便判断双击
 
 			clearTimeout(this._setTimeFunc);
 
 			this._$DOM.off(this._moveEvent + " " + this._stopEvent);
 
-			this._$container.children().removeClass(this._staticConfig.activeItemClass);
-
 			this._InitializeMoveEvent = false;// 这属性都不在这里使用, 先关闭
 
-			this._dragging = false;// 这属性都不在这里使用, 先关闭
-
-			this._startTime = stopTime;// 方便判断双击
 
 			if(isPress && this._editing){
 				// 情景: 有编辑模式就必然有dragItem
