@@ -485,23 +485,6 @@
 
 				this._indexAry[i] // 视觉位置
 					= i; // i是文本位置的序号
-
-				/* 以下是keyframes的生成 */
-				//var translateA = 'translate3D(' + position.left +'px, ' + position.top +'px, 0px)';
-				//this._addKeyframes('pos' + i, {
-				//	'0%,100%': {
-				//		opacity: 1,
-				//		'z-index': 99,
-				//		'-webkit-transform': translateA + ' scale3d(1, 1, 1)',
-				//		transform: translateA + ' scale3d(1, 1, 1)'
-				//	},
-				//	'50%': {
-				//		opacity: 0.5,
-				//		'z-index': 99,
-				//		'-webkit-transform': translateA + ' scale3d(1.2, 1.2, 1.2)',
-				//		transform: translateA + ' scale3d(1.2, 1.2, 1.2)'
-				//	}
-				//});
 			}
 		},
 
@@ -629,18 +612,10 @@
 
 			this._$editItem = null;
 
-			this._reorderItemIndex = null;//????需要这样处理么
+			this._reorderItemIndex = null;
 
 			this._editing = false;
-			// 若编辑对象不是本对象的话(情景如在编辑模式中点击其他item), 意味没有dragItem, 只需要把editItem转换正常item
-			//if(this._$editItem !== this._$touchTarget){}
 		},
-
-		//_stayEditMode: function(){
-		//	// 其实可以放在_removeDragItem里处理的, 但分离出来是方便理解
-		//	// 保留了属性this._editing=true, this._$editItem, this._reorderItemIndex
-		//	this._$editItem.removeClass(this._staticConfig.ghostItemClass);
-		//},
 
 		_renderDragItem: function(){
 			// 生成dragItem
@@ -731,6 +706,494 @@
 			this._setItemsPos(this._$items);
 			this._editing = false;
  		},
+
+		_cleanEvent: function(){
+			// 清空绑定事件与定时器, 清空由startEvent于moveEvent放生的状态与事件
+
+			// 退出激活模式
+			this._$container.children().removeClass(this._staticConfig.activeItemClass);
+
+			clearTimeout(this._setTimeFunc);
+
+			this._$DOM.off(this._moveEvent + " " + this._stopEvent);
+
+			this._dragging = false;// 这属性都不在这里使用, 先关闭
+
+			this._InitializeMoveEvent = false;// 这属性都不在这里使用, 先关闭
+
+		},
+
+		_stopEventFunc: function(event){
+
+			this._stopTime = event.timeStamp || +new Date();
+
+			var isPress = (this._stopTime - this._startTime) > this._config.pressDuration, _this = this;
+
+			this._startTime = this._stopTime;// 方便判断双击
+
+			this._cleanEvent();
+
+			if(isPress && this._editing){
+				// 情景: 有编辑模式就必然有dragItem
+				// 以下两种区分是按照支付宝效果:
+				if(this._dragToReorder){
+					// 情景: 编辑模式且拖拽产生排序
+					this._removeDragItem(function(){//callback
+						// 取消编辑状态
+						_this._quitEditMode();
+						// 提供外部的方法, 传参排序后的jQuery对象集合
+						_this._config.onDragEnd(_this._$items);
+						// 清理拖拽排序情况
+						_this._dragToReorder = null;// ?? 应该放在哪里的
+					});
+
+				} else {
+					// 情景: 编辑模式且拖拽没有产生排序, 应该在reset dragItem后保留编辑状态
+					this._removeDragItem();
+				}
+
+			} else if(!isPress){
+
+				if(!this._editing){ // 判断: 没有拖拽后且没有滑动且只在限制时间内才是click事件
+					// 状态: 非编辑模式且没有拖拽的点击, 是正常的点击
+					this._config.onItemTap(this._$touchTargetData);
+
+				} else {
+
+					this._quitEditMode();
+				}
+			}
+		},
+
+		_dragEventFn: function(event){
+			this._dragging = true;// 进入拖动模式
+
+			var Move_ex = this._page('x', event),
+				Move_ey = this._page('y', event);
+
+			// 初始化MoveEvent
+			if(!this._InitializeMoveEvent){
+
+				if(this._staticConfig._sensitive){
+					// 灵敏模式, 只关心满足时间条件就可以拖拽
+					var inShort = (event.timeStamp - this._startTime) < this._config.pressDuration;
+
+					if (inShort){
+						this._cleanEvent();
+						return;
+					}
+				} else {
+					this._sensitiveJudge(event);
+				}
+
+				// 满足两个条件后, 初始化(仅进行一次)
+				this._InitializeMoveEvent = true;
+				// 重新获取可以拖拉的数量
+				this._draggableCount = this._$items.length - this._staticCount;
+
+				// 进入拖拽状态前必须先清空reorderItem的transition, 因为需要reorderItem立即变化为透明与在释放dragItem动画后立即显示reorderItem
+				this._disableTransition(this._$editItem);
+
+				// 清空transition来实现无延迟拖拽
+				this._disableTransition(this._$draggingItem);
+			}
+
+			// 在初始化拖动后才禁止默认事件行为
+			event.preventDefault();
+
+			var cssX, cssY;
+			// 计算触控点拖拽距离
+			cssX = Move_ex - this._eventStartX;
+			cssY = Move_ey - this._eventStartY;
+
+			// 计算item被拖拽时的坐标
+			cssX = this._draggingItemStartPos.left + cssX;
+			cssY = this._draggingItemStartPos.top + cssY;
+
+			// 拖拽
+			this._setPosition(this._$draggingItem, {'left': cssX, 'top': cssY}, {scale: '1.2'});
+
+			// 重新排序
+			this._reorder(cssX, cssY);
+		},
+
+		_getTouchIndex: function(touchX, touchY){
+			// 不能超出容器范围
+			if(touchX > 0 && touchX <= this._containerW && touchY > 0 && touchY <= this._containerH){
+				var curCol = Math.floor(touchX / this._itemW) + 1;// 列数
+				var curRow = Math.floor(touchY / this._itemH);// 行数
+				return (curRow * this._containerCols + curCol - 1);// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
+			}
+		},
+
+		_reorder: function(cssX, cssY) {
+			/* 思路1: 监听触控点位置来插入空白格子 */
+			// 1, 计算触控点位置
+			// 2, 计算target的文档位置
+			// 3, 以1与2的相对位置, 整除_itemW和_itemH得出触控点所在的li的序号index, 以此作为插入的位置
+			// 但Bug!!! 缩放屏幕会出现偏差. 根本原因是步骤1与2的获取位置的原理不同, 缩放时各自变化比例不同, 所以不能同时使用思路1
+
+			/* 思路2: 监听拖动项的中心位置来插入空白格子 */
+			// 1, 计算拖拽时target中心位置的坐标targetCenterPos
+			var targetCenterPosX = cssX + this._itemW / 2,
+				targetCenterPosY = cssY + this._itemH / 2;
+
+			// 2, 以targetCenterPos坐标来计算触控点所在视觉位置visionIndex
+			var visionIndex = this._getTouchIndex(targetCenterPosX, targetCenterPosY) || 0;
+
+			// 3, 选择性的进行排序
+			// 基于绝对定位, 不用考虑文本流的插入index值的调整
+			if(
+				visionIndex !== this._reorderItemIndex && // 在同一item上的拖拽不执行重新排序
+				visionIndex >= 0 && visionIndex < this._draggableCount // 超过items数量范围的拖拽不执行重新排序
+			){
+				this._dragToReorder = true;
+				// 重新排序数组
+				this._reorderFn(this._$items, this._reorderItemIndex, visionIndex);
+				this._reorderFn(this._indexAry, this._reorderItemIndex, visionIndex);
+
+				// 重新排序items位置, 只对有视觉上需要位移的items进行排序
+				this._setItemsPos(this._$items, this._reorderItemIndex, visionIndex);
+
+				// 更新本次位置
+				this._reorderItemIndex = visionIndex;
+			}
+			// 对比思路1, 由于拖拽距离是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
+		},
+
+		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------  以下方法可另作组件公用  -----------------------------------------*/
+		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------------------------------------------------------------------------*/
+
+		_applyTransition: function($obj, duration) {
+			// 添加css  Transition
+			var transition = {};
+
+			// 默认过渡时间是排序过渡时间
+			duration = duration || this._config.reorderDuration;
+
+			transition[this._transitionType] = 'all ' + duration + 'ms ' + this._staticConfig._transitionTiming;
+			//transition[this._transitionType] = this._transformType + ' ' + this._config.reorderDuration + 'ms ' + this._staticConfig._transitionTiming;
+
+			$obj.css(transition);
+		},
+
+		_disableTransition: function($obj) {
+			// 去掉css  Transition
+			var transition = {};
+
+			transition[this._transitionType] = 'all 0s';
+			//transition[this._transitionType] = '';
+
+			$obj.css(transition);
+		},
+
+		_setProps: function() {
+			// 环境检测可用的css属性: 能否使用transition, 能否使用transform
+
+			var bodyStyle = document.body.style;
+
+			// 选择事件类型, 添加命名空间, 不会与其他插件冲突
+			this._hasTouch = 'ontouchstart' in window;
+			this._startEvent = this._hasTouch ? 'touchstart.draggableMenu': 'mousedown.draggableMenu';
+			this._stopEvent = this._hasTouch ? 'touchend.draggableMenu': 'mouseup.draggableMenu';
+			this._moveEvent = this._hasTouch ? 'touchmove.draggableMenu': 'mousemove.draggableMenu';
+
+			if (bodyStyle.WebkitTransition !== undefined ||
+				bodyStyle.MozTransition !== undefined ||
+				bodyStyle.msTransition !== undefined) {
+				if (this._staticConfig._useCSS === true) { //_config是提供用户的选择, 但要使用的话, 需检测环境能否
+					this._cssTransitions = true;
+				}
+			}
+			/*setProps的主要作用之一:检测可使用的前缀, 可以用来借鉴, Perspective更小众*/
+			if (bodyStyle.OTransform !== undefined) {
+				this._animType = 'OTransform';
+				this._transformType = '-o-transform';
+				this._transitionType = 'OTransition';
+				this._animationType = '-o-animation';
+				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) this._animType = false;
+			}
+			if (bodyStyle.MozTransform !== undefined) {
+				this._animType = 'MozTransform';
+				this._transformType = '-moz-transform';
+				this._transitionType = 'MozTransition';
+				this._animationType = '-moz-animation';
+				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.MozPerspective === undefined) this._animType = false;
+			}
+			if (bodyStyle.webkitTransform !== undefined) {
+				this._animType = 'webkitTransform';
+				this._transformType = '-webkit-transform';
+				this._transitionType = 'webkitTransition';
+				this._animationType = '-webkit-animation';
+				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) this._animType = false;
+			}
+			if (bodyStyle.msTransform !== undefined) {
+				this._animType = 'msTransform';
+				this._transformType = '-ms-transform';
+				this._transitionType = 'msTransition';
+				this._animationType = '-ms-animation';
+				if (bodyStyle.msTransform === undefined) this._animType = false;
+			}
+			if (bodyStyle.transform !== undefined && this._animType !== false) {
+				this._animType = 'transform';
+				this._transformType = 'transform';
+				this._transitionType = 'transition';
+				this._animationType = 'animation';
+			}
+			this._transformsEnabled = this._staticConfig._useTransform && (this._animType !== null && this._animType !== false);
+			//this._transformsEnabled = false;// 测试用
+			//this._cssTransitions = false;// 测试用
+		},
+
+		_setPosition: function($obj, position, option) {
+			// 方法setCSS: 即时位置调整
+			// 之后扩展可以参考scale来做
+			option = option || {};
+			var positionProps = {},
+				x, y,
+				scale = option.scale || '1';
+
+			x =  Math.ceil(position.left) + 'px';
+			y =  Math.ceil(position.top) + 'px';
+
+			if (this._transformsEnabled === false) {
+				positionProps = {'left': x, "top": y};
+				//scale = "scale(" + scale + ', ' + scale + ")";
+				//positionProps[this._animType] = scale;
+			} else {
+				// 配置scale, 提供用户使用放大效果
+				if (this._cssTransitions === false) {
+					scale = "scale(" + scale + ', ' + scale + ")";
+					positionProps[this._animType] = 'translate(' + x + ', ' + y + ') ' + scale;
+				} else {
+					scale = "scale3d(" + scale + ', ' + scale + ', ' + scale + ")";
+					positionProps[this._animType] = 'translate3d(' + x + ', ' + y + ', 0px) ' + scale;
+				}
+			}
+			//console.log('positionProps', positionProps);
+			$obj.css(positionProps);
+		},
+
+		// 方法: 获取触控点坐标
+		_page :  function (coord, event) {
+			return (this._hasTouch? event.originalEvent.touches[0]: event)['page' + coord.toUpperCase()];
+		},
+
+
+		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------  以下方法没有用上, 备用  -----------------------------------------*/
+		/*-----------------------------------------------------------------------------------------------*/
+		/*-----------------------------------------------------------------------------------------------*/
+
+		_sensitiveJudge: function(event){
+			// move过程中对事件的判断有两个重要变量: 延时与范围
+			// 都满足: 按住拉动
+			// 都不满足: swipe
+			// 满足2, 不满足1: 是触控微动, 不停止, 只是忽略
+			// 满足1, 不满足2: 是错位, 可以理解是双触点, 按住了一点, 满足时间后立即同时点下第二点
+			// 在app实际运行时, 触控滑动监听的_moveEvent事件比较灵敏, 即使是快速touchMove, 也计算出触控点位置仅仅移动了1px, 也就是Move_ey - this._eventStartY = 1px, 所以这里在未满足时间情况完全不考虑触控点移动而直接停止方法return出来
+			var inShort = (event.timeStamp - this._startTime) < this._config.pressDuration;
+			var Move_ex = this._page('x', event),
+				Move_ey = this._page('y', event);
+
+			console.log('pc模式判断事件');
+			var rangeXY = this._config.rangeXY;
+			var outRang = (Move_ex - this._eventStartX ) > rangeXY || (Move_ey - this._eventStartY) > rangeXY;
+
+			if (inShort){
+				// 非灵敏模式, 区分触控点变化范围
+				console.log(Math.abs(Move_ex - this._eventStartX), Math.abs(Move_ey - this._eventStartY));
+				if(Math.abs(Move_ex - this._eventStartX) > rangeXY || Math.abs(Move_ey - this._eventStartY) > rangeXY){
+					console.log('非拖拽的swipe');
+					this._cleanEvent();
+					return;
+				} else {
+					// 允许微动, 忽略(return)本次操作, 不停止绑定_moveEvent事件, 因为只是微动或震动, 是允许范围
+					console.log('允许微动, 忽略(return)本次操作, 可继续绑定触发_moveEvent');
+					return;
+				}
+			}
+			// 条件2: 范围外  ps:建议范围rangeXY不要太大, 否则变成了定时拖动.
+			if(outRang){
+				console.warn('按住达到一定时间后瞬间move超距离, 认为是操作失误');
+				this._cleanEvent();
+				return false;
+			}
+		},
+
+		_applyAnimation: function($obj, index) {
+			// 添加css  Transition
+			var animation = {};
+
+			animation[this._animationType] = 'pos' + index + " 0.3s";
+
+			$obj.css(animation);
+		},
+
+		_disableAnimation: function($obj) {
+			// 去掉css  Transition
+			var animation = {};
+
+			animation[this._animationType] = "";
+
+			$obj.css(animation);
+		},
+
+		_animateSlide: function($obj, position, callback) {
+			// 方法animateSlide: 位置调整的动画滑动效果, 且接收callback
+			var animProps = {}, DrM = this;
+
+			if (this._transformsEnabled === false) {
+				// 降级方案 使用animate方案
+				$obj.animate(position, this._config.reorderDuration, 'swing', callback);
+				//this._applyTransition($obj);
+				//$obj.css({'left': position.left + 'px', 'top': position.top + 'px'})
+				//setTimeout(function(){
+				//	callback()
+				//}, this._config.reorderDuration);
+			} else {
+
+				if (this._cssTransitions === false) {
+					// 使用translate的CSS方法, 需要获取到_$draggingItem的translate位置
+					// 获取本对象_$draggingItem的css属性translate的值:
+					var objOriginal = this._$draggingItem[0].style.transform,
+						objOriginalX = Number(objOriginal.substring(10, objOriginal.indexOf("px"))),
+						objOriginalY = Number(objOriginal.substring(objOriginal.lastIndexOf(",") + 1, objOriginal.lastIndexOf("px")));
+
+					var startPosition = {"left":objOriginalX, "top":objOriginalY},
+						curPosition = {"left":objOriginalX, "top":objOriginalY},
+						pr = {};
+
+					$(startPosition)// 这个位置是拖拽的最后的位置, 也就是_moveEvent的位置
+						.animate(position, {
+							duration: this._config.reorderDuration,
+							step: function(now, data) {
+								pr[data.prop] = now;
+								$.extend(curPosition, pr);
+								animProps[DrM._animType] = 'translate(' +
+									curPosition.left + 'px, ' + curPosition.top + 'px)';
+								$obj.css(animProps);
+							},
+							complete: function() {
+								if (callback) {
+									callback.call();
+								}
+							}
+						});
+
+				} else {
+					// 使用translate3D的CSS方法
+					this._applyTransition($obj);
+
+					animProps[this._animType] = 'translate3d(' + position.left + 'px, ' + position.top + 'px, 0px)';
+
+					$obj.css(animProps);
+
+					if (callback) {
+						setTimeout(function() {
+							//DrM._disableTransition($obj);
+
+							callback.call();
+						}, this._config.reorderDuration);
+					}
+				}
+
+			}
+
+		},
+
+		_renderKeyframes: function(){
+			// 示范使用addKeyframes方法生成与_posAry对应位置的keyframes
+			for(var i = 0; i < this._posAry.length; i++){
+				var position = this._posAry[i];
+
+				var translateA = 'translate3D(' + position.left +'px, ' + position.top +'px, 0px)';
+				this._addKeyframes('pos' + i, {
+					'0%,100%': {
+						opacity: 1,
+						'z-index': 99,
+						'-webkit-transform': translateA + ' scale3d(1, 1, 1)',
+						transform: translateA + ' scale3d(1, 1, 1)'
+					},
+					'50%': {
+						opacity: 0.5,
+						'z-index': 99,
+						'-webkit-transform': translateA + ' scale3d(1.2, 1.2, 1.2)',
+						transform: translateA + ' scale3d(1.2, 1.2, 1.2)'
+					}
+				});
+			}
+		},
+
+		_addKeyframes: function(name, frames){
+			// 参数name, frames是必须的
+
+			// 生成style标签
+			var styleTag = document.createElement('style');
+			styleTag.rel = 'stylesheet';
+			styleTag.type = 'text/css';
+			// 插入到head里
+			document.getElementsByTagName('head')[0].appendChild(styleTag);
+
+			var styles = styleTag.sheet;
+
+			// 生成name命名的keyframes
+			try {
+				var idx = styles.insertRule('@keyframes ' + name + '{}',
+					styles.cssRules.length);
+			}
+			catch(e) {
+				if(e.name == 'SYNTAX_ERR' || e.name == 'SyntaxError') {
+					idx = styles.insertRule('@-webkit-keyframes ' + name + '{}',
+						styles.cssRules.length);
+				}
+				else {
+					throw e;
+				}
+			}
+
+			var original = styles.cssRules[idx];
+
+			// 遍历参数2frames对象里的属性, 来添加到keyframes里
+			for(var text in frames) {
+				var  css = frames[text];
+
+				var cssRule = text + " {";
+
+				for(var k in css) {
+					cssRule += k + ':' + css[k] + ';';
+				}
+				cssRule += "}";
+				if('appendRule' in original) {
+					original.appendRule(cssRule);
+				}
+				else {
+					original.insertRule(cssRule);
+				}
+			}
+		},
+
+
+		_getOS: function browserRedirect() {
+			var sUserAgent = navigator.userAgent.toLowerCase();
+			var bIsIpad = sUserAgent.match(/ipad/i) == "ipad";
+			var bIsIphoneOs = sUserAgent.match(/iphone os/i) == "iphone os";
+			var bIsMidp = sUserAgent.match(/midp/i) == "midp";
+			var bIsUc7 = sUserAgent.match(/rv:1.2.3.4/i) == "rv:1.2.3.4";
+			var bIsUc = sUserAgent.match(/ucweb/i) == "ucweb";
+			var bIsAndroid = sUserAgent.match(/android/i) == "android";
+			var bIsCE = sUserAgent.match(/windows ce/i) == "windows ce";
+			var bIsWM = sUserAgent.match(/windows mobile/i) == "windows mobile";
+			if (bIsIpad || bIsIphoneOs || bIsMidp || bIsUc7 || bIsUc || bIsAndroid || bIsCE || bIsWM) {
+				return "phone";
+			} else {
+				return "pc";
+			}
+		},
 
 		_stopEventFunc1: function(){
 			/*
@@ -840,457 +1303,6 @@
 
 			this._InitializeMoveEvent = false;
 			this._dragging = false;
-		},
-
-		_cleanEvent: function(){
-			// 清空绑定事件与定时器, 清空由startEvent于moveEvent放生的状态与事件
-
-			// 退出激活模式
-			this._$container.children().removeClass(this._staticConfig.activeItemClass);
-
-			clearTimeout(this._setTimeFunc);
-
-			this._$DOM.off(this._moveEvent + " " + this._stopEvent);
-
-			this._dragging = false;// 这属性都不在这里使用, 先关闭
-
-			this._InitializeMoveEvent = false;// 这属性都不在这里使用, 先关闭
-
-		},
-
-		_stopEventFunc: function(event){
-
-			this._stopTime = event.timeStamp || +new Date();
-
-			var isPress = (this._stopTime - this._startTime) > this._config.pressDuration, _this = this;
-
-			this._startTime = this._stopTime;// 方便判断双击
-
-			this._cleanEvent();
-
-			if(isPress && this._editing){
-				// 情景: 有编辑模式就必然有dragItem
-				// 以下两种区分是按照支付宝效果:
-				if(this._dragToReorder){
-					// 情景: 编辑模式且拖拽产生排序
-					this._removeDragItem(function(){//callback
-						// 取消编辑状态
-						_this._quitEditMode();
-						// 提供外部的方法, 传参排序后的jQuery对象集合
-						_this._config.onDragEnd(_this._$items);
-						// 清理拖拽排序情况
-						_this._dragToReorder = null;// ?? 应该放在哪里的
-					});
-
-				} else {
-					// 情景: 编辑模式且拖拽没有产生排序, 应该在reset dragItem后保留编辑状态
-					this._removeDragItem();
-				}
-
-			} else if(!isPress){
-
-				if(!this._editing){ // 判断: 没有拖拽后且没有滑动且只在限制时间内才是click事件
-					// 状态: 非编辑模式且没有拖拽的点击, 是正常的点击
-					this._config.onItemTap(this._$touchTargetData);
-
-				} else {
-
-					this._quitEditMode();
-
-				}
-			}
-
-		},
-
-		_dragEventFn: function(event){
-			this._dragging = true;// 进入拖动模式
-
-			var Move_ex = this._page('x', event),
-				Move_ey = this._page('y', event);
-
-			// 初始化MoveEvent
-			if(!this._InitializeMoveEvent){
-				// 条件1: 限时内
-				var inShort = (event.timeStamp - this._startTime) < this._config.pressDuration;
-				if(this._staticConfig._sensitive){
-					// 灵敏模式, 只关心满足时间条件就可以拖拽
-					if (inShort){
-						//this._stopEventFunc();
-						this._cleanEvent();
-						return;
-					}
-				} else {
-					// move过程中对事件的判断有两个重要变量: 延时与范围
-					// 都满足: 按住拉动
-					// 都不满足: swipe
-					// 满足2, 不满足1: 是触控微动, 不停止, 只是忽略
-					// 满足1, 不满足2: 是错位, 可以理解是双触点, 按住了一点, 满足时间后立即同时点下第二点
-					// 在app实际运行时, 触控滑动监听的_moveEvent事件比较灵敏, 即使是快速touchMove, 也计算出触控点位置仅仅移动了1px, 也就是Move_ey - this._eventStartY = 1px, 所以这里在未满足时间情况完全不考虑触控点移动而直接停止方法return出来
-					console.log('pc模式判断事件');
-					var rangeXY = this._config.rangeXY;
-					var outRang = (Move_ex - this._eventStartX ) > rangeXY || (Move_ey - this._eventStartY) > rangeXY;
-
-					if (inShort){
-						// 非灵敏模式, 区分触控点变化范围
-						console.log(Math.abs(Move_ex - this._eventStartX), Math.abs(Move_ey - this._eventStartY));
-						if(Math.abs(Move_ex - this._eventStartX) > rangeXY || Math.abs(Move_ey - this._eventStartY) > rangeXY){
-							console.log('非拖拽的swipe');
-							this._stopEventFunc();
-							return;
-						} else {
-							// 允许微动, 忽略(return)本次操作, 不停止绑定_moveEvent事件, 因为只是微动或震动, 是允许范围
-							console.log('允许微动, 忽略(return)本次操作, 可继续绑定触发_moveEvent');
-							return;
-						}
-					}
-					// 条件2: 范围外  ps:建议范围rangeXY不要太大, 否则变成了定时拖动.
-					if(outRang){
-						console.warn('按住达到一定时间后瞬间move超距离, 认为是操作失误');
-						this._stopEventFunc();
-						return false;
-					}
-				}
-
-				// 满足两个条件后, 初始化(仅进行一次)
-				this._InitializeMoveEvent = true;
-				// 重新获取可以拖拉的数量
-				this._draggableCount = this._$items.length - this._staticCount;
-
-				// 进入拖拽状态前必须先清空reorderItem的transition, 因为需要reorderItem立即变化为透明与在释放dragItem动画后立即显示reorderItem
-				this._disableTransition(this._$editItem);
-
-				// 清空transition来实现无延迟拖拽
-				this._disableTransition(this._$draggingItem);
-			}
-
-			// 在初始化拖动后才禁止默认事件行为
-			event.preventDefault();
-
-			var cssX, cssY;
-			// 计算触控点拖拽距离
-			cssX = Move_ex - this._eventStartX;
-			cssY = Move_ey - this._eventStartY;
-
-			// 计算item被拖拽时的坐标
-			cssX = this._draggingItemStartPos.left + cssX;
-			cssY = this._draggingItemStartPos.top + cssY;
-
-			// 拖拽
-			this._setPosition(this._$draggingItem, {'left': cssX, 'top': cssY}, {scale: '1.2'});
-
-			// 重新排序
-			this._reorder(cssX, cssY);
-		},
-
-		_getTouchIndex: function(touchX, touchY){
-			// 不能超出容器范围
-			if(touchX > 0 && touchX <= this._containerW && touchY > 0 && touchY <= this._containerH){
-				var curCol = Math.floor(touchX / this._itemW) + 1;// 列数
-				var curRow = Math.floor(touchY / this._itemH);// 行数
-				return (curRow * this._containerCols + curCol - 1);// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
-			}
-		},
-
-		_reorder: function(cssX, cssY) {
-			/* 思路1: 监听触控点位置来插入空白格子 */
-			// 1, 计算触控点位置
-			// 2, 计算target的文档位置
-			// 3, 以1与2的相对位置, 整除_itemW和_itemH得出触控点所在的li的序号index, 以此作为插入的位置
-			// 但Bug!!! 缩放屏幕会出现偏差. 根本原因是步骤1与2的获取位置的原理不同, 缩放时各自变化比例不同, 所以不能同时使用思路1
-
-			/* 思路2: 监听拖动项的中心位置来插入空白格子 */
-			// 1, 计算拖拽时target中心位置的坐标targetCenterPos
-			var targetCenterPosX = cssX + this._itemW / 2,
-				targetCenterPosY = cssY + this._itemH / 2;
-
-			// 2, 以targetCenterPos坐标来计算触控点所在视觉位置visionIndex
-			var visionIndex = this._getTouchIndex(targetCenterPosX, targetCenterPosY) || 0;
-
-			// 3, 选择性的进行排序
-			// 基于绝对定位, 不用考虑文本流的插入index值的调整
-			if(
-				visionIndex !== this._reorderItemIndex && // 在同一item上的拖拽不执行重新排序
-				visionIndex >= 0 && visionIndex < this._draggableCount // 超过items数量范围的拖拽不执行重新排序
-			){
-				this._dragToReorder = true;
-				// 重新排序数组
-				this._reorderFn(this._$items, this._reorderItemIndex, visionIndex);
-				this._reorderFn(this._indexAry, this._reorderItemIndex, visionIndex);
-
-				// 重新排序items位置, 只对有视觉上需要位移的items进行排序
-				this._setItemsPos(this._$items, this._reorderItemIndex, visionIndex);
-
-				// 更新本次位置
-				this._reorderItemIndex = visionIndex;
-			}
-			// 对比思路1, 由于拖拽距离是稳定的, 判断插入的位置只是基于文档位置的获取机制, 所以可以.
-		},
-
-		/*-----------------------------------------------------------------------------------------------*/
-		/*-----------------------------------------------------------------------------------------------*/
-		/*-----------------------------  以下方法可另作组件公用  -----------------------------------------*/
-		/*-----------------------------------------------------------------------------------------------*/
-		/*-----------------------------------------------------------------------------------------------*/
-
-		_applyTransition: function($obj, duration) {
-			// 添加css  Transition
-			var transition = {};
-
-			// 默认过渡时间是排序过渡时间
-			duration = duration || this._config.reorderDuration;
-
-			transition[this._transitionType] = 'all ' + duration + 'ms ' + this._staticConfig._transitionTiming;
-			//transition[this._transitionType] = this._transformType + ' ' + this._config.reorderDuration + 'ms ' + this._staticConfig._transitionTiming;
-
-			$obj.css(transition);
-		},
-
-		_applyAnimation: function($obj, index) {
-			// 添加css  Transition
-			var animation = {};
-
-			animation[this._animationType] = 'pos' + index + " 0.3s";
-
-			$obj.css(animation);
-		},
-
-		_disableAnimation: function($obj) {
-			// 去掉css  Transition
-			var animation = {};
-
-			animation[this._animationType] = "";
-
-			$obj.css(animation);
-		},
-
-		_disableTransition: function($obj) {
-			// 去掉css  Transition
-			var transition = {};
-
-			transition[this._transitionType] = 'all 0s';
-			//transition[this._transitionType] = '';
-
-			$obj.css(transition);
-		},
-
-		_setProps: function() {
-			// 环境检测可用的css属性: 能否使用transition, 能否使用transform
-
-			var bodyStyle = document.body.style;
-
-			// 选择事件类型, 添加命名空间, 不会与其他插件冲突
-			this._hasTouch = 'ontouchstart' in window;
-			this._startEvent = this._hasTouch ? 'touchstart.draggableMenu': 'mousedown.draggableMenu';
-			this._stopEvent = this._hasTouch ? 'touchend.draggableMenu': 'mouseup.draggableMenu';
-			this._moveEvent = this._hasTouch ? 'touchmove.draggableMenu': 'mousemove.draggableMenu';
-
-			if (bodyStyle.WebkitTransition !== undefined ||
-				bodyStyle.MozTransition !== undefined ||
-				bodyStyle.msTransition !== undefined) {
-				if (this._staticConfig._useCSS === true) { //_config是提供用户的选择, 但要使用的话, 需检测环境能否
-					this._cssTransitions = true;
-				}
-			}
-			/*setProps的主要作用之一:检测可使用的前缀, 可以用来借鉴, Perspective更小众*/
-			if (bodyStyle.OTransform !== undefined) {
-				this._animType = 'OTransform';
-				this._transformType = '-o-transform';
-				this._transitionType = 'OTransition';
-				this._animationType = '-o-animation';
-				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) this._animType = false;
-			}
-			if (bodyStyle.MozTransform !== undefined) {
-				this._animType = 'MozTransform';
-				this._transformType = '-moz-transform';
-				this._transitionType = 'MozTransition';
-				this._animationType = '-moz-animation';
-				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.MozPerspective === undefined) this._animType = false;
-			}
-			if (bodyStyle.webkitTransform !== undefined) {
-				this._animType = 'webkitTransform';
-				this._transformType = '-webkit-transform';
-				this._transitionType = 'webkitTransition';
-				this._animationType = '-webkit-animation';
-				if (bodyStyle.perspectiveProperty === undefined && bodyStyle.webkitPerspective === undefined) this._animType = false;
-			}
-			if (bodyStyle.msTransform !== undefined) {
-				this._animType = 'msTransform';
-				this._transformType = '-ms-transform';
-				this._transitionType = 'msTransition';
-				this._animationType = '-ms-animation';
-				if (bodyStyle.msTransform === undefined) this._animType = false;
-			}
-			if (bodyStyle.transform !== undefined && this._animType !== false) {
-				this._animType = 'transform';
-				this._transformType = 'transform';
-				this._transitionType = 'transition';
-				this._animationType = 'animation';
-			}
-			this._transformsEnabled = this._staticConfig._useTransform && (this._animType !== null && this._animType !== false);
-			//this._transformsEnabled = false;// 测试用
-			//this._cssTransitions = false;// 测试用
-		},
-
-		_setPosition: function($obj, position, option) {
-			// 方法setCSS: 即时位置调整
-			// 之后扩展可以参考scale来做
-			option = option || {};
-			var positionProps = {},
-				x, y,
-				scale = option.scale || '1';
-
-			x =  Math.ceil(position.left) + 'px';
-			y =  Math.ceil(position.top) + 'px';
-
-			if (this._transformsEnabled === false) {
-				positionProps = {'left': x, "top": y};
-				//scale = "scale(" + scale + ', ' + scale + ")";
-				//positionProps[this._animType] = scale;
-			} else {
-				// 配置scale, 提供用户使用放大效果
-				if (this._cssTransitions === false) {
-					scale = "scale(" + scale + ', ' + scale + ")";
-					positionProps[this._animType] = 'translate(' + x + ', ' + y + ') ' + scale;
-				} else {
-					scale = "scale3d(" + scale + ', ' + scale + ', ' + scale + ")";
-					positionProps[this._animType] = 'translate3d(' + x + ', ' + y + ', 0px) ' + scale;
-				}
-			}
-			//console.log('positionProps', positionProps);
-			$obj.css(positionProps);
-		},
-
-		_animateSlide: function($obj, position, callback) {
-			// 方法animateSlide: 位置调整的动画滑动效果, 且接收callback
-			var animProps = {}, DrM = this;
-
-			if (this._transformsEnabled === false) {
-				// 降级方案 使用animate方案
-				$obj.animate(position, this._config.reorderDuration, 'swing', callback);
-				//this._applyTransition($obj);
-				//$obj.css({'left': position.left + 'px', 'top': position.top + 'px'})
-				//setTimeout(function(){
-				//	callback()
-				//}, this._config.reorderDuration);
-			} else {
-
-				if (this._cssTransitions === false) {
-					// 使用translate的CSS方法, 需要获取到_$draggingItem的translate位置
-					// 获取本对象_$draggingItem的css属性translate的值:
-					var objOriginal = this._$draggingItem[0].style.transform,
-						objOriginalX = Number(objOriginal.substring(10, objOriginal.indexOf("px"))),
-						objOriginalY = Number(objOriginal.substring(objOriginal.lastIndexOf(",") + 1, objOriginal.lastIndexOf("px")));
-
-					var startPosition = {"left":objOriginalX, "top":objOriginalY},
-						curPosition = {"left":objOriginalX, "top":objOriginalY},
-						pr = {};
-
-					$(startPosition)// 这个位置是拖拽的最后的位置, 也就是_moveEvent的位置
-						.animate(position, {
-							duration: this._config.reorderDuration,
-							step: function(now, data) {
-								pr[data.prop] = now;
-								$.extend(curPosition, pr);
-								animProps[DrM._animType] = 'translate(' +
-									curPosition.left + 'px, ' + curPosition.top + 'px)';
-								$obj.css(animProps);
-							},
-							complete: function() {
-								if (callback) {
-									callback.call();
-								}
-							}
-						});
-
-				} else {
-					// 使用translate3D的CSS方法
-					this._applyTransition($obj);
-
-					animProps[this._animType] = 'translate3d(' + position.left + 'px, ' + position.top + 'px, 0px)';
-
-					$obj.css(animProps);
-
-					if (callback) {
-						setTimeout(function() {
-							//DrM._disableTransition($obj);
-
-							callback.call();
-						}, this._config.reorderDuration);
-					}
-				}
-
-			}
-
-		},
-
-		_addKeyframes: function(name, frames){
-			// 参数name, frames是必须的
-
-			// 生成style标签
-			var styleTag = document.createElement('style');
-			styleTag.rel = 'stylesheet';
-			styleTag.type = 'text/css';
-			// 插入到head里
-			document.getElementsByTagName('head')[0].appendChild(styleTag);
-
-			var styles = styleTag.sheet;
-
-			// 生成name命名的keyframes
-			try {
-				var idx = styles.insertRule('@keyframes ' + name + '{}',
-					styles.cssRules.length);
-			}
-			catch(e) {
-				if(e.name == 'SYNTAX_ERR' || e.name == 'SyntaxError') {
-					idx = styles.insertRule('@-webkit-keyframes ' + name + '{}',
-						styles.cssRules.length);
-				}
-				else {
-					throw e;
-				}
-			}
-
-			var original = styles.cssRules[idx];
-
-			// 遍历参数2frames对象里的属性, 来添加到keyframes里
-			for(var text in frames) {
-				var  css = frames[text];
-
-				var cssRule = text + " {";
-
-				for(var k in css) {
-					cssRule += k + ':' + css[k] + ';';
-				}
-				cssRule += "}";
-				if('appendRule' in original) {
-					original.appendRule(cssRule);
-				}
-				else {
-					original.insertRule(cssRule);
-				}
-			}
-		},
-
-		// 方法: 获取触控点坐标
-		_page :  function (coord, event) {
-			return (this._hasTouch? event.originalEvent.touches[0]: event)['page' + coord.toUpperCase()];
-		},
-
-		_getOS: function browserRedirect() {
-			var sUserAgent = navigator.userAgent.toLowerCase();
-			var bIsIpad = sUserAgent.match(/ipad/i) == "ipad";
-			var bIsIphoneOs = sUserAgent.match(/iphone os/i) == "iphone os";
-			var bIsMidp = sUserAgent.match(/midp/i) == "midp";
-			var bIsUc7 = sUserAgent.match(/rv:1.2.3.4/i) == "rv:1.2.3.4";
-			var bIsUc = sUserAgent.match(/ucweb/i) == "ucweb";
-			var bIsAndroid = sUserAgent.match(/android/i) == "android";
-			var bIsCE = sUserAgent.match(/windows ce/i) == "windows ce";
-			var bIsWM = sUserAgent.match(/windows mobile/i) == "windows mobile";
-			if (bIsIpad || bIsIphoneOs || bIsMidp || bIsUc7 || bIsUc || bIsAndroid || bIsCE || bIsWM) {
-				return "phone";
-			} else {
-				return "pc";
-			}
 		}
 	};
 
