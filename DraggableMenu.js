@@ -137,7 +137,6 @@
 			this._dragEventFn = $.proxy(this._dragEventFn, this);
 			this._stopEventFunc = $.proxy(this._stopEventFunc, this);
 
-
 			// 属性设置
 			this._config = $.extend({}, this._defaultConfig, options);
 
@@ -373,6 +372,8 @@
 				draggingItemClass: "DrM-draggingItem",
 				// 编辑中的item
 				editingItemClass: "DrM-editingItem",
+				// dragItem在释放拖拽一瞬间到回归位置的状态
+				reItemClass: "DrM-reItem",
 
 				_modeSelect: 'mode3',
 
@@ -452,6 +453,9 @@
 					break;
 				}
 			}
+
+			this._containerCols = this._containerCols || this._$items.length;
+
 			this._containerRows = Math.ceil(this._$items.length / this._containerCols);
 
 			// 锁定容器尺寸
@@ -557,7 +561,6 @@
 			}
 
 		},
-
 
 		/*
 		 进入编辑模式:
@@ -704,16 +707,15 @@
 		_cleanEvent: function(){
 			// 清空绑定事件与定时器, 清空由startEvent于moveEvent放生的状态与事件
 
-			// 退出激活模式
-			this._$container.children().removeClass(this._staticConfig.activeItemClass);
+			this._$container.children().removeClass(this._staticConfig.activeItemClass);// 退出激活模式
 
 			clearTimeout(this._setTimeFunc);
 
 			this._$DOM.off(this._moveEvent + " " + this._stopEvent);
 
-			this._dragging = false;// 这属性都不在这里使用, 先关闭
+			this._dragging = false;// 关闭滑动状态
 
-			this._InitializeMoveEvent = false;// 这属性都不在这里使用, 先关闭
+			this._InitializeMoveEvent = false;// 关闭拖拽状态
 
 		},
 
