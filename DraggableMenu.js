@@ -135,7 +135,7 @@
 	'use strict';
 
 	// 引用cssProp插件:
-	var gadget = $.fn.gadget;	// 建议使用翻译: 助力, 风力
+	var gadget = $.fn.gadget, timeFunc;	// 建议使用翻译: 助力, 风力
 
 	var arrangeTable = function ($container, options, view) {
 
@@ -232,6 +232,7 @@
 		 * items集合
 		 */
 		_$items: null,
+		//todo 四个状态的item是怎么区分, 模糊么?
 		/**
 		 * 排序对象
 		 */
@@ -571,21 +572,17 @@
 			this._draggingItemStartPos = this._gridPosAry[this._visualIndex];
 
 			// 获取本DOM的原始数据
-			if(this._config.dataList){
-				this._$touchTargetData = this._$touchItem.data('DrM-dataDetail');//this._config.dataList[this._visualIndex];
-			}
+			this._$touchTargetData = this._$touchItem.data('DrM-dataDetail') || {};//this._config.dataList[this._visualIndex];
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
 			this._$DOM.oneUiStop(this._uiStopHandler);
 
-			if(!this._$touchTargetData || (this._$touchTargetData && !this._$touchTargetData.static)){
+			if(!this._$touchTargetData.static){
 				// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
-				var _this = this;
-
-				this._setTimeFunc = setTimeout(function(){
-					_this._enterEditMode();
-					_this._renderDragItem();
-				}, this._config.pressDuration);
+				timeFunc = setTimeout($.proxy(function(){
+					this._enterEditMode();
+					this._renderDragItem();
+				}, this), this._config.pressDuration);
 
 				// 绑定拖拽事件
 				this._$DOM.onUiProcess(this._uiProcessHandler);
@@ -618,7 +615,6 @@
 			this._$editItem = this._$touchItem.addClass(this._staticConfig.class.editingItem);
 
 			// 停止动画, 因为进入编辑模式的item需要立即的效果切换, 如透明度, 立即显示与立即隐藏
-			//this._disableTransition(this._$editItem);
 			this._$editItem.transition({duration: 0});
 		},
 
@@ -632,11 +628,10 @@
 			if(!this._editing){return}
 
 			// 需要隔开时间, 先让css的透明度立即呈现
-			var _this = this, target = this._$editItem;
+			var duration = this._config.reorderDuration, target = this._$editItem;
 			setTimeout(function(){
-				//_this._applyTransition(target);
 				target.transition({
-					duration: _this._config.reorderDuration
+					duration: duration
 				})
 			},20);
 
@@ -713,7 +708,7 @@
 
 			//console.log('删除item对象内容 ',
 			// 删除reorderItemsAry里视觉位置的item
-			this._$items.splice(this._reorderItemIndex, 1)
+				this._$items.splice(this._reorderItemIndex, 1)
 			//[0]);
 			//console.log('删除后, 更新的对象集', this._$items);
 
@@ -754,7 +749,7 @@
 
 			this._$container.children().removeClass(this._staticConfig.class.activeItem);// 退出激活模式
 
-			clearTimeout(this._setTimeFunc);
+			clearTimeout(timeFunc);
 
 			this._$DOM.offUiProcess();
 			
