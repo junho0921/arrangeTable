@@ -166,6 +166,7 @@
 
 		_setConfig : function(options){
 			this._uiStartHandler = $.proxy(this._uiStartHandler, this);
+			this._uiProcessInit = $.proxy(this._uiProcessInit, this);
 			this._uiProcessHandler = $.proxy(this._uiProcessHandler, this);
 			this._uiStopHandler = $.proxy(this._uiStopHandler, this);
 
@@ -257,11 +258,11 @@
 		/**
 		 * 状态: _dragging是进入touchMove的状态, sensitive模式下可能不需要
 		 */
-		_dragging: false,
+		_isDragging: false,
 		/**
 		 * 状态: editing编辑模式是针对长按状态里添加"添加或删除"按钮进行编辑, 逻辑是长按进入编辑状态
 		 */
-		_editing: false,
+		_isEditing: false,
 
 		/*
 		 * touchStart的坐标
@@ -308,11 +309,6 @@
 		 * 静态位置的坐标数组, 网格位置的数组
 		 * */
 		_gridPosAry: null,
-
-		/*
-		 * 点击目标的原始数据
-		 * */
-		_$touchTargetData: null,
 
 		/*
 		 * 拖拽item有没有引发排序, 因支付宝效果所需要的状态
@@ -546,38 +542,105 @@
 		/*=====================================================================================*/
 		/*=====================================================================================*/
 		/*=====================================================================================*/
+		//todo 设计
+		//todo 先给效果
+		//_eventTarget:function(dataObj){
+		//	for(var attr in dataObj){
+		//		this['_' + attr] = dataObj[attr]
+		//	}
+		//},
+		//_eventData:function(dataObj){
+		//	for(var attr in dataObj){
+		//		this['_' + attr] = dataObj[attr]
+		//	}
+		//},
+		//_uiEffectData:function(dataObj){
+		//	for(var attr in dataObj){
+		//		this['_' + attr] = dataObj[attr]
+		//	}
+		//},
+		//_uiStatus:function(dataObj){
+		//	for(var attr in dataObj){
+		//		this['_' + attr] = dataObj[attr]
+		//	}
+		//},
+		_refreshData: function(dataObj){
+			for(var attr1 in dataObj){
+				for(var attr2 in dataObj[attr1]){
+					this['_' + attr2] = dataObj[attr1][attr2]
+				}
+			}
+		},
+
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+		/*=====================================================================================*/
+
 
 		_uiStartHandler :function(event){
-			this._startTime = event.timeStamp || +new Date();
 
-			if(
-				event.target.className == this._staticConfig.class.closeBtn || // 拖点击对象是关闭按钮, 则不能执行本方法
-				(this._stopTime && (this._startTime - this._stopTime) < this._config.reorderDuration) // 离上一次操作完毕太短时间
-			){
-				console.log('点击关闭按钮或距离上一次操作太快'); return
-			}
+			var time = event.timeStamp || +new Date();
 
-			this._$touchItem = $(event.currentTarget);
+			if(event.target.className == this._staticConfig.class.closeBtn || // 拖点击对象是关闭按钮, 则不能执行本方法
+				(this._stopTime && (time - this._stopTime) < this._config.reorderDuration) // 离上一次操作完毕太短时间
+			){console.log('点击关闭按钮或距离上一次操作太快'); return}
 
-			// 记录初始位置
-			this._eventStartPos = gadget.getTouchPos(event);
-
-			this._textIndex =
-				this._$touchItem.addClass(this._staticConfig.class.activeItem)// 进入激活模式
-					.index();// 获取文本位置的序号
-
-			// 由于DOM结构固定, 所以需要在变量indexAry数组里获取DOM-index所在的视觉位置序号
-			this._visualIndex = $.inArray(this._textIndex, this._indexAry);
-
-			this._draggingItemStartPos = this._gridPosAry[this._visualIndex];
-
-			// 获取本DOM的原始数据
-			this._$touchTargetData = this._$touchItem.data('DrM-dataDetail') || {};//this._config.dataList[this._visualIndex];
+			/*概念S*/
+			//this._eventTarget({
+			//	$touchItem		: $(event.currentTarget).addClass(this._staticConfig.class.activeItem)
+			//});
+			//
+			//this._eventData({
+			//	startTime		: time,
+			//	eventStartPos	: gadget.getTouchPos(event)
+			//});
+			//
+			//this._uiEffectData({
+			//	//改名: touchItemTextIndex / touchItemVisualIndex / touchItemStartPos
+			//	textIndex		: tIndex = this._$touchItem.index(),
+			//	visualIndex	: vIndex = $.inArray(tIndex, this._indexAry),
+			//	draggingItemStartPos	: this._gridPosAry[vIndex]
+			//});
+			//
+			//this._uiStatus({
+			//	isTouchStart : true
+			//});
+			var vIndex, tIndex, $e = $(event.currentTarget);
+			this._refreshData({
+				eventTarget	:{
+					$touchItem			: $e.addClass(this._staticConfig.class.activeItem)
+				},
+				eventData	:{
+					startTime			: time,
+					eventStartPos		: gadget.getTouchPos(event)
+				},
+				uiStatus	: {
+					isTouchStart		: true
+				},
+				uiEffectData:{
+					textIndex			: tIndex = $e.index(),
+					visualIndex			: vIndex = $.inArray(tIndex, this._indexAry),
+					draggingItemStartPos: this._gridPosAry[vIndex]
+				}
+			});
+			/*概念E*/
 
 			// 绑定事件_stopEvent, 本方法必须在绑定拖拽事件之前
 			this._$DOM.oneUiStop(this._uiStopHandler);
 
-			if(!this._$touchTargetData.static){
+			// 获取本DOM的原始数据
+			var touchTargetData = this._$touchItem.data('DrM-dataDetail') || {};//this._config.dataList[this._visualIndex];
+			if(!touchTargetData.static){
 				// 设定时触发press, 因按下后到一定时间, 即使没有执行什么都会执行press和进行编辑模式
 				timeFunc = setTimeout($.proxy(function(){
 					this._enterEditMode();
@@ -585,9 +648,12 @@
 				}, this), this._config.pressDuration);
 
 				// 绑定拖拽事件
-				this._$DOM.onUiProcess(this._uiProcessHandler);
+				this._$DOM.oneUiProcess(this._uiProcessInit);
 			}
+		},
 
+		_triggerApi: function (method, params){
+			this._config[method].apply(this, params);
 		},
 
 		/*
@@ -598,24 +664,28 @@
 		 */
 		_enterEditMode: function(){
 			// 在编辑模式中, 再次进入编辑模式的话, 若不是原本对象, 先把原本对象转为正常item
-			if(this._editing && this._reorderItemIndex !== this._visualIndex){
+			if(this._isEditing && this._reorderItemIndex !== this._visualIndex){
 				this._$editItem.removeClass(this._staticConfig.class.editingItem);
 			}
 
-			// 设为编辑模式
-			this._editing = true;
-
-			// 排序位置reorderItemIndex为touchItem的视_showContent觉位置, 为了让关闭按钮可以通过reorderItemIndex来删除位置
-			this._reorderItemIndex = this._visualIndex;
-
 			// 提供外部执行的方法
-			this._config.onEditing(this._$items, this._$touchItem);
+			this._triggerApi('onEditing', [this._$items, this._$touchItem]);
 
-			// touchTarget 转为 editItem
-			this._$editItem = this._$touchItem.addClass(this._staticConfig.class.editingItem);
+			this._refreshData({
+				eventTarget	:{
+					$editItem		: this._$touchItem.addClass(this._staticConfig.class.editingItem)
+				},
+				uiStatus	: {
+					isEditing		: true
+				},
+				uiEffectData:{
+					// 排序位置reorderItemIndex为touchItem的视_showContent觉位置, 为了让关闭按钮可以通过reorderItemIndex来删除位置
+					reorderItemIndex: this._visualIndex
+				}
+			});
 
 			// 停止动画, 因为进入编辑模式的item需要立即的效果切换, 如透明度, 立即显示与立即隐藏
-			this._$editItem.transition({duration: 0});
+			this._$editItem.transition({duration: 0}); //todo 不执行会有问题么? 有: 不能立即隐藏, 不能立即显示
 		},
 
 		/*
@@ -625,23 +695,27 @@
 		 恢复editItem的transition
 		 */
 		_quitEditMode: function(){
-			if(!this._editing){return}
+			if(!this._isEditing){return}
 
-			// 需要隔开时间, 先让css的透明度立即呈现
-			var duration = this._config.reorderDuration, target = this._$editItem;
-			setTimeout(function(){
-				target.transition({
-					duration: duration
-				})
+			var _this = this;
+			setTimeout(function(){// 让item退出编辑隔开一点时间, 因为恢复排位动画与立即显示矛盾, 所以先显示,注意隐藏的是reorderClass控制的
+				_this._$editItem
+					.transition({duration: _this._config.reorderDuration}) //todo 恢复排位动画时间是不是应该在touchStart?
+					.removeClass(_this._staticConfig.class.editingItem);
+
+				_this._refreshData({
+					eventTarget	:{
+						$editItem		: null
+					},
+					uiStatus	: {
+						isEditing		: false
+					},
+					uiEffectData:{
+						// 排序位置reorderItemIndex为touchItem的视_showContent觉位置, 为了让关闭按钮可以通过reorderItemIndex来删除位置
+						reorderItemIndex: null
+					}
+				});
 			},20);
-
-			this._$editItem.removeClass(this._staticConfig.class.editingItem);
-
-			this._$editItem = null;
-
-			this._reorderItemIndex = null;
-
-			this._editing = false;
 		},
 
 		_renderDragItem: function(){
@@ -673,7 +747,7 @@
 		 * 动画回归dragItem后执行callback
 		 * */
 		_removeDragItem: function(callback){
-			if(!this._editing){return}
+			if(!this._isEditing){return}
 
 			var _this = this;
 			// dragItem在释放触控的一刻转为普通item
@@ -733,15 +807,14 @@
 
 			this._quitEditMode();
 
-			// 提供外部执行的方法, 传参修改后的items对象集合
-			this._config.onClose(this._$items);
+			this._triggerApi('onClose', [this._$items]);
 
 			// 清空排序的序号, 否则长按与本_reorderItemIndex值相同的视觉位置item会没有反应
 			this._reorderItemIndex = null;
 
 			// 动画"定位"剩下的items
 			this._setItemsPos(this._$items);
-			this._editing = false;
+			this._isEditing = false;
 		},
 
 		_cleanEvent: function(){
@@ -755,23 +828,34 @@
 			
 			this._$DOM.offUiStop();
 
-			this._dragging = false;// 关闭滑动状态
+			this._isDragging = false;// 关闭滑动状态
 
 			this._InitializeMoveEvent = false;// 关闭拖拽状态
 
 		},
 
 		_uiStopHandler: function(event){
-
-			this._stopTime = event.timeStamp || +new Date();
-
-			var isPress = (this._stopTime - this._startTime) > this._config.pressDuration, _this = this;
-
-			this._startTime = this._stopTime;// 方便判断双击
+			this._refreshData({
+				eventData:{
+					stopTime: event.timeStamp
+				}
+			});
 
 			this._cleanEvent();
 
-			if(isPress && this._editing){
+			this._triggerE();
+		},
+
+		_triggerE: function(){
+			var isPress = (this._stopTime - this._startTime) > this._config.pressDuration, _this = this;
+
+			this._refreshData({
+				eventData:{
+					stopTime: this._stopTime
+				}
+			});
+
+			if(isPress && this._isEditing){
 				// 情景: 有编辑模式就必然有dragItem
 				// 以下两种区分是按照支付宝效果:
 				if(this._dragToReorder){
@@ -779,8 +863,8 @@
 					this._removeDragItem(function(){//callback
 						// 取消编辑状态
 						_this._quitEditMode();
-						// 提供外部的方法, 传参排序后的jQuery对象集合
-						_this._config.onDragEnd(_this._$items);
+
+						_this._triggerApi('onDragEnd', [_this._$items]);
 						// 清理拖拽排序情况
 						_this._dragToReorder = null;// ?? 应该放在哪里的
 					});
@@ -792,9 +876,10 @@
 
 			} else if(!isPress){
 
-				if(!this._editing){ // 判断: 没有拖拽后且没有滑动且只在限制时间内才是click事件
+				if(!this._isEditing){ // 判断: 没有拖拽后且没有滑动且只在限制时间内才是click事件
 					// 状态: 非编辑模式且没有拖拽的点击, 是正常的点击
-					this._config.onItemTap(this._$touchTargetData);
+					var itemData = this._$touchItem.data('DrM-dataDetail');
+					this._triggerApi('onItemTap', [itemData]);
 
 				} else {
 
@@ -803,61 +888,52 @@
 			}
 		},
 
-		_uiProcessHandler: function(event){
-			this._dragging = true;// 进入拖动模式
+		_uiProcessInit: function(event){
+			if(this._staticConfig._sensitive){
+				// 灵敏模式, 只关心满足时间条件就可以拖拽
+				var isInDuration = (event.timeStamp - this._startTime) < this._config.pressDuration;
 
-			var touchMovePos = gadget.getTouchPos(event);
-
-			// 初始化MoveEvent
-			if(!this._InitializeMoveEvent){
-
-				if(this._staticConfig._sensitive){
-					// 灵敏模式, 只关心满足时间条件就可以拖拽
-					var isInDuration = (event.timeStamp - this._startTime) < this._config.pressDuration;
-
-					if (isInDuration){
-						this._cleanEvent();
-						return;
-					}
-				} else {
-					this._sensitiveJudge(event);
+				if (isInDuration){
+					this._cleanEvent();
+					return;
 				}
-
-				// 满足两个条件后, 初始化(仅进行一次)
-				this._InitializeMoveEvent = true;
-				// 重新获取可以拖拉的数量
-				this._draggableCount = this._$items.length - this._staticCount;
-
-
-
-				// 进入拖拽状态前必须先清空reorderItem的transition, 因为需要reorderItem立即变化为透明与在释放dragItem动画后立即显示reorderItem
-				this._$editItem.transition({duration: 0});
-
-				// 清空transition来实现无延迟拖拽
-				this._$draggingItem.transition({duration: 0});
-
+			} else {
+				this._sensitiveJudge(event);
 			}
 
-			// 在初始化拖动后才禁止默认事件行为
-			event.preventDefault();
+			this._refreshData({
+				uiEffectData:{
+					draggableCount	: this._$items.length - this._staticCount
+				},
+				uiStatus:{
+					isDragging : true
+				}
+			});
 
-			var cssX, cssY;
+			this._$editItem.transition({duration: 0});
+			this._$draggingItem.transition({duration: 0});
+
+			event.preventDefault();
+			this._$DOM.onUiProcess(this._uiProcessHandler);
+		},
+
+		_uiProcessHandler: function(event){
+			/*拖拽*/
+			var cssX, cssY, touchMovePos = gadget.getTouchPos(event);
 			// 计算触控点拖拽距离
 			cssX = touchMovePos[0] - this._eventStartPos[0];
 			cssY = touchMovePos[1] - this._eventStartPos[1];
 
 			// 计算item被拖拽时的坐标
-			cssX = this._draggingItemStartPos[0] + cssX;3
+			cssX = this._draggingItemStartPos[0] + cssX;
 			cssY = this._draggingItemStartPos[1] + cssY;
 
-			// 拖拽
-			//this._setPosition(this._$draggingItem, {'left': cssX, 'top': cssY}, {scale: '1.2'});
 			this._$draggingItem.transform({
 				pos: [cssX,  cssY],
 				scale: [1.2, 1.2, 1.2]
 			});
 
-			// 重新排序
+			/*排序*/
 			this._reorder(cssX, cssY);
 		},
 
@@ -1178,7 +1254,7 @@
 		//			// 状态: 拖拽item并产生重新排序items的释放触控
 		//			// 按支付宝效果, 若拖拽产生位移的话, 退出编辑模式
 		//			removeClassName += (" " + this._staticConfig.editingItemClass);
-		//			this._editing = false;
+		//			this._isEditing = false;
 		//			this._dragToReorder = false;
 		//		}
 		//		// 动画效果后的callback
@@ -1196,18 +1272,18 @@
 		//	}else{
 		//		this._$container.children().removeClass(removeClassName);
 		//
-		//		if(this._dragging === false){
+		//		if(this._isDragging === false){
 		//			// 状态: 没有拖拽且没有滑动触控点
 		//			var stopTime = new Date();
 		//
 		//			if(stopTime - this._startTime < this._staticConfig._clickDuration){ // 判断: 没有拖拽后且没有滑动且只在限制时间内才是click事件
 		//				// 状态: 没有拖拽的点击
-		//				if(this._editing){
+		//				if(this._isEditing){
 		//					// 状态: 在编辑模式中, 没有拖拽的点击
 		//					// 编辑模式的情况下的点击事件是结束编辑或取消编辑的点击:
 		//					this._$items.removeClass(this._staticConfig.editingItemClass);
 		//
-		//					this._editing = false;
+		//					this._isEditing = false;
 		//				} else{
 		//					// 状态: 非编辑模式且没有拖拽的点击, 是正常的点击
 		//					this._config.onItemTap(this._$touchTargetData);
@@ -1226,7 +1302,7 @@
 		//				});
 		//			}
 		//		} else {
-		//			if(this._editing){
+		//			if(this._isEditing){
 		//				// 状态: 长按而没有拖拽的释放触控, 认为是进入了编辑模式的释放触控
 		//				//动画
 		//				//this._setPosition(this._$draggingItem, this._draggingItemStartPos);
@@ -1243,7 +1319,7 @@
 		//	}
 		//
 		//	this._InitializeMoveEvent = false;
-		//	this._dragging = false;
+		//	this._isDragging = false;
 		//}
 	};
 
