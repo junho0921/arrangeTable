@@ -38,16 +38,16 @@
     z-index: 1000;
     transition:all 300ms ease-in-out;
 }
-/*Òþ²Ø*/
-.DrM-reorderItem{opacity: 0.01!important;}
+/*ï¿½ï¿½ï¿½ï¿½*/
+.DrM-ghostItem{opacity: 0.01!important;}
 
 /*Ô­Ê¼Öµ*/
 .DrM-closeBtn{transform: scale3D(0, 0, 0);}
-/*ÏÔÊ¾¹Ø±Õ°´Å¥µÄ×´Ì¬*/
+/*ï¿½ï¿½Ê¾ï¿½Ø±Õ°ï¿½Å¥ï¿½ï¿½×´Ì¬*/
 .dragItem.DrM-editingItem .DrM-closeBtn,/*editingItem*/
 .dragItem.DrM-draggingItem .DrM-closeBtn,/*dragItem*/
-.dragItem.DrM-reorderItem .DrM-closeBtn,/*reorderItem*/
-.dragItem.DrM-reItem .DrM-closeBtn/*ÊÍ·ÅdragItemµ½ÏûÊ§µÄ×´Ì¬*/
+.dragItem.DrM-ghostItem .DrM-closeBtn,/*reorderItem*/
+.dragItem.DrM-reItem .DrM-closeBtn/*ï¿½Í·ï¿½dragItemï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½×´Ì¬*/
 {transform: scale3D(1, 1, 1)}
 
 /* for nuui-draggableMenu end */
@@ -87,7 +87,7 @@
 
 
 
-/*µã»÷µÄ¶¯»­Ð§¹û*/
+/*ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½Ð§ï¿½ï¿½*/
 .DrM-activeItem{
     /*-webkit-transform:scale3d(1, 1, 1);*/
     /*transform:scale3d(1, 1, 1);*/
@@ -177,7 +177,7 @@
     /*100% {z-index:88; width:300px;}*/
 /*}*/
 
-/*@-webkit-keyframes mymove /!* Safari ºÍ Chrome *!/*/
+/*@-webkit-keyframes mymove /!* Safari ï¿½ï¿½ Chrome *!/*/
 /*{*/
     /*0%   {z-index:88; width:200px;}*/
     /*100% {z-index:88; width:300px;}*/
