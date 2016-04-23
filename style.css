@@ -7,7 +7,7 @@
     perspective: 62px;
 }
 
-.draggableMenu .dragItem{
+.draggableMenu .item{
     display: inline-block;
     min-width:200px;
     min-height: 200px;
@@ -16,9 +16,9 @@
     text-align: center;
 }
 
-.dragItem.DrM-activeItem.DrM-draggingItem {background: deepskyblue;}
+.item.DrM-activeItem.DrM-draggingItem {background: deepskyblue;}
 
-.dragItem.DrM-activeItem.DrM-reItem{background: lightcyan!important;}
+.item.DrM-activeItem.DrM-reItem{background: lightcyan!important;}
 
 
 /* for nuui-draggableMenu start */
@@ -44,10 +44,10 @@
 /*ԭʼֵ*/
 .DrM-closeBtn{transform: scale3D(0, 0, 0);}
 /*��ʾ�رհ�ť��״̬*/
-.dragItem.DrM-editingItem .DrM-closeBtn,/*editingItem*/
-.dragItem.DrM-draggingItem .DrM-closeBtn,/*dragItem*/
-.dragItem.DrM-ghostItem .DrM-closeBtn,/*reorderItem*/
-.dragItem.DrM-reItem .DrM-closeBtn/*�ͷ�dragItem����ʧ��״̬*/
+.item.DrM-editingItem .DrM-closeBtn,/*editingItem*/
+.item.DrM-draggingItem .DrM-closeBtn,/*dragItem*/
+.item.DrM-ghostItem .DrM-closeBtn,/*reorderItem*/
+.item.DrM-reItem .DrM-closeBtn/*�ͷ�dragItem����ʧ��״̬*/
 {transform: scale3D(1, 1, 1)}
 
 /* for nuui-draggableMenu end */

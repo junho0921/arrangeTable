@@ -38,7 +38,7 @@
 
 		renderer: function(data, i){
 			// <li class="dragItem" id="recharge"><i class="list-ico h"></i><span>话费充值</span></li>
-			return $('<li>').addClass('dragItem').attr({'id': data.id})
+			return $('<li>').addClass('item').attr({'id': data.id})
 					.append($("<i class='list-ico'>").addClass(data.icon))
 					.append($('<span>').text(data.text))
 					.append($('<span class="DrM-closeBtn">').text('-')); // 关闭按钮都是用户自定义的,
