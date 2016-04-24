@@ -44,7 +44,7 @@
 /*ԭʼֵ*/
 .DrM-closeBtn{transform: scale3D(0, 0, 0);}
 /*��ʾ�رհ�ť��״̬*/
-.item.DrM-editingItem .DrM-closeBtn,/*editingItem*/
+.item.DrM-editItem .DrM-closeBtn,/*editItem*/
 .item.DrM-draggingItem .DrM-closeBtn,/*dragItem*/
 .item.DrM-ghostItem .DrM-closeBtn,/*reorderItem*/
 .item.DrM-reItem .DrM-closeBtn/*�ͷ�dragItem����ʧ��״̬*/
