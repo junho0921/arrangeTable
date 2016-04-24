@@ -493,7 +493,7 @@
 				this.$el.removeClass(this.context._staticConfig.class.touchItem);
 				this.$el = null;
 			},
-			magnify:function(){ //todo 需要延缓一点时间, 不然没有动画效果,
+			magnify:function(){
 				var $target = this.$el;
 				$target
 					.css({'z-index': 1001})
@@ -531,7 +531,7 @@
 					],
 					scale: [1.2, 1.2, 1.2]
 				});
-				// todo ghostItem reorder
+				// ghostItem reorder
 			},
 			getFloatGrid: function(movePos){
 				var pos = [
@@ -587,7 +587,7 @@
 		_enterEditMode: function(){
 			// 在编辑模式中, 再次进入编辑模式的话, 若不是原本对象, 先把原本对象转为正常item
 			if(this._$editingItem && (!this._$uiTarget.$el.is(this._$editingItem))){
-				this._$editingItem.removeClass(this._staticConfig.class.editItem);//todo
+				this._$editingItem.removeClass(this._staticConfig.class.editItem);
 			}
 
 			this._triggerApi('onEditing', [this._$items.$el, this._$uiTarget.$el]);
