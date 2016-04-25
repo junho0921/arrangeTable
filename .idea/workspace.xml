@@ -4,7 +4,6 @@
     <list default="true" id="3d6f705b-ebdc-405d-99df-be8f38840f8f" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DraggableMenu.js" afterPath="$PROJECT_DIR$/DraggableMenu.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/html.html" afterPath="$PROJECT_DIR$/html.html" />
     </list>
     <ignored path="junDrag.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -28,8 +27,8 @@
       <file leaf-file-name="DraggableMenu.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.37445888">
-              <caret line="176" column="38" selection-start-line="176" selection-start-column="31" selection-end-line="176" selection-end-column="38" />
+            <state vertical-scroll-proportion="0.3836478">
+              <caret line="585" column="41" selection-start-line="585" selection-start-column="41" selection-end-line="585" selection-end-column="41" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
               </folding>
@@ -233,12 +232,6 @@
       <created>1448872141692</created>
       <option name="number" value="Default" />
       <updated>1448872141692</updated>
-    </task>
-    <task id="LOCAL-00056" summary="初步实现translate的定位效果, 但还没有完整">
-      <created>1449924403546</created>
-      <option name="number" value="00056" />
-      <option name="project" value="LOCAL" />
-      <updated>1449924403547</updated>
     </task>
     <task id="LOCAL-00057" summary="初步有效果, 但没有解决删除的问题!">
       <created>1449980726008</created>
@@ -528,7 +521,13 @@
       <option name="project" value="LOCAL" />
       <updated>1461548584279</updated>
     </task>
-    <option name="localTasksCounter" value="105" />
+    <task id="LOCAL-00105" summary="uiItems, uiTarget剥离为构造函数">
+      <created>1461568878409</created>
+      <option name="number" value="00105" />
+      <option name="project" value="LOCAL" />
+      <updated>1461568878422</updated>
+    </task>
+    <option name="localTasksCounter" value="106" />
     <servers />
   </component>
   <component name="TodoView" selected-index="2">
@@ -546,6 +545,7 @@
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.11875" sideWeight="0.48167005" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32892057" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32478634" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32985073" sideWeight="0.5" order="11" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.96274215" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -554,7 +554,6 @@
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.119791664" sideWeight="0.5183299" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32478634" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
@@ -577,7 +576,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="分类模式, 现在有三种模式:&#10;_mode: {&#10;&#9;&#9;&#9;&#9;'mode1': {&#10;&#9;&#9;&#9;&#9;&#9;attr: {&#10;&#9;&#9;&#9;&#9;&#9;&#9;_reorderTransition: false,&#10;&#9;&#9;&#9;&#9;&#9;&#9;_useTransform: true&#10;&#9;&#9;&#9;&#9;&#9;},&#10;&#9;&#9;&#9;&#9;&#9;name: 'DomFlow-css',&#10;&#9;&#9;&#9;&#9;&#9;desc: '降级模式: item文本流排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果没有过度; 2,不管是不是使用translate来定位, 用户自己都可以写keyframes, 因为translate是从0开始;'&#10;&#9;&#9;&#9;&#9;},&#10;&#9;&#9;&#9;&#9;'mode2': {&#10;&#9;&#9;&#9;&#9;&#9;attr: {&#10;&#9;&#9;&#9;&#9;&#9;&#9;_reorderTransition: true,&#10;&#9;&#9;&#9;&#9;&#9;&#9;_useTransform: false // _useTransform必须为false来使用css定位才可以提供用户自定义keyframes&#10;&#9;&#9;&#9;&#9;&#9;},&#10;&#9;&#9;&#9;&#9;&#9;name: 'Float-css',&#10;&#9;&#9;&#9;&#9;&#9;desc: '项目模式: item浮动排序的基础, 用户可自定义item的keyframes动画, 特点:1, 排序的效果有过度; 2, 指定用户自己来写keyframes '&#10;&#9;&#9;&#9;&#9;},&#10;&#9;&#9;&#9;&#9;'mode3': {&#10;&#9;&#9;&#9;&#9;&#9;attr: {&#10;&#9;&#9;&#9;&#9;&#9;&#9;_reorderTransition: true,&#10;&#9;&#9;&#9;&#9;&#9;&#9;_useTransform: true,&#10;&#9;&#9;&#9;&#9;&#9;&#9;_animation: true// 可删除的属性, 因为mode3模式应该直接使用本属性, 但要具体看修改代码时候的情况&#10;&#9;&#9;&#9;&#9;&#9;},&#10;&#9;&#9;&#9;&#9;&#9;name: 'Float-translate',&#10;&#9;&#9;&#9;&#9;&#9;desc: '最优动画模式: item浮动排序的基础, 用户定义item的keyframes动画的话需要在config里定义, 特点:1, 排序的效果有过度; 2, 指定用户在config来添加keyframes; 3, 动画效果有最好的效果 '&#10;&#9;&#9;&#9;&#9;}&#10;&#9;&#9;&#9;}," />
     <MESSAGE value="现在三种模式都可以顺利使用, 确定版本V3.0" />
     <MESSAGE value="修正放大效果, 由于支付宝的放大效果只在dragItem上, 所以不需要keyframe动画" />
     <MESSAGE value="准备修改关闭按钮的生成时间位置, &#10;&#10;关闭按钮应该在初始化的时候都生成出来的, 在激活状态才显示, 这样一方面有利于性能的优化, 另方面有利于按钮的放大缩小的效果" />
@@ -602,7 +600,8 @@
     <MESSAGE value="完成版本v3.0" />
     <MESSAGE value="&#10;" />
     <MESSAGE value="v3.0" />
-    <option name="LAST_COMMIT_MESSAGE" value="v3.0" />
+    <MESSAGE value="uiItems, uiTarget剥离为构造函数" />
+    <option name="LAST_COMMIT_MESSAGE" value="uiItems, uiTarget剥离为构造函数" />
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.83806145" />
   </component>
   <component name="XDebuggerManager">
@@ -984,8 +983,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/DraggableMenu.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.37445888">
-          <caret line="176" column="38" selection-start-line="176" selection-start-column="31" selection-end-line="176" selection-end-column="38" />
+        <state vertical-scroll-proportion="0.3836478">
+          <caret line="585" column="41" selection-start-line="585" selection-start-column="41" selection-end-line="585" selection-end-column="41" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
           </folding>

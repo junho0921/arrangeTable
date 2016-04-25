@@ -137,7 +137,7 @@
  21, 研究status应用: 没有需要保留的状态, 使用$editingItem的有无表示isEditing //okay!
  22, uiTargetStartPos, uiTargetCurrentIndex修改,合并到_$uiTarget属性里 //okay!
  23, 修改_collectUiData的不合理数据, 纯粹的要ui操作数据 //okay!
- 24, //todo _$uiTarget不安全, 现在只能是一个页面只有一个实例对象
+ 24, 剥离uiItems, uiTarget为构造函数 //okay!
 
  */
 
@@ -154,13 +154,10 @@
 }(function($) {
 	'use strict';
 
-	// 引用cssProp插件:
-	var gadget = $.fn.gadget, timeFunc;
+	var gadget = $.fn.gadget, timeFunc;// 引用cssProp插件
 
 	var arrangeTable = function ($container, options, view) {
-
 		this.initialize($container, options, view);
-
 		return this;
 	};
 
@@ -170,16 +167,12 @@
 			this._$container = $container.css({position: 'relative', padding: 0, overflow: 'hidden'});
 			this._config = $.extend({}, this._defaultConfig, options, this._staticConfig);
 
-			// 获取当前页面信息
-			this._getTableDomSize();
+			this._getTableDomSize();// 获取当前页面信息
 
-			// 渲染items
 			this._$items = new uiItems(this._renderContent(this._config.dataList), this._config, this._domSize, this._$container);
 			this._$uiTarget = new uiTarget(this._$items, this._config);
 
-			this._showContent(this._$items.$el);
-
-			console.log('this._$items.$el', this._$items.$el);
+			this._showContent(this._$items.$el); // 渲染内容
 
 			this._$items.$el
 				// 绑定关闭按钮事件
@@ -189,7 +182,7 @@
 		},
 
 		/*
-		 * 默认设置
+		 * 接口
 		 * */
 		_defaultConfig: {
 			// 渲染html的数据内容
@@ -271,7 +264,17 @@
 				reItem    : 'DrM-reItem'// dragItem在释放拖拽一瞬间到回归位置的状态
 			}
 		},
+
+		_collectUiData: function(attr, value){// 逻辑数据的收集, 与效果无关的用户操作数据
+			this['_' + attr] = value
+		},
+
+		_triggerApi: function (method, params){
+			this._config[method].apply(this, params);
+		},
+
 		/*=========================================初始化功夫============================================*/
+		/*==============================================================================================*/
 
 		_renderContent: function(data){
 			// 填充template内容并收集所有item的html的jQuery包装集
@@ -323,19 +326,8 @@
 			domSize.containerH = Math.ceil(domSize.gridsLength / domSize.containerCols) * domSize.gridH;
 		},
 
-		/*=======================================设计模式==============================================*/
-
-		_collectUiData: function(dataObj){
-			/*逻辑数据的收集, 与效果无关的用户操作数据, */
-			for(var attr in dataObj){
-				this['_' + attr] = dataObj[attr]
-			}
-		},
-
-		_triggerApi: function (method, params){
-			this._config[method].apply(this, params);
-		},
 		/*=======================================事件发展==============================================*/
+		/*============================================================================================*/
 
 		_uiStartHandler :function(event){
 			var $e = $(event.currentTarget), touchTime = event.timeStamp || +new Date(), _this = this;
@@ -346,11 +338,9 @@
 
 			this._$uiTarget.start($e);
 
-			this._collectUiData({
-				//eventData	:{
-					startTime		: touchTime,
-					eventStartPos	: gadget.getTouchPos(event)
-			});
+			this._collectUiData('startTime', touchTime);
+			this._collectUiData('eventStartPos', gadget.getTouchPos(event));
+
 			// bind touchEnd
 			this._$DOM.oneUiStop($.proxy(this._uiStopHandler, this));
 
@@ -376,10 +366,8 @@
 			this._triggerApi('onEditing', [this._$items.$el, this._$uiTarget.$el]);
 
 			var $uiTarget =  this._$uiTarget.toBeDragItem();
-			this._collectUiData({
-				//eventTarget	: {
-				    $editingItem: $uiTarget.addClass(this._config.class.editItem)
-			});
+
+			this._collectUiData('$editingItem', $uiTarget.addClass(this._config.class.editItem));
 		},
 
 		_uiProcessInit: function(event){
@@ -419,10 +407,7 @@
 		},
 
 		_uiStopHandler: function(event){
-			this._collectUiData({
-				//eventData:{
-					stopTime: event.timeStamp
-			});
+			this._collectUiData('stopTime', event.timeStamp);
 
 			this._cleanEvent();
 
@@ -481,10 +466,7 @@
 
 			this._$editingItem.removeClass(this._config.class.editItem);
 
-			this._collectUiData({
-				//eventTarget	:{
-					$editingItem: null
-			});
+			this._collectUiData('$editingItem', null);
 		},
 
 		_clickCloseBtnFn: function(e){
@@ -496,10 +478,7 @@
 
 			this._triggerApi('onClose', [this._$items.$el]);
 
-			this._collectUiData({
-				//eventData:{
-					stopTime: event.timeStamp
-			});
+			this._collectUiData('stopTime', event.timeStamp);
 		},
 
 		_cleanEvent: function(){
@@ -559,9 +538,7 @@
 		}
 	};
 
-
 	function uiItems () {
-		console.log(this);
 		return this.init.apply(this, arguments);
 	}
 	uiItems.prototype = {
@@ -602,14 +579,16 @@
 			return this;
 		},
 		getGridPos: function(index){
-			if($.type(index) == 'number'){
+			var type = $.type(index);
+			if(type == 'number'){
 				return this.gridPosAry[index];
-			} else {
+			} else if(type == 'object'){
 				return index.data('pos');
-			}
+			} else { return 0}
 		},
 		getVisualIndex: function(param){
 			/*以点击的对象所在的格子pos来判断在视觉上的位置*/
+			if(param == undefined){return 0}
 			var pos = $.type(param) == 'array' ? param : this.getGridPos(param);
 			return $.inArray(pos, this.gridPosAry);
 		},
@@ -661,7 +640,7 @@
 			var curCol = Math.floor(centerX / this.domSize.gridW) + 1,// 列数
 				curRow = Math.floor(centerY / this.domSize.gridH);// 行数
 			var floatIndex = (curRow * this.domSize.containerCols + curCol - 1);
-			var max = this.domSize.gridsLength;
+			var max = this.domSize.gridsLength - 1;
 			//var max = this.domSize.gridsLength - this.context._staticCount;
 			floatIndex = floatIndex < max ? (floatIndex >= 0 ? floatIndex : 0) : max;
 			return floatIndex;// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
