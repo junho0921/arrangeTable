@@ -1,6 +1,6 @@
 /* 依赖: jQuery, cssProp(by jun)*/
 
-/* 混合模式v3.0*/
+/* arrangeTable v3.0*/
 
 /*
  思考:
