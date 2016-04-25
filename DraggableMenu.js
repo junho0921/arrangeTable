@@ -137,6 +137,7 @@
  21, 研究status应用: 没有需要保留的状态, 使用$editingItem的有无表示isEditing //okay!
  22, uiTargetStartPos, uiTargetCurrentIndex修改,合并到_$uiTarget属性里 //okay!
  23, 修改_collectUiData的不合理数据, 纯粹的要ui操作数据 //okay!
+ 24, //todo _$uiTarget不安全, 现在只能是一个页面只有一个实例对象
 
  */
 
@@ -167,19 +168,22 @@
 		initialize: function($container, options, view) {
 			this._$DOM = view ? view.$el : $(document);
 			this._$container = $container.css({position: 'relative', padding: 0, overflow: 'hidden'});
-			this._config = $.extend({}, this._defaultConfig, options);
+			this._config = $.extend({}, this._defaultConfig, options, this._staticConfig);
 
 			// 获取当前页面信息
 			this._getTableDomSize();
 
 			// 渲染items
-			this._showContent(
-				this._$items.init(this)
-			);
+			this._$items = new uiItems(this._renderContent(this._config.dataList), this._config, this._domSize, this._$container);
+			this._$uiTarget = new uiTarget(this._$items, this._config);
+
+			this._showContent(this._$items.$el);
+
+			console.log('this._$items.$el', this._$items.$el);
 
 			this._$items.$el
 				// 绑定关闭按钮事件
-				.onUiStart('.' + this._staticConfig.class.closeBtn, $.proxy(this._clickCloseBtnFn, this))
+				.onUiStart('.' + this._config.class.closeBtn, $.proxy(this._clickCloseBtnFn, this))
 				// 绑定touchStart事件
 				.onUiStart($.proxy(this._uiStartHandler, this));
 		},
@@ -217,11 +221,11 @@
 		/**
 		 * items集合
 		 */
-		//_$items: null,
+		_$items: null,
 		/**
-		 * 拖拽对象, 功能集合
-		 * _$uiTarget
+		 * 操作对象
 		 */
+		_$uiTarget: null,
 		/**
 		 * 正在编辑的对象
 		 */
@@ -267,22 +271,7 @@
 				reItem    : 'DrM-reItem'// dragItem在释放拖拽一瞬间到回归位置的状态
 			}
 		},
-
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
 		/*=========================================初始化功夫============================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
 
 		_renderContent: function(data){
 			// 填充template内容并收集所有item的html的jQuery包装集
@@ -293,7 +282,7 @@
 				var $itemHtml = this._config.renderer(data[i], i, data)// 根据用户的自定义模板填进数据
 					.data('DrM-dataDetail', data[i]);
 				if(data[i].static){
-					$itemHtml.addClass(this._staticConfig.class.staticItem);
+					$itemHtml.addClass(this._config.class.staticItem);
 					this._staticCount++;// 记数
 				}
 				$renderWrap.append($itemHtml)
@@ -334,28 +323,7 @@
 			domSize.containerH = Math.ceil(domSize.gridsLength / domSize.containerCols) * domSize.gridH;
 		},
 
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
 		/*=======================================设计模式==============================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
 
 		_collectUiData: function(dataObj){
 			/*逻辑数据的收集, 与效果无关的用户操作数据, */
@@ -367,202 +335,17 @@
 		_triggerApi: function (method, params){
 			this._config[method].apply(this, params);
 		},
-
-		_$items: { // _simulateDom
-			/*
-			* 绝对定位模式的items控制器,
-			* 功能: 1,控制位置; 2,提供获取视觉index位置方法; 3,删除items; 4,container的autoHeight方法
-			* 目标: 模拟文本流定位的items控制
-			* */
-			gridPosAry:null, // 位置数据
-			context: null,
-			$el:null, // 对象
-			domSize:null, // 对象
-
-			init: function(context){
-				// 计算静态位置数组与items的序号数组
-				// 数组保存:格子数量和各格子坐标, 优点: 避免重复计算
-				this.context = context;
-				this.domSize = context._domSize;
-
-				this.gridPosAry = [];
-				for(var i = 0; i < this.domSize.gridsLength; i++){
-					var inRow = Math.floor(i / this.domSize.containerCols);
-					var inCol = i % this.domSize.containerCols;
-					this.gridPosAry.push([inCol * this.domSize.gridW, inRow * this.domSize.gridH]);
-				}
-
-				this.$el = this.context._renderContent(this.context._config.dataList);
-
-				this.$el // set items float state
-					.transition({duration: context._staticConfig.reorderDuration})
-					.css({position: 'absolute', left: 0, top: 0});
-
-				this.setItemsPos(); // set items float position
-
-				this.containerAutoHeight();
-
-				return this.$el;
-			},
-			getGridPos: function(index){
-				if($.type(index) == 'number'){
-					return this.gridPosAry[index];
-				} else {
-					return index.data('pos');
-				}
-			},
-			getVisualIndex: function(param){
-				/*以点击的对象所在的格子pos来判断在视觉上的位置*/
-				var pos = $.type(param) == 'array' ? param : this.getGridPos(param);
-				return $.inArray(pos, this.gridPosAry);
-			},
-			saveGridPosCache: function($target, pos){ // gridPosAry与saveGridPosCache方法是最好的利器, 使得getGridPos与getVisualIndex都简单直接了
-				$target.data('pos', pos);
-			},
-			reorder: function(originalPos, newPos){
-				var reorderItem = this.$el.splice(originalPos, 1)[0];// 抽出
-				this.$el.splice(newPos, 0, reorderItem);// 指定插入
-				// 定位的item不包含dragItem自身, 所以范围是[originalPos, newPos - 1]
-				var startItemIndex, stopItemIndex;
-				if(originalPos > newPos){ // 排序的item是有选择的, 在出与入位置的中间item, 不包含dragItem
-					startItemIndex = newPos + 1;
-					stopItemIndex = originalPos + 1;
-				} else {
-					startItemIndex = originalPos;
-					stopItemIndex = newPos;
-				}
-
-				this.setItemsPos([startItemIndex, stopItemIndex]);
-			},
-			delete: function(deletePos){
-				var deleteItem = this.$el.splice(deletePos, 1)[0]; console.log('删除的item = ', deleteItem);
-				$(deleteItem).remove();
-				this.setItemsPos();
-				this.domSize.gridsLength--;
-				this.containerAutoHeight();
-			},
-			setItemsPos: function(arrange){
-				var _$items = this;
-				var startIndex = (arrange && arrange[0]) || 0;// startIndex的意义是拖拽排序时, 只有连续items需要排序
-				var $target = arrange ? (this.$el.slice(arrange[0], arrange[1])) : this.$el;
-				$target.each(function(i, item){
-					var $e = $(item);
-					var pos = _$items.getGridPos(i + startIndex);
-					$e.transform({pos: pos, scale: [1, 1, 1]});
-					_$items.saveGridPosCache($e, pos);
-				});
-			},
-			containerAutoHeight: function(){
-				var context = this.context;
-				context._$container.height(
-					context._domSize.containerH = Math.ceil(context._domSize.gridsLength / context._domSize.containerCols) * context._domSize.gridH
-				);
-			},
-			getIndexByPointPos: function(pos){
-				/* 以target中心坐标, 计算该点所在格子的index */
-				var centerX = pos[0] + this.domSize.gridW / 2,
-					centerY = pos[1] + this.domSize.gridH / 2;
-				var curCol = Math.floor(centerX / this.domSize.gridW) + 1,// 列数
-					curRow = Math.floor(centerY / this.domSize.gridH);// 行数
-				var floatIndex = (curRow * this.domSize.containerCols + curCol - 1);
-				var max = this.domSize.gridsLength - this.context._staticCount;
-				floatIndex = floatIndex < max ? (floatIndex >= 0 ? floatIndex : 0) : max;
-				return floatIndex;// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
-			}
-		},
-
-		_$uiTarget: {
-			/*为何要独立dragItem, 因为这里关注的是动画效果, 不是逻辑, 放大, 拖拽, 缩小并归位都是动画*/
-			$el: null,
-			$ghost: null,
-			context: null,
-			startGridPos: null,
-			currentGridPos: null,
-			init:function(context, $e){
-				this.context = context;
-				this.startGridPos = context._$items.getGridPos($e);
-				this.currentGridPos = this.startGridPos;
-				return this.$el = $e.addClass(context._staticConfig.class.touchItem);
-			},
-			toBeDragItem:function(){
-				this.$el.addClass(this.context._staticConfig.class.dragItem);
-				this.magnify();
-				return this.$el;
-			},
-			destroy:function(){
-				this.$el.removeClass(this.context._staticConfig.class.touchItem);
-				this.$el = null;
-			},
-			magnify:function(){
-				var $target = this.$el;
-				$target
-					.css({'z-index': 1001})
-					.transition({duration: this.context._staticConfig.focusDuration})
-					.transitionEnd(function(){$target.transition({duration:0});})
-					.transform({
-						pos: this.startGridPos,
-						scale: [1.2, 1.2, 1.2]
-					});
-			},
-			reset: function(callback){
-				/*释放dragItem事件包含缩放与归位两个动画, 还提供callback*/
-				var context = this.context;
-				this.$el
-					.removeClass(context._staticConfig.class.dragItem)
-					.transition({
-						duration: context._staticConfig.reorderDuration
-					})
-					.css({'z-index': 1})
-					.transitionEnd(function(){
-						if(callback){callback.apply(context)}
-					})
-					.transform({
-						pos: this.currentGridPos,
-						scale: [1, 1, 1]
-					});
-				context._$items.saveGridPosCache(this.$el, this.currentGridPos);// 存储位置
-			},
-			followMove: function (movePos) {
-				// 这就分离了touchMove关注的是pos的数据更新, 动画效果交由本cssHandler处理
-				this.$el.transform({
-					pos: [
-						this.startGridPos[0] + movePos[0],
-						this.startGridPos[1] + movePos[1]
-					],
-					scale: [1.2, 1.2, 1.2]
-				});
-				// ghostItem reorder
-			},
-			getFloatGrid: function(movePos){
-				var pos = [
-					this.startGridPos[0] + movePos[0],
-					this.startGridPos[1] + movePos[1]
-				];
-				return this.context._$items.getIndexByPointPos(pos);
-			}
-		},
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
 		/*=======================================事件发展==============================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
-		/*=====================================================================================*/
 
 		_uiStartHandler :function(event){
 			var $e = $(event.currentTarget), touchTime = event.timeStamp || +new Date(), _this = this;
-			var isTargetStatic = $e.hasClass(this._staticConfig.class.staticItem);
-			var isReTouchTooFast = touchTime - this._stopTime < this._staticConfig.reorderDuration;
+			var isTargetStatic = $e.hasClass(this._config.class.staticItem);
+			var isReTouchTooFast = touchTime - this._stopTime < this._config.reorderDuration;
 
 			if(isReTouchTooFast){return}// 看来操作的条件没有状态判断
 
-			this._$uiTarget.init(this, $e);
+			this._$uiTarget.start($e);
+
 			this._collectUiData({
 				//eventData	:{
 					startTime		: touchTime,
@@ -575,7 +358,7 @@
 				// if Press, to enter editMode
 				timeFunc = setTimeout(function(){
 					_this._enterEditMode();
-				}, this._staticConfig.pressDuration);
+				}, this._config.pressDuration);
 				// bind touchMove
 				this._$DOM.oneUiProcess($.proxy(this._uiProcessInit, this));
 			}
@@ -587,7 +370,7 @@
 		_enterEditMode: function(){
 			// 在编辑模式中, 再次进入编辑模式的话, 若不是原本对象, 先把原本对象转为正常item
 			if(this._$editingItem && (!this._$uiTarget.$el.is(this._$editingItem))){
-				this._$editingItem.removeClass(this._staticConfig.class.editItem);
+				this._$editingItem.removeClass(this._config.class.editItem);
 			}
 
 			this._triggerApi('onEditing', [this._$items.$el, this._$uiTarget.$el]);
@@ -595,17 +378,17 @@
 			var $uiTarget =  this._$uiTarget.toBeDragItem();
 			this._collectUiData({
 				//eventTarget	: {
-				    $editingItem: $uiTarget.addClass(this._staticConfig.class.editItem)
+				    $editingItem: $uiTarget.addClass(this._config.class.editItem)
 			});
 		},
 
 		_uiProcessInit: function(event){
 			event.preventDefault();
 			// todo this._sensitiveJudge(event)
-			var isFlag = (event.timeStamp - this._startTime) < this._staticConfig.pressDuration;
+			var isFlag = (event.timeStamp - this._startTime) < this._config.pressDuration;
 			if (isFlag){ console.log('isFlag');
 				this._cleanEvent();
-				this._$uiTarget.destroy();
+				this._$uiTarget.end();
 			}else {
 				this._$DOM.onUiProcess($.proxy(this._uiProcessHandler, this));
 			}
@@ -647,11 +430,11 @@
 
 			purpose && this._uiCallback[purpose].apply(this);
 
-			this._$uiTarget.destroy();
+			this._$uiTarget.end();
 		},
 
 		_judgeUserAction: function(){
-			var isPress = (this._stopTime - this._startTime) > this._staticConfig.pressDuration;
+			var isPress = (this._stopTime - this._startTime) > this._config.pressDuration;
 			if(isPress && this._$editingItem){
 				var isDragToReorder = this._$uiTarget.currentGridPos !== this._$uiTarget.startGridPos;
 				if(isDragToReorder){
@@ -670,11 +453,11 @@
 
 		_uiCallback: {
 			forReorder: function(){
-				var callback = function(){
+				var callback = $.proxy(function(){
 					this._quitEditMode();
 
 					this._triggerApi('onDragEnd', [this._$items.$el]);
-				};
+				}, this);
 				this._$uiTarget.reset(callback);
 			},
 			forEnterEdit: function(){
@@ -696,7 +479,7 @@
 		_quitEditMode: function(){
 			if(!this._$editingItem){return}
 
-			this._$editingItem.removeClass(this._staticConfig.class.editItem);
+			this._$editingItem.removeClass(this._config.class.editItem);
 
 			this._collectUiData({
 				//eventTarget	:{
@@ -744,14 +527,14 @@
 			// 在app实际运行时, 触控滑动监听的_moveEvent事件比较灵敏, 即使是快速touchMove, 也计算出触控点位置仅仅移动了1px, 也就是Move_ey - this._eventStartPos[1] = 1px, 所以这里在未满足时间情况完全不考虑触控点移动而直接停止方法return出来
 
 			// 允许触控的边缘值, 单位px
-			this._staticConfig.rangeXY = 4;
+			this._config.rangeXY = 4;
 
-			var inShort = (event.timeStamp - this._startTime) < this._staticConfig.pressDuration;
+			var inShort = (event.timeStamp - this._startTime) < this._config.pressDuration;
 			var Move_ex = gadget.getTouchX(event),
 				Move_ey = gadget.getTouchY(event);
 
 			console.log('pc模式判断事件');
-			var rangeXY = this._staticConfig.rangeXY;
+			var rangeXY = this._config.rangeXY;
 			var outRang = (Move_ex - this._eventStartPos[0] ) > rangeXY || (Move_ey - this._eventStartPos[1]) > rangeXY;
 
 			if (inShort){
@@ -773,6 +556,193 @@
 				this._cleanEvent();
 				return false;
 			}
+		}
+	};
+
+
+	function uiItems () {
+		console.log(this);
+		return this.init.apply(this, arguments);
+	}
+	uiItems.prototype = {
+		/*
+		 * 绝对定位模式的items控制器,
+		 * 功能: 1,控制位置; 2,提供获取视觉index位置方法; 3,删除items; 4,container的autoHeight方法
+		 * 目标: 模拟文本流定位的items控制
+		 * */
+		gridPosAry:null, // 位置
+		$el:null,
+		domSize:null,
+		config:null,
+		$container:null,
+
+		init: function($el, config, domSize, $container){
+			// 计算静态位置数组与items的序号数组
+			// 数组保存:格子数量和各格子坐标, 优点: 避免重复计算
+			this.$el = $el;
+			this.domSize = domSize;
+			this.config = config;
+			this.$container = $container;
+
+			this.gridPosAry = [];
+			for(var i = 0; i < this.domSize.gridsLength; i++){
+				var inRow = Math.floor(i / this.domSize.containerCols);
+				var inCol = i % this.domSize.containerCols;
+				this.gridPosAry.push([inCol * this.domSize.gridW, inRow * this.domSize.gridH]);
+			}
+
+			this.$el // set items float state
+				.transition({duration: this.config.reorderDuration})
+				.css({position: 'absolute', left: 0, top: 0});
+
+			this.setItemsPos(); // set items float position
+
+			this.containerAutoHeight();
+
+			return this;
+		},
+		getGridPos: function(index){
+			if($.type(index) == 'number'){
+				return this.gridPosAry[index];
+			} else {
+				return index.data('pos');
+			}
+		},
+		getVisualIndex: function(param){
+			/*以点击的对象所在的格子pos来判断在视觉上的位置*/
+			var pos = $.type(param) == 'array' ? param : this.getGridPos(param);
+			return $.inArray(pos, this.gridPosAry);
+		},
+		saveGridPosCache: function($target, pos){ // gridPosAry与saveGridPosCache方法是最好的利器, 使得getGridPos与getVisualIndex都简单直接了
+			$target.data('pos', pos);
+		},
+		reorder: function(originalPos, newPos){
+			var reorderItem = this.$el.splice(originalPos, 1)[0];// 抽出
+			this.$el.splice(newPos, 0, reorderItem);// 指定插入
+			// 定位的item不包含dragItem自身, 所以范围是[originalPos, newPos - 1]
+			var startItemIndex, stopItemIndex;
+			if(originalPos > newPos){ // 排序的item是有选择的, 在出与入位置的中间item, 不包含dragItem
+				startItemIndex = newPos + 1;
+				stopItemIndex = originalPos + 1;
+			} else {
+				startItemIndex = originalPos;
+				stopItemIndex = newPos;
+			}
+
+			this.setItemsPos([startItemIndex, stopItemIndex]);
+		},
+		delete: function(deletePos){
+			var deleteItem = this.$el.splice(deletePos, 1)[0]; console.log('删除的item = ', deleteItem);
+			$(deleteItem).remove();
+			this.setItemsPos();
+			this.domSize.gridsLength--;
+			this.containerAutoHeight();
+		},
+		setItemsPos: function(arrange){
+			var _$items = this;
+			var startIndex = (arrange && arrange[0]) || 0;// startIndex的意义是拖拽排序时, 只有连续items需要排序
+			var $target = arrange ? (this.$el.slice(arrange[0], arrange[1])) : this.$el;
+			$target.each(function(i, item){
+				var $e = $(item);
+				var pos = _$items.getGridPos(i + startIndex);
+				$e.transform({pos: pos, scale: [1, 1, 1]});
+				_$items.saveGridPosCache($e, pos);
+			});
+		},
+		containerAutoHeight: function(){
+			this.$container.height(
+				this.domSize.containerH = Math.ceil(this.domSize.gridsLength / this.domSize.containerCols) * this.domSize.gridH
+			);
+		},
+		getIndexByPointPos: function(pos){
+			/* 以target中心坐标, 计算该点所在格子的index */
+			var centerX = pos[0] + this.domSize.gridW / 2,
+				centerY = pos[1] + this.domSize.gridH / 2;
+			var curCol = Math.floor(centerX / this.domSize.gridW) + 1,// 列数
+				curRow = Math.floor(centerY / this.domSize.gridH);// 行数
+			var floatIndex = (curRow * this.domSize.containerCols + curCol - 1);
+			var max = this.domSize.gridsLength;
+			//var max = this.domSize.gridsLength - this.context._staticCount;
+			floatIndex = floatIndex < max ? (floatIndex >= 0 ? floatIndex : 0) : max;
+			return floatIndex;// 计算值 = (坐标行数-1)*容器列数 + 坐标列数 -1;
+		}
+	};
+
+	function uiTarget () {
+		return this.init.apply(this, arguments);
+	}
+	uiTarget.prototype = {
+		/*为何要独立dragItem, 因为这里关注的是动画效果, 不是逻辑, 放大, 拖拽, 缩小并归位都是动画*/
+		$el: null,
+		$ghost: null,
+		startGridPos: null,
+		currentGridPos: null,
+		items:null,
+		config:null,
+		init:function($items, config){
+			this.$items = $items;
+			this.config = config;
+			return this;
+		},
+		start: function($e){
+			this.currentGridPos = this.startGridPos = this.$items.getGridPos($e);
+			this.$el = $e.addClass(this.config.class.touchItem);
+		},
+		toBeDragItem:function(){
+			this.$el.addClass(this.config.class.dragItem);
+			this.magnify();
+			return this.$el;
+		},
+		end:function(){
+			this.$el.removeClass(this.config.class.touchItem);
+			this.$el = this.currentGridPos = this.startGridPos = null;
+		},
+		magnify:function(){
+			var $target = this.$el;
+			$target
+				.css({'z-index': 1001})
+				.transition({duration: this.config.focusDuration})
+				.transitionEnd(function(){$target.transition({duration:0});})
+				.transform({
+					pos: this.startGridPos,
+					scale: [1.2, 1.2, 1.2]
+				});
+		},
+		reset: function(callback){
+			/*释放dragItem事件包含缩放与归位两个动画, 还提供callback*/
+			this.$el
+				.removeClass(this.config.class.dragItem)
+				.transition({
+					duration: this.config.reorderDuration
+				})
+				.css({'z-index': 1})
+				.transitionEnd(function(){
+					console.log('transitionEnd');
+					if(callback){callback()}
+				})
+				.transform({
+					pos: this.currentGridPos,
+					scale: [1, 1, 1]
+				});
+			this.$items.saveGridPosCache(this.$el, this.currentGridPos);// 存储位置
+		},
+		followMove: function (movePos) {
+			// 这就分离了touchMove关注的是pos的数据更新, 动画效果交由本cssHandler处理
+			this.$el.transform({
+				pos: [
+					this.startGridPos[0] + movePos[0],
+					this.startGridPos[1] + movePos[1]
+				],
+				scale: [1.2, 1.2, 1.2]
+			});
+			// ghostItem reorder
+		},
+		getFloatGrid: function(movePos){
+			var pos = [
+				this.startGridPos[0] + movePos[0],
+				this.startGridPos[1] + movePos[1]
+			];
+			return this.$items.getIndexByPointPos(pos);
 		}
 	};
 
