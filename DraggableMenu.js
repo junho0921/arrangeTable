@@ -622,11 +622,6 @@
 				touchMovePos[1] - touchStartPos[1]
 			];
 
-			this._collectUiData({
-				//uiEffectData:{
-					movePos: movePos
-			});
-
 			this._$uiTarget.followMove(movePos);//可以raf
 
 			var floatGridIndex = this._$uiTarget.getFloatGrid(movePos);//可以raf
