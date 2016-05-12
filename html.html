@@ -2,39 +2,20 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>DraggableMenu</title>
+	<title>arrangeTable</title>
 	<link rel="stylesheet" href="style.css"/>
-	<style>
-
-	</style>
 </head>
 <body>
-
-<div style="height:900px"></div>
-<h2 class="DraggableMenutittle" style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">DraggableMenu</h2>
-<button>获取数据</button>
-<ul class="draggableMenu">
-
-</ul>
-
+	<div style="height:900px"></div>
+	<h2 style="background:lightgoldenrodyellow; font-size: 32px; text-align: center">arrangeTable</h2>
+	<button>获取数据</button>
+	<ul class="arrangeTable"></ul>
+</body>
 <script src="libs/jquery.js"></script>
 <script src="../cssProp/cssProp.js"></script>
-<script src="DraggableMenu.js"></script>
-
+<script src="arrangeTable.js"></script>
 <script>
-	var DraggableMenu = new arrangeTable($(".draggableMenu"), {
-
-//		dataList:[
-//			{text:'0  信用卡', icon:"c", id:"credit", url:"example/index/mycountDetail"},
-//			{text:'1  理财交易', icon:"d", id:"product", url:"example/index/iwant"},
-//			{text:'2  生活缴费', icon:"e", id:"life", url:"example/index/lifePayment"},
-//			{text:'3  关联转账', icon:"f", id:"", url:""},
-//			{text:'4  周边', icon:"g", id:"bankNodes", url:"example/index/bankNodes"},
-//			{text:'5  话费充值', icon:"h", id:"recharge", url:"example/index/recharge"},
-//			{text:'6  无卡取款', icon:"i", id:"", url:""},
-////			{text:'组件展示', icon:"d", id:"toComponentsList", url:"demo/demo/list"},
-//			{text:'7  更多', icon:"d", id:"toComponentsList", static:true, url:"demo/demo/list"}
-//		],
+	var arrangeTable = new arrangeTable($(".arrangeTable"), {
 		dataList:[
 			{text:'0  信用卡', icon:"c", id:"credit", url:"0  信用卡"},
 			{text:'1  理财交易', icon:"d", id:"product", url:"1  理财交易"},
@@ -45,37 +26,24 @@
 			{text:'6  无卡取款', icon:"i", id:"", url:"6  无卡取款"},
 			{text:'7  更多', icon:"d", id:"toComponentsList", static:true, url:"7  更多"}
 		],
-
 		renderer: function(data, i){
-			// <li class="dragItem" id="recharge"><i class="list-ico h"></i><span>话费充值</span></li>
 			return $('<li>').addClass('item').attr({'id': data.id})
 					.append($("<i class='list-ico'>").addClass(data.icon))
 					.append($('<span>').text(data.text))
 					.append($('<span class="DrM-closeBtn">').text('-')); // 关闭按钮都是用户自定义的,
 		},
-
 		onItemTap: function(data){
 			$('.DraggableMenutittle').text('app.navigate='+ data.url);
 		},
-
 		onDragEnd:function(){
 			$('.DraggableMenutittle').text('onDragEnd');
 		},
-
 		onClose:function(){
 			$('.DraggableMenutittle').text('onClose');
 		},
-
 		onEditing:function(){
 //			console.log('进入编辑模式')
 		}
-
 	});
-
-	console.log('DraggableMenu', DraggableMenu)
-
-
 </script>
-
-</body>
 </html>

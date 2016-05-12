@@ -1,13 +1,13 @@
 
 *{padding:0; margin:0;}
 
-.draggableMenu {
+.arrangeTable {
     list-style: none;
     position: relative;
     perspective: 62px;
 }
 
-.draggableMenu .item{
+.arrangeTable .item{
     display: inline-block;
     min-width:200px;
     min-height: 200px;
@@ -21,7 +21,7 @@
 .item.DrM-activeItem.DrM-reItem{background: lightcyan!important;}
 
 
-/* for nuui-draggableMenu start */
+/* for nuui-arrangeTable start */
 .DrM-closeBtn{
     position: absolute;
     right:3px;
@@ -50,7 +50,7 @@
 .item.DrM-reItem .DrM-closeBtn/*�ͷ�dragItem����ʧ��״̬*/
 {transform: scale3D(1, 1, 1)}
 
-/* for nuui-draggableMenu end */
+/* for nuui-arrangeTable end */
 
 
 
