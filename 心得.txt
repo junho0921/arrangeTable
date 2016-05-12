@@ -1,8 +1,0 @@
-
-// 重要修改:
-// 拖动的单位不再以li为单位, 会以li里的内容wrap"div".addClass(li.class), 以这div为拖动的对象, 而且是基于position:relative的模式
-// 这样就可以避免了复制模式, 也可以避免bug:container的尺寸变化, 有利于setCSS的三种模式的统一位置(不再担心降级方法的css({"left":??}))的特殊处理,
-// 这是因为, 原来clone的情况, 必须要cloneItem先改变css的坐标位置, 这样使得setCSS的三种模式里translate是基于改变后的css坐标, 而降级方案还是基于原来未改变的css坐标
-// 这样的话, animateslide的情况也可以
-
-// 但这不能实现, 因为拖动的item不能有基础坐标参考点的变化, 不然就更加复杂了
