@@ -27,8 +27,8 @@
       <file leaf-file-name="README.adoc" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/README.adoc">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.25773194">
-              <caret line="123" column="44" selection-start-line="123" selection-start-column="44" selection-end-line="123" selection-end-column="44" />
+            <state vertical-scroll-proportion="0.7250859">
+              <caret line="149" column="14" selection-start-line="149" selection-start-column="14" selection-end-line="149" selection-end-column="14" />
               <folding />
             </state>
           </provider>
@@ -266,12 +266,6 @@
       <created>1448872141692</created>
       <option name="number" value="Default" />
       <updated>1448872141692</updated>
-    </task>
-    <task id="LOCAL-00065" summary="小改动">
-      <created>1450171429403</created>
-      <option name="number" value="00065" />
-      <option name="project" value="LOCAL" />
-      <updated>1450171429403</updated>
     </task>
     <task id="LOCAL-00066" summary="项目版本混合模式V2.0">
       <created>1450174723544</created>
@@ -561,7 +555,13 @@
       <option name="project" value="LOCAL" />
       <updated>1465225854910</updated>
     </task>
-    <option name="localTasksCounter" value="114" />
+    <task id="LOCAL-00114" summary="说明文档的整理">
+      <created>1465225957169</created>
+      <option name="number" value="00114" />
+      <option name="project" value="LOCAL" />
+      <updated>1465225957169</updated>
+    </task>
+    <option name="localTasksCounter" value="115" />
     <servers />
   </component>
   <component name="TodoView" selected-index="2">
@@ -1041,8 +1041,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/README.adoc">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.25773194">
-          <caret line="123" column="44" selection-start-line="123" selection-start-column="44" selection-end-line="123" selection-end-column="44" />
+        <state vertical-scroll-proportion="0.7250859">
+          <caret line="149" column="14" selection-start-line="149" selection-start-column="14" selection-end-line="149" selection-end-column="14" />
           <folding />
         </state>
       </provider>
