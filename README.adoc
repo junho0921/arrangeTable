@@ -60,11 +60,11 @@
 
 操作的类型有:
 
-. 点击item --> 跳转页面
-. 长按item --> 进入编辑模式 --> 松开item --> item保留编辑状态
-. 长按item --> 进入编辑模式 --> 松开item --> item保留编辑状态 --> 点击其他item --> 该item退出编辑模式
-. 长按item --> 进入编辑模式 --> 拖拽item --> 没有重排其他item --> 松开item --> item保留编辑状态
-. 长按item --> 进入编辑模式 --> 拖拽item --> 产生重排其他item --> 松开item --> item退出编辑状态
+. 点击item -> 跳转页面
+. 长按item -> 进入编辑模式 -> 松开item -> item保留编辑状态
+. 长按item -> 进入编辑模式 -> 松开item -> item保留编辑状态 -> 点击其他item -> 该item退出编辑模式
+. 长按item -> 进入编辑模式 -> 拖拽item -> 没有重排其他item -> 松开item -> item保留编辑状态
+. 长按item -> 进入编辑模式 -> 拖拽item -> 产生重排其他item -> 松开item -> item退出编辑状态
 . 编辑状态可以点击关闭按钮, 删除改item
 
 === 选择怎样的布局
